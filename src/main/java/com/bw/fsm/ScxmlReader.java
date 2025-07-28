@@ -334,7 +334,7 @@ public class ScxmlReader {
             String parent_tag = this.get_parent_tag();
             if (!Arrays.asList(allowed_parents).contains(parent_tag)) {
                 StaticOptions.panic(
-                        "<%s> inside <%s>. Only allowed inside {%s}",
+                        "<%s> inside <%s>. Only allowed inside %s",
                         name, parent_tag, String.join(",", allowed_parents)
                 );
             }
@@ -465,11 +465,12 @@ public class ScxmlReader {
 
         /// A new "donedata" element started
         protected void start_donedata() {
+            throw new UnsupportedOperationException();
         }
 
         /// A new "history" element started
         protected State start_history(Attributes attr) {
-            return null;
+            throw new UnsupportedOperationException();
         }
 
         // A new "state" element started
@@ -482,28 +483,86 @@ public class ScxmlReader {
 
         // A "datamodel" element started (node, not attribute)
         protected void start_datamodel() {
+            this.verify_parent_tag(TAG_DATAMODEL, new String[]{TAG_SCXML, TAG_STATE, TAG_PARALLEL});
         }
 
-        protected void start_data(Attributes attr, XMLStreamReader reader, boolean has_content) {
+        protected void start_data(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
+            this.verify_parent_tag(TAG_DATA, new String[]{TAG_DATAMODEL});
+
+            String id = get_required_attr(TAG_DATA, ATTR_ID, attr);
+            String src = attr.getValue(ATTR_SRC);
+
+            String expr = attr.getValue(ATTR_EXPR);
+
+            String content = (has_content) ? this.read_content(TAG_DATA, reader) : "";
+
+            // W3C:
+            // In a conformant SCXML document, a \<data}> element may have either a 'src' or an 'expr' attribute,
+            // but must not have both. Furthermore, if either attribute is present, the element must not have any children.
+            // Thus 'src', 'expr' and children are mutually exclusive in the <data> element.
+
+            String data_value;
+            if (src != null) {
+                if (!(expr == null && content.isEmpty())) {
+                    StaticOptions.panic(
+                            "%s shall have only %s, %s or children, but not some combination of it.",
+                            TAG_DATA, ATTR_SRC, ATTR_EXPR
+                    );
+                }
+                // W3C:
+                // Gives the location from which the data object should be fetched.
+                // If the 'src' attribute is present, the Platform must fetch the specified object
+                // at the time specified by the 'binding' attribute of \<scxml\> and must assign it as
+                // the value of the data element
+                data_value = this.read_from_uri(src);
+                if (data_value != null) {
+                    if (StaticOptions.debug_option)
+                        StaticOptions.debug("src='%s':\n%s", src, data_value);
+                } else {
+                    StaticOptions.panic("Can't read data source '%s'", src);
+                }
+            } else if (expr != null) {
+                if (!content.isEmpty()) {
+                    StaticOptions.panic(
+                            "%s shall have only %s, %s or children, but not some combination of it.",
+                            TAG_DATA, ATTR_SRC, ATTR_EXPR
+                    );
+                }
+                data_value = expr;
+            } else if (!content.isEmpty()) {
+                data_value = content;
+            } else {
+                data_value = null;
+            }
+            ;
+            this.get_current_state()
+                    .data
+                    .put(id, data_value == null ? Data.NULL : this.create_source(data_value.trim()));
         }
 
         /// A "initial" element started (the element, not the attribute)
         protected void start_initial() {
+            throw new UnsupportedOperationException();
         }
 
         protected void start_invoke(Attributes attr) {
+            throw new UnsupportedOperationException();
         }
 
         protected void start_finalize(Attributes attr) {
+            throw new UnsupportedOperationException();
         }
 
         protected void end_finalize() {
+            throw new UnsupportedOperationException();
         }
 
         protected void start_transition(Attributes attr) {
+            throw new UnsupportedOperationException();
         }
 
         protected void end_transition() {
+            throw new UnsupportedOperationException();
         }
 
         protected void start_script(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
@@ -543,7 +602,7 @@ public class ScxmlReader {
             }
 
             String script_text = (has_content) ?
-                    this.read_content(reader).trim() : "";
+                    this.read_content(TAG_SCRIPT, reader).trim() : "";
 
             if (!script_text.isEmpty()) {
                 if (!s.content.is_empty()) {
@@ -569,6 +628,7 @@ public class ScxmlReader {
                             TAG_IF,
                             TAG_FINALIZE}
             );
+            throw new UnsupportedOperationException();
 
 
         }
@@ -588,6 +648,7 @@ public class ScxmlReader {
                             TAG_FOR_EACH,
                     }
             );
+            throw new UnsupportedOperationException();
 
         }
 
@@ -678,7 +739,8 @@ public class ScxmlReader {
         }
 
         /// Reads the content of the current element.
-        protected String read_content(XMLStreamReader reader) throws IOException {
+        /// Calles "pop" to remove the element from stack.
+        protected String read_content(String tag, XMLStreamReader reader) throws IOException {
 
             StringWriter writer = getWriter();
             try {
@@ -686,6 +748,7 @@ public class ScxmlReader {
                 XMLStreamWriter xmlWriter = null;
                 xmlWriter = outputFactory.createXMLStreamWriter(writer);
 
+                outer_while:
                 while (reader.hasNext()) {
                     int event = reader.next();
 
@@ -724,15 +787,19 @@ public class ScxmlReader {
                             break;
 
                         case XMLStreamConstants.CHARACTERS:
-                            xmlWriter.writeCharacters(reader.getText());
+                            if (!reader.isWhiteSpace()) {
+                                xmlWriter.writeCharacters(reader.getText());
+                            }
+
                             break;
 
                         case XMLStreamConstants.END_ELEMENT:
-                            xmlWriter.writeEndElement();
                             depth--;
                             if (depth == 0) {
-                                break;
+                                pop();
+                                break outer_while;
                             }
+                            xmlWriter.writeEndElement();
                             break;
                     }
                 }
