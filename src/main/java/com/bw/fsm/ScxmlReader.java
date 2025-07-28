@@ -537,7 +537,7 @@ public class ScxmlReader {
             ;
             this.get_current_state()
                     .data
-                    .put(id, data_value == null ? Data.NULL : this.create_source(data_value.trim()));
+                    .put(id, data_value == null ? Data.Null.NULL : this.create_source(data_value.trim()));
         }
 
         /// A "initial" element started (the element, not the attribute)

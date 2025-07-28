@@ -48,8 +48,8 @@ class ScxmlReaderTest {
         Assertions.assertNotNull(fsm.pseudo_root);
         Assertions.assertEquals( 5, fsm.pseudo_root.data.size());
         Assertions.assertEquals( new Data.Source("0"), fsm.pseudo_root.data.get("Var1"));
-        Assertions.assertEquals( Data.NULL, fsm.pseudo_root.data.get("Var2"));
-        Assertions.assertEquals( Data.NULL, fsm.pseudo_root.data.get("Var3"));
+        Assertions.assertEquals( Data.Null.NULL, fsm.pseudo_root.data.get("Var2"));
+        Assertions.assertEquals( Data.Null.NULL, fsm.pseudo_root.data.get("Var3"));
         Assertions.assertEquals( new Data.Source("7"), fsm.pseudo_root.data.get("Var4"));
         Assertions.assertEquals( new Data.Source("[1,2,3]"), fsm.pseudo_root.data.get("Var5"));
     }
