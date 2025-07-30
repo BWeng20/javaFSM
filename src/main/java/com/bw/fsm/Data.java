@@ -2,17 +2,64 @@ package com.bw.fsm;
 
 import com.bw.fsm.datamodel.SourceCode;
 
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 
+/**
+ * Data Variant used to handle data in a type-safe but Datamodel-agnostic way.
+ */
 public abstract class Data {
 
+    /** Tries to convert the data to a number. */
+    public Number as_number() {
+        return NUL;
+    }
+
+    public abstract java.lang.String as_script();
+
+    public boolean is_numeric() {
+        return false;
+    }
+
     public abstract boolean is_empty();
+
+
+    private static final java.lang.Integer NUL = 0;
+    private static final java.lang.Integer ONE = 1;
+    private static NumberFormat nf = NumberFormat.getInstance(Locale.UK);
+
+    private static Number parseNumber(java.lang.String s) {
+        try {
+            return nf.parse(s);
+        } catch (ParseException e) {
+            return NUL;
+        }
+    }
 
     public static class Integer extends Data {
         int value;
 
         public Integer(int value) {
             this.value = value;
+        }
+
+        @Override
+        public Number as_number() {
+            return value;
+        }
+
+        @Override
+        public java.lang.String as_script() {
+            return nf.format(value);
+        }
+
+
+        @Override
+        public boolean is_numeric() {
+            return true;
         }
 
         @Override
@@ -37,8 +84,6 @@ public abstract class Data {
             }
             return false;
         }
-
-
     }
 
     public static class Double extends Data {
@@ -46,6 +91,20 @@ public abstract class Data {
 
         public Double(double value) {
             this.value = value;
+        }
+
+        @Override
+        public Number as_number() {
+            return value;
+        }
+        @Override
+        public java.lang.String as_script() {
+            return nf.format(value);
+        }
+
+        @Override
+        public boolean is_numeric() {
+            return true;
         }
 
         @Override
@@ -80,6 +139,16 @@ public abstract class Data {
         }
 
         @Override
+        public Number as_number() {
+            return value == null ? NUL : parseNumber(value);
+        }
+        @Override
+        public java.lang.String as_script() {
+            // @TODO
+            return "'"+value+"'";
+        }
+
+        @Override
         public boolean is_empty() {
             return value == null || value.isEmpty();
         }
@@ -106,6 +175,15 @@ public abstract class Data {
 
         public Boolean(boolean value) {
             this.value = value;
+        }
+
+        @Override
+        public Number as_number() {
+            return value? ONE : NUL;
+        }
+        @Override
+        public java.lang.String as_script() {
+            return value ? "true" : "false";
         }
 
         @Override
@@ -142,6 +220,13 @@ public abstract class Data {
             return values.isEmpty();
         }
 
+        public Number as_number() {
+            return values.size();
+        }
+        @Override
+        public java.lang.String as_script() {
+            return values.toString();
+        }
         @Override
         public java.lang.String toString() {
             return values.toString();
@@ -158,6 +243,9 @@ public abstract class Data {
         }
     }
 
+    /**
+     * A map, can also be used to store "object"-like data-structures.
+     */
     public static class Map extends Data {
 
         java.util.Map<java.lang.String, Data> values;
@@ -171,6 +259,14 @@ public abstract class Data {
             return values.isEmpty();
         }
 
+        @Override
+        public  Number as_number() {
+            return values.size();
+        }
+        @Override
+        public java.lang.String as_script() {
+            return values.toString();
+        }
         @Override
         public java.lang.String toString() {
             return values.toString();
@@ -193,7 +289,16 @@ public abstract class Data {
         }
 
         @Override
+        public boolean is_numeric() {
+            return true;
+        }
+
+        @Override
         public java.lang.String toString() {
+            return "null";
+        }
+        @Override
+        public java.lang.String as_script() {
             return "null";
         }
 
@@ -206,6 +311,7 @@ public abstract class Data {
 
     }
 
+    /** Special placeholder to indicate an error */
     public static class Error extends Data {
         java.lang.String message;
 
@@ -216,6 +322,10 @@ public abstract class Data {
         @Override
         public java.lang.String toString() {
             return "Error: " + message;
+        }
+        @Override
+        public java.lang.String as_script() {
+            return "";
         }
 
         @Override
@@ -234,6 +344,10 @@ public abstract class Data {
         }
     }
 
+    /**
+     * Special placeholder to indicate script source (from FSM definition)
+     * that needs to be evaluated by the datamodel.
+     */
     public static class Source extends Data {
         SourceCode source;
 
@@ -241,6 +355,20 @@ public abstract class Data {
             this.source = source;
         }
 
+        @Override
+        public Number as_number() {
+            return source == null ? NUL : parseNumber(source.source);
+        }
+
+        @Override
+        public java.lang.String as_script() {
+            return source == null ? null: source.source ;
+        }
+
+        /**
+         * Create a Data.Source from a String with invalid id.
+         * Should be used for calculated script source, that is not part of FSM definition.
+         */
         public Source(java.lang.String source) {
             this.source = new SourceCode(source, 0);
         }
@@ -271,7 +399,10 @@ public abstract class Data {
 
     }
 
-
+    /**
+     * Special placeholder to indicate empty content.
+     * There is only one instance.
+     */
     public static class None extends Data {
 
         private None() {
@@ -286,7 +417,10 @@ public abstract class Data {
         public boolean is_empty() {
             return true;
         }
-
+        @Override
+        public java.lang.String as_script() {
+            return "" ;
+        }
         public static final Data NONE = new None();
     }
 

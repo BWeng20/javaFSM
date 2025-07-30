@@ -15,6 +15,7 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ScxmlReader {
 
@@ -148,6 +149,14 @@ public class ScxmlReader {
 
         public String getValue(String name) {
             return this.values.get(name);
+        }
+    }
+
+    protected static String strip_suffix(String v, String suffix) {
+        if (v.endsWith(suffix)) {
+            return v.substring(0, v.length() - suffix.length());
+        } else {
+            return null;
         }
     }
 
@@ -558,11 +567,81 @@ public class ScxmlReader {
         }
 
         protected void start_transition(Attributes attr) {
-            throw new UnsupportedOperationException();
+
+            String parent_tag = this
+                    .verify_parent_tag(
+                            TAG_TRANSITION,
+                            new String[]{TAG_HISTORY, TAG_INITIAL, TAG_STATE, TAG_PARALLEL}
+                    );
+
+            Transition t = new Transition();
+            t.doc_id = DOC_ID_COUNTER.incrementAndGet();
+
+            // Start script.
+            this.start_executable_content_region(false, TAG_TRANSITION);
+
+            String event = attr.getValue(TAG_EVENT);
+            if (event != null) {
+                t.events = Arrays.stream(split_whitespace.split(event))
+                        .map(s -> {
+                            // Strip redundant "." and ".*" suffix
+                            var rt = s;
+                            var do_it = true;
+                            while (do_it) {
+                                do_it = false;
+                                String r = strip_suffix(rt, ".*");
+                                if (r != null) {
+                                    do_it = true;
+                                    rt = r;
+                                }
+                                r = strip_suffix(rt, ".");
+                                if (r != null) {
+                                    do_it = true;
+                                    rt = r;
+                                }
+                            }
+                            return rt;
+                        })
+                        .collect(Collectors.toList());
+                t.wildcard = t.events.contains("*");
+            }
+
+            String cond = attr.getValue(ATTR_COND);
+            if (cond != null) {
+                t.cond = this.create_source(cond);
+            }
+
+            String target = attr.getValue(ATTR_TARGET);
+            if (target != null) {
+                this.parse_state_specification(target, t.target);
+            }
+
+            String trans_type = attr.getValue(TAG_TYPE);
+            if (trans_type != null) {
+                t.transition_type = TransitionType.map_transition_type(trans_type);
+            }
+
+            State state = this.get_current_state();
+
+            if (TAG_INITIAL.equals(parent_tag)) {
+                if (state.initial != null) {
+                    StaticOptions.panic("<initial> must not be specified if initial-attribute was given");
+                }
+                if (StaticOptions.debug_option)
+                    StaticOptions.debug(" %s#%s.initial = %s", state.name, state.id, t);
+                state.initial = t;
+            } else {
+                state.transitions.push(t);
+            }
+            t.source = state;
+            this.current.current_transition = t;
         }
 
         protected void end_transition() {
-            throw new UnsupportedOperationException();
+            var ec = this.end_executable_content_region(TAG_TRANSITION);
+            Transition trans = this.get_current_transition();
+            // Assign the collected content to the transition.
+            trans.content = ec;
         }
 
         protected void start_script(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
