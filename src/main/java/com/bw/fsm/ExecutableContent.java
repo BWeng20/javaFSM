@@ -6,6 +6,9 @@ import com.bw.fsm.executable_content.ExecutableContentTracer;
 public interface ExecutableContent {
     boolean execute(Datamodel datamodel, Fsm fsm);
 
+    /**
+     * Returns the matching "TYPE_XXX".
+     */
     int get_type();
 
     void trace(ExecutableContentTracer tracer, Fsm fsm);

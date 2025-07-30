@@ -2,6 +2,9 @@ package com.bw.fsm;
 
 import com.bw.fsm.datamodel.SourceCode;
 import com.bw.fsm.executable_content.Expression;
+import com.bw.fsm.executable_content.ForEach;
+import com.bw.fsm.executable_content.If;
+import com.bw.fsm.executable_content.Log;
 
 import javax.xml.stream.*;
 import java.io.*;
@@ -172,7 +175,28 @@ public class ScxmlReader {
         ReaderStackItem current;
         Stack<ReaderStackItem> stack;
 
-        Stack<ExecutableContentRegion> executable_content_stack;
+        static class ExecutableContentStackItem {
+            /**
+             * the element for which the item was pushed (that replaced current)
+             */
+            String for_tag;
+            /**
+             * the pushed region
+             */
+            ExecutableContentRegion region;
+
+            ExecutableContentStackItem(String tag, ExecutableContentRegion region) {
+                this.for_tag = tag;
+                this.region = region;
+            }
+
+            @Override
+            public String toString() {
+                return "#" + for_tag + " " + region;
+            }
+        }
+
+        Stack<ExecutableContentStackItem> executable_content_stack;
         ExecutableContentRegion current_executable_content;
         List<Path> include_paths;
 
@@ -273,14 +297,14 @@ public class ScxmlReader {
         protected ExecutableContentRegion start_executable_content_region(boolean stack, String tag) {
             if (stack) {
                 if (debug_option)
-                    StaticOptions.debug(" push executable content region %s", this.current_executable_content);
-                this.executable_content_stack.push(this.current_executable_content);
+                    StaticOptions.debug(" push executable content region [%s]", this.current_executable_content);
+                this.executable_content_stack.push(new ExecutableContentStackItem(tag, this.current_executable_content));
             } else {
                 this.executable_content_stack.clear();
             }
             this.current_executable_content = new ExecutableContentRegion(null, tag);
             if (debug_option)
-                StaticOptions.debug(" start executable content region %s", this.current_executable_content);
+                StaticOptions.debug(" start executable content region [%s]", this.current_executable_content);
             return this.current_executable_content;
         }
 
@@ -302,15 +326,20 @@ public class ScxmlReader {
                 return null;
             } else {
                 if (debug_option)
-                    StaticOptions.debug(" end executable content region #{}", this.current_executable_content);
+                    StaticOptions.debug(" end executable content region [%s]", this.current_executable_content);
                 ExecutableContentRegion ec = this.current_executable_content;
-                this.current_executable_content = this.executable_content_stack.isEmpty() ? null : this.executable_content_stack.pop();
-                if (this.current_executable_content != null) {
+                ExecutableContentStackItem item = this.executable_content_stack.isEmpty() ? null : this.executable_content_stack.pop();
+                if (item != null) {
+                    this.current_executable_content = item.region;
                     if (debug_option)
-                        StaticOptions.debug(" pop executable content region %s", this.current_executable_content);
-                    if (tag != null && !tag.equals(this.current_executable_content.tag)) {
-                        this.end_executable_content_region(tag);
+                        StaticOptions.debug(" pop executable content region [%s]", item);
+                    if (this.current_executable_content != null) {
+                        if (tag != null && !tag.equals(item.for_tag)) {
+                            this.end_executable_content_region(tag);
+                        }
                     }
+                } else {
+                    this.current_executable_content = null;
                 }
                 return ec;
             }
@@ -323,8 +352,8 @@ public class ScxmlReader {
             } else {
                 if (StaticOptions.debug_option)
                     StaticOptions.debug(
-                            "Adding Executable Content '{}' to #{}",
-                            ec.get_type(),
+                            "Adding Executable Content [%s] to [%s]",
+                            ec,
                             this.current_executable_content
                     );
                 this.current_executable_content.content.add(ec);
@@ -707,9 +736,13 @@ public class ScxmlReader {
                             TAG_IF,
                             TAG_FINALIZE}
             );
-            throw new UnsupportedOperationException();
 
-
+            var fe = new ForEach();
+            fe.array = this.create_source(get_required_attr(TAG_FOR_EACH, ATTR_ARRAY, attr));
+            fe.item = get_required_attr(TAG_FOR_EACH, ATTR_ITEM, attr);
+            fe.index = attr.getValue(ATTR_INDEX);
+            this.add_executable_content(fe);
+            fe.content = this.start_executable_content_region(true, TAG_FOR_EACH);
         }
 
         protected void end_for_each() {
@@ -767,8 +800,23 @@ public class ScxmlReader {
                             TAG_FINALIZE
                     }
             );
-            throw new UnsupportedOperationException();
 
+            If ec_if = new If(this.create_source(this.get_required_attr(TAG_IF, ATTR_COND, attr)));
+            this.add_executable_content(ec_if);
+            ExecutableContentRegion parent_content_id = this.current_executable_content;
+
+            this.start_executable_content_region(true, TAG_IF);
+            ExecutableContentRegion if_cid = this.current_executable_content;
+
+            ExecutableContent if_ec = this.get_last_executable_content_entry_for_region(parent_content_id);
+            if (if_ec instanceof If evc_if) {
+                evc_if.content = if_cid;
+            } else {
+                StaticOptions.panic(
+                        "Internal Error: Executable Content missing in start_if in region #%s",
+                        parent_content_id
+                );
+            }
         }
 
         protected void end_if() {
@@ -777,12 +825,78 @@ public class ScxmlReader {
 
         protected void start_else_if(Attributes attr) {
             this.verify_parent_tag(TAG_ELSEIF, new String[]{TAG_IF});
-            throw new UnsupportedOperationException();
+
+            // Close parent <if> content region
+            this.end_executable_content_region(TAG_IF);
+
+            ExecutableContentRegion if_id = this.current_executable_content;
+
+            // Start new "else" region - will contain only one "if", replacing current "if" stack element.
+            this.start_executable_content_region(true, TAG_IF);
+            ExecutableContentRegion else_id = this.current_executable_content;
+
+            // Add new "if"
+            If else_if = new If(this.create_source(get_required_attr(TAG_IF, ATTR_COND, attr)));
+            this.add_executable_content(else_if);
+
+            ExecutableContentRegion else_if_content_id = this.start_executable_content_region(true, TAG_ELSEIF);
+
+            // Put together
+            ExecutableContent else_if_ec = this.get_last_executable_content_entry_for_region(else_id);
+            if (else_if_ec instanceof If evc_if) {
+                evc_if.content = else_if_content_id;
+            } else {
+                StaticOptions.panic(
+                        "Internal Error: Executable Content missing in start_else_if in region #%s",
+                        else_id
+                );
+            }
+
+            while (if_id != null) {
+                // Find matching "if" level for the new "else if"
+                ExecutableContent if_ec = this.get_last_executable_content_entry_for_region(if_id);
+                if (if_ec instanceof If evc_if) {
+                    if (evc_if.else_content != null) {
+                        // Some higher "if". Go inside else-region.
+                        if_id = evc_if.else_content;
+                    } else {
+                        // Match, set "else-region".
+                        if_id = null;
+                        evc_if.else_content = else_id;
+                    }
+                } else {
+                    StaticOptions.panic("Internal Error: Executable Content missing in start_else_if");
+                }
+            }
+
         }
 
         protected void start_else(Attributes _attr) {
             this.verify_parent_tag(TAG_ELSE, new String[]{TAG_IF});
-            throw new UnsupportedOperationException();
+
+            // Close parent <if> content region
+            this.end_executable_content_region(TAG_IF);
+
+            ExecutableContentRegion if_id = this.current_executable_content;
+
+            // Start new "else" region, replacing "If" region.
+            ExecutableContentRegion else_id = this.start_executable_content_region(true, TAG_IF);
+
+            // Put together. Set deepest else
+            while (if_id != null) {
+                ExecutableContent if_ec = this.get_last_executable_content_entry_for_region(if_id);
+                if (if_ec instanceof If evc_if) {
+
+                    if (evc_if.else_content != null) {
+                        if_id = evc_if.else_content;
+                    } else {
+                        if_id = null;
+                        evc_if.else_content = else_id;
+                    }
+                } else {
+                    StaticOptions.panic("Internal Error: Executable Content missing in start_else");
+                }
+            }
         }
 
         protected void start_send(Attributes attr) {
@@ -917,7 +1031,12 @@ public class ScxmlReader {
                             TAG_FINALIZE
                     }
             );
-            throw new UnsupportedOperationException();
+            String label = attr.getValue(ATTR_LABEL);
+            String expr = attr.getValue(ATTR_EXPR);
+            if (expr != null) {
+                var expression = this.create_source(expr);
+                this.add_executable_content(new Log(label, expression));
+            }
         }
 
         protected void start_assign(Attributes attr, XMLStreamReader reader, boolean has_content) {
@@ -1020,72 +1139,28 @@ public class ScxmlReader {
                 case TAG_DATAMODEL -> this.start_datamodel();
                 case TAG_DATA -> this.start_data(attr, reader, has_content);
                 case TAG_STATE -> this.start_state(attr);
-                case TAG_PARALLEL -> {
-                    this.start_parallel(attr);
-                }
-                case TAG_FINAL -> {
-                    this.start_final(attr);
-                }
-                case TAG_DONEDATA -> {
-                    this.start_donedata();
-                }
-                case TAG_HISTORY -> {
-                    this.start_history(attr);
-                }
-                case TAG_INITIAL -> {
-                    this.start_initial();
-                }
-                case TAG_INVOKE -> {
-                    this.start_invoke(attr);
-                }
-                case TAG_TRANSITION -> {
-                    this.start_transition(attr);
-                }
-                case TAG_FINALIZE -> {
-                    this.start_finalize(attr);
-                }
-                case TAG_ON_ENTRY -> {
-                    this.start_on_entry(attr);
-                }
-                case TAG_ON_EXIT -> {
-                    this.start_on_exit(attr);
-                }
-                case TAG_SCRIPT -> {
-                    this.start_script(attr, reader, has_content);
-                }
-                case TAG_RAISE -> {
-                    this.start_raise(attr);
-                }
-                case TAG_SEND -> {
-                    this.start_send(attr);
-                }
-                case TAG_PARAM -> {
-                    this.start_param(attr);
-                }
-                case TAG_CONTENT -> {
-                    this.start_content(attr, reader, has_content);
-                }
-                case TAG_LOG -> {
-                    this.start_log(attr);
-                }
-                case TAG_ASSIGN -> {
-                    this.start_assign(attr, reader, has_content);
-                }
-                case TAG_FOR_EACH -> {
-                    this.start_for_each(attr);
-                }
-                case TAG_CANCEL -> {
-                    this.start_cancel(attr);
-                }
-                case TAG_IF -> {
-                    this.start_if(attr);
-                }
-                case TAG_ELSE -> {
-                    this.start_else(attr);
-                }
-                case TAG_ELSEIF -> {
-                    this.start_else_if(attr);
-                }
+                case TAG_PARALLEL -> this.start_parallel(attr);
+                case TAG_FINAL -> this.start_final(attr);
+                case TAG_DONEDATA -> this.start_donedata();
+                case TAG_HISTORY -> this.start_history(attr);
+                case TAG_INITIAL -> this.start_initial();
+                case TAG_INVOKE -> this.start_invoke(attr);
+                case TAG_TRANSITION -> this.start_transition(attr);
+                case TAG_FINALIZE -> this.start_finalize(attr);
+                case TAG_ON_ENTRY -> this.start_on_entry(attr);
+                case TAG_ON_EXIT -> this.start_on_exit(attr);
+                case TAG_SCRIPT -> this.start_script(attr, reader, has_content);
+                case TAG_RAISE -> this.start_raise(attr);
+                case TAG_SEND -> this.start_send(attr);
+                case TAG_PARAM -> this.start_param(attr);
+                case TAG_CONTENT -> this.start_content(attr, reader, has_content);
+                case TAG_LOG -> this.start_log(attr);
+                case TAG_ASSIGN -> this.start_assign(attr, reader, has_content);
+                case TAG_FOR_EACH -> this.start_for_each(attr);
+                case TAG_CANCEL -> this.start_cancel(attr);
+                case TAG_IF -> this.start_if(attr);
+                case TAG_ELSE -> this.start_else(attr);
+                case TAG_ELSEIF -> this.start_else_if(attr);
                 default -> {
                     if (debug_option)
                         StaticOptions.debug("Ignored tag %s", name);
@@ -1122,6 +1197,7 @@ public class ScxmlReader {
          * Only parse="text" and "href" with a relative path are supported, also no "xpointer" etc.
          */
         protected void include(Attributes attr) {
+            throw new UnsupportedOperationException();
         }
 
         /**
@@ -1135,30 +1211,14 @@ public class ScxmlReader {
             if (StaticOptions.debug_option)
                 StaticOptions.debug("End Element %s", name);
             switch (name) {
-                case TAG_SCXML -> {
-                    this.end_scxml();
-                }
-                case TAG_IF -> {
-                    this.end_if();
-                }
-                case TAG_TRANSITION -> {
-                    this.end_transition();
-                }
-                case TAG_ON_EXIT -> {
-                    this.end_on_exit();
-                }
-                case TAG_ON_ENTRY -> {
-                    this.end_on_entry();
-                }
-                case TAG_FOR_EACH -> {
-                    this.end_for_each();
-                }
-                case TAG_FINALIZE -> {
-                    this.end_finalize();
-                }
-                case TAG_STATE -> {
-                    this.end_state();
-                }
+                case TAG_SCXML -> this.end_scxml();
+                case TAG_IF -> this.end_if();
+                case TAG_TRANSITION -> this.end_transition();
+                case TAG_ON_EXIT -> this.end_on_exit();
+                case TAG_ON_ENTRY -> this.end_on_entry();
+                case TAG_FOR_EACH -> this.end_for_each();
+                case TAG_FINALIZE -> this.end_finalize();
+                case TAG_STATE -> this.end_state();
                 default -> {
                 }
             }

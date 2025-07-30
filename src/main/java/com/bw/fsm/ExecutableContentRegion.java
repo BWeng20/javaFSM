@@ -9,16 +9,17 @@ public class ExecutableContentRegion {
     public String tag;
 
     ExecutableContentRegion(ExecutableContent content, String tag) {
-        this.content.add(content);
+        if (content != null)
+            this.content.add(content);
         this.tag = tag;
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(10);
+        StringBuilder sb = new StringBuilder(50);
+        sb.append("ECRegion #").append(tag);
         if (!content.isEmpty())
-            sb.append(content.get(0)).append(' ');
-        sb.append("#").append(tag);
+            sb.append(" (").append(content.get(0)).append(')');
         return sb.toString();
     }
 }

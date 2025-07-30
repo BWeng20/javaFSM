@@ -6,14 +6,15 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Data Variant used to handle data in a type-safe but Datamodel-agnostic way.
  */
 public abstract class Data {
 
-    /** Tries to convert the data to a number. */
+    /**
+     * Tries to convert the data to a number.
+     */
     public Number as_number() {
         return NUL;
     }
@@ -97,6 +98,7 @@ public abstract class Data {
         public Number as_number() {
             return value;
         }
+
         @Override
         public java.lang.String as_script() {
             return nf.format(value);
@@ -142,10 +144,11 @@ public abstract class Data {
         public Number as_number() {
             return value == null ? NUL : parseNumber(value);
         }
+
         @Override
         public java.lang.String as_script() {
             // @TODO
-            return "'"+value+"'";
+            return "'" + value + "'";
         }
 
         @Override
@@ -179,8 +182,9 @@ public abstract class Data {
 
         @Override
         public Number as_number() {
-            return value? ONE : NUL;
+            return value ? ONE : NUL;
         }
+
         @Override
         public java.lang.String as_script() {
             return value ? "true" : "false";
@@ -223,10 +227,12 @@ public abstract class Data {
         public Number as_number() {
             return values.size();
         }
+
         @Override
         public java.lang.String as_script() {
             return values.toString();
         }
+
         @Override
         public java.lang.String toString() {
             return values.toString();
@@ -260,13 +266,15 @@ public abstract class Data {
         }
 
         @Override
-        public  Number as_number() {
+        public Number as_number() {
             return values.size();
         }
+
         @Override
         public java.lang.String as_script() {
             return values.toString();
         }
+
         @Override
         public java.lang.String toString() {
             return values.toString();
@@ -297,6 +305,7 @@ public abstract class Data {
         public java.lang.String toString() {
             return "null";
         }
+
         @Override
         public java.lang.String as_script() {
             return "null";
@@ -311,7 +320,9 @@ public abstract class Data {
 
     }
 
-    /** Special placeholder to indicate an error */
+    /**
+     * Special placeholder to indicate an error
+     */
     public static class Error extends Data {
         java.lang.String message;
 
@@ -323,6 +334,7 @@ public abstract class Data {
         public java.lang.String toString() {
             return "Error: " + message;
         }
+
         @Override
         public java.lang.String as_script() {
             return "";
@@ -362,7 +374,7 @@ public abstract class Data {
 
         @Override
         public java.lang.String as_script() {
-            return source == null ? null: source.source ;
+            return source == null ? null : source.source;
         }
 
         /**
@@ -417,10 +429,12 @@ public abstract class Data {
         public boolean is_empty() {
             return true;
         }
+
         @Override
         public java.lang.String as_script() {
-            return "" ;
+            return "";
         }
+
         public static final Data NONE = new None();
     }
 

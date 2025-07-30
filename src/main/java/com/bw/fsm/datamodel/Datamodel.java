@@ -5,7 +5,7 @@ import com.bw.fsm.event_io_processor.EventIOProcessor;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Supplier;
 
 public abstract class Datamodel {
 
@@ -106,7 +106,7 @@ public abstract class Datamodel {
             Data array_expression,
             String item,
             String index,
-            Function<Datamodel, Boolean> execute_body
+            Supplier<Boolean> execute_body
     );
 
     /// *W3C says*:\
@@ -114,9 +114,6 @@ public abstract class Datamodel {
     /// but all data models must support the 'In()' predicate, which takes a state ID as its
     /// argument and returns true if the state machine is in that state.\
     /// Conditional expressions in conformant SCXML documents should not have side effects.
-    /// #Actual Implementation:
-    /// As no side effects shall occur, this method should be "&this". But we assume that most script-engines have
-    /// no read-only "eval" function and such method may be hard to implement.
     public abstract boolean execute_condition(Data script);
 
     /// Executes content.

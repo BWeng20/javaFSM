@@ -2,7 +2,7 @@ package com.bw.fsm;
 
 public interface StaticOptions {
 
-    final boolean debug_option = true;
+    boolean debug_option = true;
 
     static void debug(String msg, Object... arguments) {
         if (debug_option) {
@@ -17,6 +17,11 @@ public interface StaticOptions {
 
 
     static void info(String message, Object... arguments) {
+        System.out.printf(message, arguments);
+        System.out.println();
+    }
+
+    static void warn(String message, Object... arguments) {
         System.out.printf(message, arguments);
         System.out.println();
     }
