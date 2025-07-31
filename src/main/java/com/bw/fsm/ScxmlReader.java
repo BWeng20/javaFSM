@@ -20,6 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * Reads SCXML files via SAX parser and produces an FSM model.<br>
+ */
 public class ScxmlReader {
 
     public static final String TAG_SCXML = "scxml";
@@ -155,14 +158,6 @@ public class ScxmlReader {
         }
     }
 
-    protected static String strip_suffix(String v, String suffix) {
-        if (v.endsWith(suffix)) {
-            return v.substring(0, v.length() - suffix.length());
-        } else {
-            return null;
-        }
-    }
-
     protected static class StatefulReader implements StaticOptions {
 
         // True if reader in inside a scxml element
@@ -174,6 +169,14 @@ public class ScxmlReader {
         Fsm fsm;
         ReaderStackItem current;
         Stack<ReaderStackItem> stack;
+
+        protected static String strip_suffix(String v, String suffix) {
+            if (v.endsWith(suffix)) {
+                return v.substring(0, v.length() - suffix.length());
+            } else {
+                return null;
+            }
+        }
 
         static class ExecutableContentStackItem {
             /**
@@ -214,8 +217,10 @@ public class ScxmlReader {
             include_paths = new ArrayList<>();
         }
 
-        /// Process a XML file.
-        /// For technical reasons (to handle user content) the file is read in a temporary buffer.
+        /**
+         * Process an XML file.<br>
+         * For technical reasons (to handle user content) the file is read in a temporary buffer.
+         */
         public void process_file(Path file) throws IOException {
             throw new UnsupportedOperationException();
         }
@@ -285,15 +290,19 @@ public class ScxmlReader {
             return transition;
         }
 
-        /// Starts a new region of executable content.\
-        /// A stack is used to handle nested executable content.
-        /// This stack works independent of the main element stack, but should be
-        /// considered as synchronized with it.
-        /// # Arguments
-        /// * `stack` - If true, the current region is put on stack,
-        ///             continued after the matching [get_executable_content](Self::get_executable_content).
-        ///             If false, the current stack is discarded.
-        /// * `tag`   - Tag for which this region was started. Used to mark the region for later clean-up.
+        /**
+         * Starts a new region of executable content.<br>
+         * A stack is used to handle nested executable content.
+         * This stack works independent of the main element stack, but should be
+         * considered as synchronized with it.<br>
+         * <b>Arguments</b>
+         * <table>
+         * <tr><td>stack</td><td>If true, the current region is put on stack,
+         *     continued after the matching {@link #end_executable_content_region(String)}.
+         *     If false, the current stack is discarded.</td></tr>
+         * <tr><td>tag</td><td>Tag for which this region was started. Used to mark the region for later clean-up.
+         * </td></tr></table>
+         */
         protected ExecutableContentRegion start_executable_content_region(boolean stack, String tag) {
             if (stack) {
                 if (debug_option)
