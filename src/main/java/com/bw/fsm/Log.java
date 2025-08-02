@@ -14,6 +14,8 @@ public class Log {
 
     public static void setLogFile(Path logFile) {
         try {
+            System.out.flush();
+            System.err.flush();
             if (writer != null) {
                 writer.flush();
                 writer.close();
