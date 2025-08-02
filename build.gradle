@@ -12,8 +12,17 @@ repositories {
 dependencies {
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'net.sf.saxon:Saxon-HE:12.8'
 }
 
-test {
-    useJUnitPlatform()
+tasks.register('w3cTest', JavaExec) {
+    group = 'verification'
+    description = 'Starts the w3c test'
+
+    mainClass = 'com.bw.fsm.W3CTest'
+
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+
+    // jvmArgs = ['-Xmx512m']
+    args = [layout.projectDirectory.asFile.absolutePath + '/w3ctest', layout.projectDirectory.asFile.absolutePath+ "/W3C_TEST_REPORT.MD"]
 }
