@@ -94,6 +94,7 @@ public class ScxmlReader {
     static Pattern split_whitespace = Pattern.compile("\\s");
 
     static XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    List<Path> includePaths = new ArrayList<>();
 
     public Fsm read(Path path) throws IOException, XMLStreamException {
         try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
@@ -1235,5 +1236,13 @@ public class ScxmlReader {
             }
             this.pop();
         }
+    }
+
+    public ScxmlReader() {
+    }
+
+    public ScxmlReader withIncludePaths( List<Path> includePaths) {
+        this.includePaths.addAll( includePaths );
+        return this;
     }
 }
