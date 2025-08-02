@@ -20,4 +20,8 @@ gradle-app.setting
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
 /.idea/
-/w3ctest/
+/w3ctest/dependencies/scxml/
+/w3ctest/logs/
+/w3ctest/manual_scxml/
+/w3ctest/optional_scxml/
+/w3ctest/scxml/
