@@ -10,7 +10,7 @@ public enum TransitionType {
             case "external" -> TransitionType.External;
             case "" -> TransitionType.External;
             default -> {
-                StaticOptions.panic("Unknown transition type '%s'", ts);
+                Log.panic("Unknown transition type '%s'", ts);
                 yield null;
             }
         };

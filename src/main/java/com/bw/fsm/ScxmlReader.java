@@ -277,7 +277,7 @@ public class ScxmlReader {
         protected State get_current_state() {
             State id = this.current.current_state;
             if (id == null) {
-                StaticOptions.panic("Internal error: Current State is unknown");
+                com.bw.fsm.Log.panic("Internal error: Current State is unknown");
             }
             return id;
         }
@@ -285,7 +285,7 @@ public class ScxmlReader {
         protected Transition get_current_transition() {
             Transition transition = this.current.current_transition;
             if (transition == null) {
-                StaticOptions.panic("Internal error: Current Transition is unknown");
+                com.bw.fsm.Log.panic("Internal error: Current Transition is unknown");
             }
             return transition;
         }
@@ -306,14 +306,14 @@ public class ScxmlReader {
         protected ExecutableContentRegion start_executable_content_region(boolean stack, String tag) {
             if (stack) {
                 if (debug_option)
-                    StaticOptions.debug(" push executable content region [%s]", this.current_executable_content);
+                    com.bw.fsm.Log.debug(" push executable content region [%s]", this.current_executable_content);
                 this.executable_content_stack.push(new ExecutableContentStackItem(tag, this.current_executable_content));
             } else {
                 this.executable_content_stack.clear();
             }
             this.current_executable_content = new ExecutableContentRegion(null, tag);
             if (debug_option)
-                StaticOptions.debug(" start executable content region [%s]", this.current_executable_content);
+                com.bw.fsm.Log.debug(" start executable content region [%s]", this.current_executable_content);
             return this.current_executable_content;
         }
 
@@ -331,17 +331,17 @@ public class ScxmlReader {
          */
         protected ExecutableContentRegion end_executable_content_region(String tag) {
             if (this.current_executable_content == null) {
-                StaticOptions.panic("Try to get executable content in unsupported document part.");
+                com.bw.fsm.Log.panic("Try to get executable content in unsupported document part.");
                 return null;
             } else {
                 if (debug_option)
-                    StaticOptions.debug(" end executable content region [%s]", this.current_executable_content);
+                    com.bw.fsm.Log.debug(" end executable content region [%s]", this.current_executable_content);
                 ExecutableContentRegion ec = this.current_executable_content;
                 ExecutableContentStackItem item = this.executable_content_stack.isEmpty() ? null : this.executable_content_stack.pop();
                 if (item != null) {
                     this.current_executable_content = item.region;
                     if (debug_option)
-                        StaticOptions.debug(" pop executable content region [%s]", item);
+                        com.bw.fsm.Log.debug(" pop executable content region [%s]", item);
                     if (this.current_executable_content != null) {
                         if (tag != null && !tag.equals(item.for_tag)) {
                             this.end_executable_content_region(tag);
@@ -354,13 +354,15 @@ public class ScxmlReader {
             }
         }
 
-        /// Adds content to the current executable content region.
+        /**
+         * Adds content to the current executable content region.
+         */
         protected void add_executable_content(ExecutableContent ec) {
             if (this.current_executable_content == null) {
-                StaticOptions.panic("Try to add executable content to unsupported document part.");
+                com.bw.fsm.Log.panic("Try to add executable content to unsupported document part.");
             } else {
                 if (StaticOptions.debug_option)
-                    StaticOptions.debug(
+                    com.bw.fsm.Log.debug(
                             "Adding Executable Content [%s] to [%s]",
                             ec,
                             this.current_executable_content
@@ -380,7 +382,7 @@ public class ScxmlReader {
         protected String verify_parent_tag(String name, String[] allowed_parents) {
             String parent_tag = this.get_parent_tag();
             if (!Arrays.asList(allowed_parents).contains(parent_tag)) {
-                StaticOptions.panic(
+                com.bw.fsm.Log.panic(
                         "<%s> inside <%s>. Only allowed inside %s",
                         name, parent_tag, String.join(",", allowed_parents)
                 );
@@ -419,7 +421,7 @@ public class ScxmlReader {
                 initial.source = state;
                 this.parse_state_specification(initialName, initial.target);
                 if (StaticOptions.debug_option)
-                    StaticOptions.debug(
+                    com.bw.fsm.Log.debug(
                             " %s.initial = %s -> %s",
                             sname, initialName,
                             initial);
@@ -431,7 +433,7 @@ public class ScxmlReader {
             if (parent != null) {
                 state.parent = parent;
                 if (debug_option)
-                    StaticOptions.debug(
+                    com.bw.fsm.Log.debug(
                             " state #%s %s%s parent %s",
                             state, (parallel ? "(parallel) " : ""), sname, parent.name
                     );
@@ -440,7 +442,7 @@ public class ScxmlReader {
                 }
             } else {
                 if (debug_option)
-                    StaticOptions.debug(
+                    com.bw.fsm.Log.debug(
                             " state #%s %s%s no parent",
                             state, (parallel ? "(parallel) " : ""), sname);
             }
@@ -451,7 +453,7 @@ public class ScxmlReader {
         protected String get_required_attr(String tag, String attribute, Attributes attributes) {
             String attr = attributes.getValue(attribute);
             if (attr == null) {
-                StaticOptions.panic("<%s> requires attribute %s", tag, attribute);
+                com.bw.fsm.Log.panic("<%s> requires attribute %s", tag, attribute);
             }
             return attr;
         }
@@ -465,7 +467,7 @@ public class ScxmlReader {
                     }
                     default -> {
                         if (debug_option)
-                            StaticOptions.debug("read from URL %s", url_result);
+                            com.bw.fsm.Log.debug("read from URL %s", url_result);
                         ByteArrayOutputStream sb = new ByteArrayOutputStream(1024);
                         try (InputStream is = url_result.toURL().openStream()) {
                             byte[] buffer = new byte[1024];
@@ -479,7 +481,7 @@ public class ScxmlReader {
                 }
             } catch (URISyntaxException syntaxException) {
                 if (debug_option)
-                    StaticOptions.debug(
+                    com.bw.fsm.Log.debug(
                             "%s is not a URI (%s). Try loading as relative path...",
                             uri, syntaxException.getMessage()
                     );
@@ -551,7 +553,7 @@ public class ScxmlReader {
             String data_value;
             if (src != null) {
                 if (!(expr == null && content.isEmpty())) {
-                    StaticOptions.panic(
+                    com.bw.fsm.Log.panic(
                             "%s shall have only %s, %s or children, but not some combination of it.",
                             TAG_DATA, ATTR_SRC, ATTR_EXPR
                     );
@@ -564,13 +566,13 @@ public class ScxmlReader {
                 data_value = this.read_from_uri(src);
                 if (data_value != null) {
                     if (StaticOptions.debug_option)
-                        StaticOptions.debug("src='%s':\n%s", src, data_value);
+                        com.bw.fsm.Log.debug("src='%s':\n%s", src, data_value);
                 } else {
-                    StaticOptions.panic("Can't read data source '%s'", src);
+                    com.bw.fsm.Log.panic("Can't read data source '%s'", src);
                 }
             } else if (expr != null) {
                 if (!content.isEmpty()) {
-                    StaticOptions.panic(
+                    com.bw.fsm.Log.panic(
                             "%s shall have only %s, %s or children, but not some combination of it.",
                             TAG_DATA, ATTR_SRC, ATTR_EXPR
                     );
@@ -663,10 +665,10 @@ public class ScxmlReader {
 
             if (TAG_INITIAL.equals(parent_tag)) {
                 if (state.initial != null) {
-                    StaticOptions.panic("<initial> must not be specified if initial-attribute was given");
+                    com.bw.fsm.Log.panic("<initial> must not be specified if initial-attribute was given");
                 }
                 if (StaticOptions.debug_option)
-                    StaticOptions.debug(" %s#%s.initial = %s", state.name, state.id, t);
+                    com.bw.fsm.Log.debug(" %s#%s.initial = %s", state.name, state.id, t);
                 state.initial = t;
             } else {
                 state.transitions.push(t);
@@ -711,10 +713,10 @@ public class ScxmlReader {
                 String source = this.read_from_uri(file_src);
                 if (source != null) {
                     if (StaticOptions.debug_option)
-                        StaticOptions.debug("src='%s':\n%s", file_src, source);
+                        com.bw.fsm.Log.debug("src='%s':\n%s", file_src, source);
                     s.content = this.create_source_moved(source);
                 } else {
-                    StaticOptions.panic("Can't read script '%s'", file_src);
+                    com.bw.fsm.Log.panic("Can't read script '%s'", file_src);
                 }
             }
 
@@ -723,7 +725,7 @@ public class ScxmlReader {
 
             if (!script_text.isEmpty()) {
                 if (!s.content.is_empty()) {
-                    StaticOptions.panic("<script> with 'src' attribute shall not have content.");
+                    com.bw.fsm.Log.panic("<script> with 'src' attribute shall not have content.");
                 }
                 s.content = this.create_source_moved(file_src);
             }
@@ -821,7 +823,7 @@ public class ScxmlReader {
             if (if_ec instanceof If evc_if) {
                 evc_if.content = if_cid;
             } else {
-                StaticOptions.panic(
+                com.bw.fsm.Log.panic(
                         "Internal Error: Executable Content missing in start_if in region #%s",
                         parent_content_id
                 );
@@ -855,7 +857,7 @@ public class ScxmlReader {
             if (else_if_ec instanceof If evc_if) {
                 evc_if.content = else_if_content_id;
             } else {
-                StaticOptions.panic(
+                com.bw.fsm.Log.panic(
                         "Internal Error: Executable Content missing in start_else_if in region #%s",
                         else_id
                 );
@@ -874,7 +876,7 @@ public class ScxmlReader {
                         evc_if.else_content = else_id;
                     }
                 } else {
-                    StaticOptions.panic("Internal Error: Executable Content missing in start_else_if");
+                    com.bw.fsm.Log.panic("Internal Error: Executable Content missing in start_else_if");
                 }
             }
 
@@ -903,7 +905,7 @@ public class ScxmlReader {
                         evc_if.else_content = else_id;
                     }
                 } else {
-                    StaticOptions.panic("Internal Error: Executable Content missing in start_else");
+                    com.bw.fsm.Log.panic("Internal Error: Executable Content missing in start_else");
                 }
             }
         }
@@ -1081,7 +1083,7 @@ public class ScxmlReader {
         protected void start_scxml(Attributes attr) {
 
             if (this.in_scxml) {
-                StaticOptions.panic("Only one <%s> allowed", TAG_SCXML);
+                com.bw.fsm.Log.panic("Only one <%s> allowed", TAG_SCXML);
             }
             this.in_scxml = true;
             String name = attr.getValue(ATTR_NAME);
@@ -1093,7 +1095,7 @@ public class ScxmlReader {
             String datamodel = attr.getValue(ATTR_DATAMODEL);
             if (datamodel != null) {
                 if (StaticOptions.debug_option)
-                    StaticOptions.debug(" scxml.datamodel = %s", datamodel);
+                    com.bw.fsm.Log.debug(" scxml.datamodel = %s", datamodel);
                 this.fsm.datamodel = datamodel;
             }
             String binding = attr.getValue(ATTR_BINDING);
@@ -1101,14 +1103,14 @@ public class ScxmlReader {
                 try {
                     this.fsm.binding = BindingType.valueOf(binding);
                 } catch (IllegalArgumentException iae) {
-                    StaticOptions.panic("%s: unsupported value %s", ATTR_BINDING, binding);
+                    com.bw.fsm.Log.panic("%s: unsupported value %s", ATTR_BINDING, binding);
                 }
             }
             String version = attr.getValue(TAG_VERSION);
             if (version != null) {
                 this.fsm.version = version;
                 if (StaticOptions.debug_option)
-                    StaticOptions.debug(" scxml.version = %s", version);
+                    com.bw.fsm.Log.debug(" scxml.version = %s", version);
 
             }
             this.fsm.pseudo_root = this.get_or_create_state_with_attributes(attr, false, null);
@@ -1172,7 +1174,7 @@ public class ScxmlReader {
                 case TAG_ELSEIF -> this.start_else_if(attr);
                 default -> {
                     if (debug_option)
-                        StaticOptions.debug("Ignored tag %s", name);
+                        com.bw.fsm.Log.debug("Ignored tag %s", name);
                 }
             }
         }
@@ -1214,11 +1216,11 @@ public class ScxmlReader {
          */
         public void end_element(String name) {
             if (!this.current.current_tag.equals(name)) {
-                StaticOptions.panic(
+                com.bw.fsm.Log.panic(
                         "Illegal end-tag %s, expected %s", name, this.current.current_tag);
             }
             if (StaticOptions.debug_option)
-                StaticOptions.debug("End Element %s", name);
+                com.bw.fsm.Log.debug("End Element %s", name);
             switch (name) {
                 case TAG_SCXML -> this.end_scxml();
                 case TAG_IF -> this.end_if();

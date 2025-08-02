@@ -268,6 +268,4 @@ class ScxmlReaderTest {
         Assertions.assertEquals(new Data.Source("Var3"), forEachEc.array);
         Assertions.assertEquals(1, forEachEc.content.content.size());
     }
-
-
 }

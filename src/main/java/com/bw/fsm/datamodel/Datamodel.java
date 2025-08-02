@@ -92,7 +92,7 @@ public abstract class Datamodel {
 
     /// "log" function, use for \<log\> content.
     public void log(String msg) {
-        StaticOptions.info("%s", msg);
+        Log.info("%s", msg);
     }
 
     /// Executes a script.\
@@ -165,7 +165,7 @@ public abstract class Datamodel {
                 try {
                     return this.execute(new Data.Source(content.content));
                 } catch (Exception e) {
-                    StaticOptions.error("content expr '%s' is invalid (%s)", content.content, e.getMessage());
+                    Log.error("content expr '%s' is invalid (%s)", content.content, e.getMessage());
                     // W3C:\
                     // If the evaluation of 'expr' produces an error, the Processor must place
                     // error.execution in the internal event queue and use the empty string as
@@ -190,7 +190,7 @@ public abstract class Datamodel {
                         // the data model, ..., the SCXML Processor must place the error
                         // 'error.execution' on the internal event queue and must ignore the name
                         // and value.
-                        StaticOptions.error("location of param %s is invalid", param);
+                        Log.error("location of param %s is invalid", param);
                         // get_by_location already added "error.execution"
                     } else {
                         values.add(new ParamPair(param.name, data));
@@ -202,7 +202,7 @@ public abstract class Datamodel {
                         // ...if the evaluation of the 'expr' produces an error, the SCXML
                         // Processor must place the error 'error.execution' on the internal event
                         // queue and must ignore the name and value.
-                        StaticOptions.error("expr of param %s is invalid", param);
+                        Log.error("expr of param %s is invalid", param);
                         this.internal_error_execution();
                     } else {
                         values.add(new ParamPair(param.name, data));
