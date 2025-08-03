@@ -1,10 +1,9 @@
 package com.bw.fsm;
 
+import com.bw.fsm.tracer.TraceMode;
+
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class Arguments {
 
@@ -72,6 +71,29 @@ public class Arguments {
         }
         this.options = map;
     }
+
+    public TraceMode getTraceMode() {
+        TraceMode trace = TraceMode.STATES;
+
+        String trace_name = options.get("trace");
+        if ( trace_name != null ){
+            trace = switch (trace_name.toLowerCase(Locale.CANADA)) {
+                case "methods" -> TraceMode.METHODS;
+                case    "states" -> TraceMode.STATES;
+                case    "events" -> TraceMode.EVENTS;
+                case    "arguments" -> TraceMode.ARGUMENTS;
+                case    "results" -> TraceMode.RESULTS;
+                case    "all" -> TraceMode.ALL;
+                default-> {
+                    Log.warn("Unknown trace mode %s", trace_name);
+                    yield TraceMode.STATES;
+                }
+            };
+        }
+        return trace;
+    }
+
+
     public static String getFileExtension(Path path) {
         return getFileExtension(path.getFileName().toString());
     }

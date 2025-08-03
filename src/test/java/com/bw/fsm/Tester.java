@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
+/**
+ * Loads a test specification and executes the given FSM.<br>
+ */
 public class Tester {
 
 
@@ -45,11 +48,12 @@ public class Tester {
 
     public Tester(Arguments arguments) {
         try {
-            java.util.List<Path>  include_paths = new ArrayList<>();
+            java.util.List<Path> include_paths = new ArrayList<>();
 
             String incPath = arguments.options.get(INCLUDE_PATH_ARGUMENT_OPTION);
-            if ( incPath != null)
+            if (incPath != null)
                 Arrays.stream(incPath.split(File.pathSeparator)).map(Paths::get).forEach(include_paths::add);
+            Fsm fsm = null;
             for (String arg : arguments.final_args) {
                 final String ext;
                 int extIdx = arg.lastIndexOf('.');
@@ -67,15 +71,44 @@ public class Tester {
                         config = TestSpecification.fromJson(Paths.get(arg));
                         test_spec_file = arg;
                     }
-                    case "rfsm", "scxml", "xml" -> load_fsm(Paths.get(arg), include_paths);
+                    case "rfsm", "scxml", "xml" -> fsm = load_fsm(Paths.get(arg), include_paths);
                     default -> abort_test(String.format("File '%s' has unsupported extension.", arg));
                 }
             }
+            if (config != null) {
+                TestUseCase uc = new TestUseCase();
+                uc.name = test_spec_file;
+                if (config.file != null) {
+                    if (config.file != null) {
+                        if (fsm != null) {
+                            abort_test(String.format("Test Specification '%s' contains a fsm path, but program arguments define some other fsm",
+                                    test_spec_file));
+                        }
+                        uc.fsm = load_fsm(Paths.get(test_spec_file), include_paths);
+                        // uc.fsm.tracer.enable_trace(trace);
+                        if (StaticOptions.debug_option)
+                            Log.debug("Loaded %s", test_spec_file);
+                    }
+                } else {
+                    uc.fsm = fsm;
+                }
+                ;
+                uc.specification = config;
+                uc.trace_mode = arguments.getTraceMode();
+                uc.include_paths.addAll(include_paths);
+                run_test(uc);
+            } else {
+                abort_test("No test specification given.");
+            }
 
-        } catch (Exception ie) {
-            ie.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public void run_test(TestUseCase testCase) {
+        // TODO
     }
 
     protected void abort_test(String message) {
