@@ -9,6 +9,57 @@ import java.util.function.Supplier;
 
 public abstract class Datamodel {
 
+    public static final String DATAMODEL_OPTION_PREFIX = "datamodel:";
+
+
+    public static final String SCXML_INVOKE_TYPE = "http://www.w3.org/TR/scxml";
+
+    /// W3C: Processors MAY define short form notations as an authoring convenience
+    /// (e.g., "scxml" as equivalent to <http://www.w3.org/TR/scxml> ).
+    public static final String SCXML_INVOKE_TYPE_SHORT = "scxml";
+
+    public static final String SCXML_EVENT_PROCESSOR = "http://www.w3.org/TR/scxml/#SCXMLEventProcessor";
+
+    public static final String BASIC_HTTP_EVENT_PROCESSOR = "http://www.w3.org/TR/scxml/#BasicHTTPEventProcessor";
+
+    /// Name of system variable "_sessionid".\
+    /// *W3C says*:\
+    /// The SCXML Processor MUST bind the variable _sessionid at load time to the system-generated id
+    /// for the current SCXML session. (This is of type NMTOKEN.) The Processor MUST keep the variable
+    /// bound to this value until the session terminates.
+    public static final String SESSION_ID_VARIABLE_NAME = "_sessionid";
+
+    /// Name of system variable "_name".
+    /// *W3C says*:\
+    /// The SCXML Processor MUST bind the variable _name at load time to the value of the 'name'
+    /// attribute of the \<scxml\> element. The Processor MUST keep the variable bound to this
+    /// value until the session terminates.
+    public static final String SESSION_NAME_VARIABLE_NAME = "_name";
+
+    /// Name of system variable "_event" for events
+    public static final String EVENT_VARIABLE_NAME = "_event";
+
+    /// Name of field "name" of system variable "_event"
+    public static final String EVENT_VARIABLE_FIELD_NAME = "name";
+
+    /// Name of field "type" of system variable "_event"
+    public static final String EVENT_VARIABLE_FIELD_TYPE = "type";
+
+    /// Name of field of system variable "_event" "sendid"
+    public static final String EVENT_VARIABLE_FIELD_SEND_ID = "sendid";
+
+    /// Name of field "origin" of system variable "_event"
+    public static final String EVENT_VARIABLE_FIELD_ORIGIN = "origin";
+
+    /// Name of field "origintype" of system variable "_event"
+    public static final String EVENT_VARIABLE_FIELD_ORIGIN_TYPE = "origintype";
+
+    /// Name of field "invokeid" of system variable "_event"
+    public static final String EVENT_VARIABLE_FIELD_INVOKE_ID = "invokeid";
+
+    /// Name of field "data" of system variable "_event"
+    public static final String EVENT_VARIABLE_FIELD_DATA = "data";
+
     /// Returns the global data.\
     /// As the data model needs access to other global variables and rust doesn't like
     /// accessing data of parents (Fsm in this case) from inside a child (the actual Datamodel), most global data is
@@ -23,7 +74,8 @@ public abstract class Datamodel {
     public abstract void add_functions(Fsm fsm);
 
     /// sets '_ioprocessors'.
-    public abstract void set_ioprocessors();
+    public void set_ioprocessors() {
+    }
 
     /// Initialize the data model for one data-store.
     /// This method is called for the global data and for the data of each state.
@@ -38,26 +90,34 @@ public abstract class Datamodel {
     /// Sets data from state data-store.\
     /// All data-elements contain script-source and needs to be evaluated by the datamodel before use.
     /// set_data - if true set the data, otherwise just initialize the variables.
-    public abstract void set_from_state_data(Map<String, Data> data, boolean set_data);
+    public void set_from_state_data(Map<String, Data> data, boolean set_data) {
+    }
 
     /// Initialize a global read-only variable.
-    public abstract void initialize_read_only(String name, Data value);
+    public void initialize_read_only(String name, Data value) {
+    }
 
     /// Sets a global variable.
-    public abstract void set(String name, Data data, boolean allow_undefined);
+    public void set(String name, Data data, boolean allow_undefined) {
+    }
 
     // Sets system variable "_event"
-    public abstract void set_event(Event event);
+    public void set_event(Event event) {
+    }
 
     /// Execute an assign expression.
     /// Returns true if the assignment was correct.
-    public abstract boolean assign(Data left_expr, Data right_expr);
+    public boolean assign(Data left_expr, Data right_expr) {
+        return true;
+    }
 
     /// Gets a global variable by a location expression.\
     /// If the location is undefined or the location expression is invalid,
     /// "error.execute" shall be put inside the internal event queue.\
     /// See [internal_error_execution](Datamodel::internal_error_execution).
-    public abstract Data get_by_location(String location);
+    public Data get_by_location(String location) {
+        throw new UnsupportedOperationException();
+    }
 
     /// Convenient function to retrieve a value that has an alternative expression-value.\
     /// If value_expression is empty, Ok(value) is returned (if empty or not). If the expression
@@ -88,7 +148,8 @@ public abstract class Datamodel {
     }
 
     /// Clear all data.
-    public abstract void clear();
+    public void clear() {
+    }
 
     /// "log" function, use for \<log\> content.
     public void log(String msg) {
@@ -99,25 +160,33 @@ public abstract class Datamodel {
     /// If the script execution fails, "error.execute" shall be put
     /// inside the internal event queue.
     /// See [internal_error_execution](Datamodel::internal_error_execution).
-    public abstract Data execute(Data script);
+    public Data execute(Data script) {
+        throw new UnsupportedOperationException();
+    }
 
     /// Executes a for-each loop
-    public abstract boolean execute_for_each(
+    public boolean execute_for_each(
             Data array_expression,
             String item,
             String index,
             Supplier<Boolean> execute_body
-    );
+    ) {
+        throw new UnsupportedOperationException();
+    }
 
     /// *W3C says*:\
     /// The set of operators in conditional expressions varies depending on the data model,
     /// but all data models must support the 'In()' predicate, which takes a state ID as its
     /// argument and returns true if the state machine is in that state.\
     /// Conditional expressions in conformant SCXML documents should not have side effects.
-    public abstract boolean execute_condition(Data script);
+    public boolean execute_condition(Data script) {
+        throw new UnsupportedOperationException();
+    }
 
     /// Executes content.
-    public abstract boolean executeContent(Fsm fsm, ExecutableContent content);
+    public boolean executeContent(Fsm fsm, ExecutableContent content) {
+        throw new UnsupportedOperationException();
+    }
 
     /// *W3C says*:\
     /// Indicates that an error internal to the execution of the document has occurred, such as one

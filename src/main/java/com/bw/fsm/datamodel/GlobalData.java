@@ -20,13 +20,13 @@ public class GlobalData {
 
     Queue<Event> internalQueue = new Queue<>();
 
-    public BlockingQueue<Event> externalQueue = new BlockingQueue();
+    public BlockingQueue<Event> externalQueue = new BlockingQueue<>();
 
     /// Invoked Sessions. Key: InvokeId.
-    public HashMap<Integer, ScxmlSession> child_sessions = new HashMap<>();
+    public HashMap<String, ScxmlSession> child_sessions = new HashMap<>();
 
     /// Set if this FSM was created as result of some invoke.
-    public Integer caller_invoke_id;
+    public String caller_invoke_id;
     public Integer parent_session_id;
 
     /// Unique Id of the owning session.

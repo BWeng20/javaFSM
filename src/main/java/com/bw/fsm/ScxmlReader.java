@@ -10,6 +10,7 @@ import javax.xml.stream.*;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -94,37 +95,63 @@ public class ScxmlReader {
     static Pattern split_whitespace = Pattern.compile("\\s");
 
     static XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
+    static XMLInputFactory factory = XMLInputFactory.newInstance();
+
     List<Path> includePaths = new ArrayList<>();
 
-    public Fsm read(Path path) throws IOException, XMLStreamException {
+    /**
+     * Read and parse the FSM from an XML file
+     */
+    public Fsm parse_from_xml_file(Path path) throws IOException {
         try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
-            return read(input);
+            return parse(input);
         }
     }
 
-    public Fsm read(InputStream input) throws XMLStreamException, IOException {
-        XMLInputFactory factory = XMLInputFactory.newInstance();
-        StatefulReader statefulReader = new StatefulReader();
-        XMLStreamReader reader = factory.createXMLStreamReader(input);
-
-        while (reader.hasNext()) {
-            int event = reader.next();
-
-            switch (event) {
-                case XMLStreamConstants.START_ELEMENT:
-                    statefulReader.start_element(reader.getName().getLocalPart(),
-                            new Attributes(reader), reader, true);
-                    break;
-
-                case XMLStreamConstants.CHARACTERS:
-                    break;
-
-                case XMLStreamConstants.END_ELEMENT:
-                    statefulReader.end_element(reader.getName().getLocalPart());
-                    break;
-            }
+    /**
+     * Read and parse the FSM from a URL
+     */
+    public Fsm parse_from_url(URL url) throws IOException {
+        try (InputStream input = url.openStream()) {
+            return parse(input);
         }
-        return statefulReader.fsm;
+    }
+
+    /**
+     * Reads the FSM from an XML String
+     */
+    public Fsm parse_from_xml(String xml) throws IOException {
+        try (InputStream input = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
+            return parse(input);
+        }
+    }
+
+    public Fsm parse(InputStream input) throws IOException {
+        try {
+            StatefulReader statefulReader = new StatefulReader();
+            XMLStreamReader reader = factory.createXMLStreamReader(input);
+
+            while (reader.hasNext()) {
+                int event = reader.next();
+
+                switch (event) {
+                    case XMLStreamConstants.START_ELEMENT:
+                        statefulReader.start_element(reader.getName().getLocalPart(),
+                                new Attributes(reader), reader, true);
+                        break;
+
+                    case XMLStreamConstants.CHARACTERS:
+                        break;
+
+                    case XMLStreamConstants.END_ELEMENT:
+                        statefulReader.end_element(reader.getName().getLocalPart());
+                        break;
+                }
+            }
+            return statefulReader.fsm;
+        } catch (XMLStreamException xs) {
+            throw new IOException(xs);
+        }
     }
 
     protected static class ReaderStackItem {
@@ -222,7 +249,7 @@ public class ScxmlReader {
          * Process an XML file.<br>
          * For technical reasons (to handle user content) the file is read in a temporary buffer.
          */
-        public void process_file(Path file) throws IOException {
+        public void process_file(Path file) {
             throw new UnsupportedOperationException();
         }
 
@@ -269,10 +296,6 @@ public class ScxmlReader {
 
         protected boolean parse_boolean(String value, boolean defaultVaLue) {
             return (value != null) ? "true".equalsIgnoreCase(value) : defaultVaLue;
-        }
-
-        protected State get_state_by_id_mut(int id) {
-            return this.fsm.get_state_by_id(id);
         }
 
         protected State get_current_state() {
@@ -477,7 +500,7 @@ public class ScxmlReader {
                                 sb.write(buffer, 0, len);
                             }
                         }
-                        return new String(sb.toByteArray(), StandardCharsets.UTF_8);
+                        return sb.toString(StandardCharsets.UTF_8);
                     }
                 }
             } catch (URISyntaxException syntaxException) {
@@ -584,7 +607,6 @@ public class ScxmlReader {
             } else {
                 data_value = null;
             }
-            ;
             this.get_current_state()
                     .data
                     .put(id, data_value == null ? Data.Null.NULL : this.create_source(data_value.trim()));
@@ -1241,8 +1263,8 @@ public class ScxmlReader {
     public ScxmlReader() {
     }
 
-    public ScxmlReader withIncludePaths( List<Path> includePaths) {
-        this.includePaths.addAll( includePaths );
+    public ScxmlReader withIncludePaths(List<Path> includePaths) {
+        this.includePaths.addAll(includePaths);
         return this;
     }
 }

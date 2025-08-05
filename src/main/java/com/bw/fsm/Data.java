@@ -4,6 +4,8 @@ import com.bw.fsm.datamodel.SourceCode;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -39,6 +41,11 @@ public abstract class Data {
             return NUL;
         }
     }
+
+    /**
+     * Gets a deep copy
+     */
+    public abstract Data getCopy();
 
     public static class Integer extends Data {
         int value;
@@ -84,6 +91,10 @@ public abstract class Data {
                 return value == i.value;
             }
             return false;
+        }
+
+        public Data getCopy() {
+            return new Integer(this.value);
         }
     }
 
@@ -131,6 +142,10 @@ public abstract class Data {
             }
             return false;
         }
+
+        public Data getCopy() {
+            return new Double(this.value);
+        }
     }
 
     public static class String extends Data {
@@ -171,6 +186,9 @@ public abstract class Data {
             return false;
         }
 
+        public Data getCopy() {
+            return new String(this.value);
+        }
     }
 
     public static class Boolean extends Data {
@@ -209,6 +227,10 @@ public abstract class Data {
             }
             return false;
         }
+
+        public Data getCopy() {
+            return new Boolean(this.value);
+        }
     }
 
     public static class Array extends Data {
@@ -246,6 +268,17 @@ public abstract class Data {
                 return values.equals(i.values);
             }
             return false;
+        }
+
+        /**
+         * Get a deep copy
+         */
+        public Data getCopy() {
+            Array a = new Array(new ArrayList<>(this.values.size()));
+            for (Data d : values) {
+                a.values.add(d.getCopy());
+            }
+            return a;
         }
     }
 
@@ -289,6 +322,18 @@ public abstract class Data {
             }
             return false;
         }
+
+        /**
+         * Get a deep copy
+         */
+        @Override
+        public Data getCopy() {
+            HashMap<java.lang.String, Data> a = new HashMap<>();
+            for (var d : values.entrySet()) {
+                a.put(d.getKey(), d.getValue().getCopy());
+            }
+            return new Map(a);
+        }
     }
 
     public static class Null extends Data {
@@ -318,6 +363,10 @@ public abstract class Data {
 
         public static final Data NULL = new Null();
 
+        @Override
+        public Data getCopy() {
+            return NULL;
+        }
     }
 
     /**
@@ -354,6 +403,12 @@ public abstract class Data {
             }
             return false;
         }
+
+        @Override
+        public Data getCopy() {
+            return new Error(message);
+        }
+
     }
 
     /**
@@ -410,6 +465,10 @@ public abstract class Data {
             return false;
         }
 
+        @Override
+        public Data getCopy() {
+            return new Source(source);
+        }
     }
 
     /**
@@ -437,7 +496,11 @@ public abstract class Data {
         }
 
         public static final Data NONE = new None();
-    }
 
+        @Override
+        public Data getCopy() {
+            return NONE;
+        }
+    }
 
 }

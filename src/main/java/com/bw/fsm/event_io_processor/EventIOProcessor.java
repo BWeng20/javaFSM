@@ -1,8 +1,6 @@
 package com.bw.fsm.event_io_processor;
 
-import com.bw.fsm.BlockingQueue;
-import com.bw.fsm.Event;
-import com.bw.fsm.Fsm;
+import com.bw.fsm.*;
 import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.GlobalData;
 
@@ -32,4 +30,14 @@ public abstract class EventIOProcessor {
     public abstract boolean send(GlobalData global, String target, Event event);
 
     public abstract void shutdown();
+
+
+    protected void shutdownQueues(Map<Integer, BlockingQueue<Event>> queues) {
+        Event cancel_event = Event.new_simple(Fsm.EVENT_CANCEL_SESSION);
+        for (var queue : queues.entrySet()) {
+            if (StaticOptions.debug_option)
+                Log.debug("Send cancel to fsm #%s", queue.getKey());
+            queue.getValue().enqueue(cancel_event.get_copy());
+        }
+    }
 }

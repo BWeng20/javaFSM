@@ -12,8 +12,7 @@ public class Arguments {
         public boolean with_value = false;
         public boolean required = false;
 
-        public Option(String name)
-        {
+        public Option(String name) {
             this.name = name;
         }
 
@@ -36,7 +35,7 @@ public class Arguments {
 
         final_args = new ArrayList<>();
         var args = Arrays.asList(appArgs);
-        int idx = 1;
+        int idx = 0;
         Map<String, String> map = new HashMap<>();
 
         // Don't use clap to parse arguments for now to reduce dependencies.
@@ -73,36 +72,23 @@ public class Arguments {
     }
 
     public TraceMode getTraceMode() {
-        TraceMode trace = TraceMode.STATES;
+        return TraceMode.fromString(options.get("trace"));
+    }
 
-        String trace_name = options.get("trace");
-        if ( trace_name != null ){
-            trace = switch (trace_name.toLowerCase(Locale.CANADA)) {
-                case "methods" -> TraceMode.METHODS;
-                case    "states" -> TraceMode.STATES;
-                case    "events" -> TraceMode.EVENTS;
-                case    "arguments" -> TraceMode.ARGUMENTS;
-                case    "results" -> TraceMode.RESULTS;
-                case    "all" -> TraceMode.ALL;
-                default-> {
-                    Log.warn("Unknown trace mode %s", trace_name);
-                    yield TraceMode.STATES;
-                }
-            };
+    public static Option INCLUDE_PATH_ARGUMENT_OPTION =
+            new Option("includePaths").withValue();
+
+
+    public java.util.List<Path> getIncludePaths() {
+        java.util.List<Path> p;
+        String includePathsOption = options.get(INCLUDE_PATH_ARGUMENT_OPTION.name);
+        if (includePathsOption != null) {
+            p = IOTool.splitPaths(includePathsOption);
+        } else {
+            p = Collections.emptyList();
         }
-        return trace;
+        return p;
     }
 
 
-    public static String getFileExtension(Path path) {
-        return getFileExtension(path.getFileName().toString());
-    }
-
-    public static String getFileExtension(String fileName) {
-        int dotIndex = fileName.lastIndexOf('.');
-        if (dotIndex >= 0 ) {
-            return fileName.substring(dotIndex + 1);
-        }
-        return "";
-    }
 }

@@ -42,11 +42,11 @@ public class Event {
     public EventType etype;
     public String sendid;
     public String origin;
-    public String originType;
-    public Integer invokeId;
+    public String origin_type;
+    public Integer invoke_id;
 
     /// Name-Value pairs from \<param\> elements.
-    public java.util.List<ParamPair> paramValues;
+    public java.util.List<ParamPair> param_values;
 
     /// Content from \<content\> element.
     public Data content;
@@ -71,7 +71,7 @@ public class Event {
         Event event = new Event();
         event.name = prefix + id;
         event.etype = eventType;
-        event.paramValues = dataParams;
+        event.param_values = dataParams;
         event.content = dataContent;
         return event;
     }
@@ -89,8 +89,8 @@ public class Event {
         err.etype = EventType.platform;
         err.sendid = event.sendid;
         err.origin = event.origin;
-        err.invokeId = event.invokeId;
-        err.originType = event.originType;
+        err.invoke_id = event.invoke_id;
+        err.origin_type = event.origin_type;
         return err;
     }
 
@@ -99,7 +99,7 @@ public class Event {
         err.name = "error.execution";
         err.etype = EventType.platform;
         err.sendid = sendId;
-        err.invokeId = invokeId;
+        err.invoke_id = invokeId;
         return err;
     }
 
@@ -109,8 +109,8 @@ public class Event {
         err.etype = EventType.platform;
         err.sendid = event.sendid;
         err.origin = event.origin;
-        err.invokeId = event.invokeId;
-        err.originType = event.originType;
+        err.invoke_id = event.invoke_id;
+        err.origin_type = event.origin_type;
         return err;
     }
 
@@ -120,9 +120,9 @@ public class Event {
         copy.etype = this.etype;
         copy.sendid = this.sendid;
         copy.origin = this.origin;
-        copy.originType = this.originType;
-        copy.invokeId = this.invokeId;
-        copy.paramValues = this.paramValues;
+        copy.origin_type = this.origin_type;
+        copy.invoke_id = this.invoke_id;
+        copy.param_values = this.param_values;
         copy.content = this.content;
         return copy;
     }

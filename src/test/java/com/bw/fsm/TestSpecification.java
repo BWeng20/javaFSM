@@ -2,8 +2,8 @@ package com.bw.fsm;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -23,13 +23,13 @@ public class TestSpecification {
     public List<Event> events;
 
     @JsonProperty("final_configuration")
-    public List<String> finalConfiguration;
+    public List<String> final_configuration;
 
     @JsonProperty("timeout_milliseconds")
-    public Integer timeoutMilliseconds;
+    public Integer timeout_milliseconds;
 
     @JsonProperty("options")
-    public Map<String, Object> options;
+    public Map<String, String> options;
 
     /**
      * Loads a JSON test specification

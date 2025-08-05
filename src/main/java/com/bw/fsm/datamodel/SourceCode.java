@@ -9,7 +9,7 @@ public class SourceCode {
         this.source_id = id;
     }
 
-    public String source;
+    public final String source;
 
     @Override
     public boolean equals(Object o) {
@@ -29,7 +29,7 @@ public class SourceCode {
 
     /// The unique Id of the script. Unique only inside the current life-cycle.\
     /// Invalid if 0
-    public int source_id;
+    public final int source_id;
 
     public boolean is_empty() {
         return source == null || source.isEmpty();

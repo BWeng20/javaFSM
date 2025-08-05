@@ -10,13 +10,13 @@ import java.util.Calendar;
 public class W3CTest {
 
     public static void main(String[] args) {
-        if ( args.length != 2) {
+        if (args.length != 2) {
             Log.error("Wrong number of arguments.");
             Log.error(
                     """
-                    Usage:
-                      java com.bw.fsm.W3CTest <testDirectory> <ReportFile>
-                    """);
+                            Usage:
+                              java com.bw.fsm.W3CTest <testDirectory> <ReportFile>
+                            """);
             System.exit(2);
         }
 
@@ -26,11 +26,11 @@ public class W3CTest {
         Path logDirectory = testDirectory.resolve("logs");
         try {
             Files.createDirectories(logDirectory);
-            String date = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime()) ;
-            Log.setLogFile( logDirectory.resolve("LOG_"+date+".txt") );
-        } catch ( IOException io) {
+            String date = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
+            Log.setLogFile(logDirectory.resolve("LOG_" + date + ".txt"));
+        } catch (IOException io) {
             io.printStackTrace();
-            Log.error("Failed to initialize logging. %s", io.getMessage() );
+            Log.error("Failed to initialize logging. %s", io.getMessage());
         }
 
         Log.info("=== Download and transform tests to %s", testDirectory);

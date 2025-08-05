@@ -27,7 +27,7 @@ class ScxmlReaderTest {
     }
 
     @Test
-    void state() throws XMLStreamException, IOException {
+    void state() throws IOException {
 
         String scxml = """
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -36,7 +36,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.read(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         Assertions.assertNotNull(fsm);
         Assertions.assertNotNull(fsm.pseudo_root);
@@ -44,7 +44,7 @@ class ScxmlReaderTest {
     }
 
     @Test
-    void data() throws XMLStreamException, IOException {
+    void data() throws IOException {
         String scxml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" datamodel="ecmascript">
@@ -60,7 +60,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.read(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         Assertions.assertNotNull(fsm);
         Assertions.assertNotNull(fsm.pseudo_root);
@@ -73,7 +73,7 @@ class ScxmlReaderTest {
     }
 
     @Test
-    void transition() throws XMLStreamException, IOException {
+    void transition() throws IOException {
         String scxml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <scxml xmlns="http://www.w3.org/2005/07/scxml" initial="s0" version="1.0" datamodel="ecmascript">
@@ -86,7 +86,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.read(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
 
         State s0 = getS0(fsm);
@@ -117,7 +117,7 @@ class ScxmlReaderTest {
     }
 
     @Test
-    void executableContent_if() throws XMLStreamException, IOException {
+    void executableContent_if() throws IOException {
         String scxml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <scxml xmlns="http://www.w3.org/2005/07/scxml" initial="s0" version="1.0" datamodel="ecmascript">
@@ -135,7 +135,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.read(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 
@@ -162,7 +162,7 @@ class ScxmlReaderTest {
     }
 
     @Test
-    void executableContent_elseif() throws XMLStreamException, IOException {
+    void executableContent_elseif() throws IOException {
         String scxml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <scxml xmlns="http://www.w3.org/2005/07/scxml" initial="s0" version="1.0" datamodel="ecmascript">
@@ -181,7 +181,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.read(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 
@@ -208,7 +208,7 @@ class ScxmlReaderTest {
     }
 
     @Test
-    void executableContent_foreach_wo_index() throws XMLStreamException, IOException {
+    void executableContent_foreach_wo_index() throws IOException {
         String scxml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <scxml xmlns="http://www.w3.org/2005/07/scxml" initial="s0" version="1.0" datamodel="ecmascript">
@@ -223,7 +223,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.read(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 
@@ -239,7 +239,7 @@ class ScxmlReaderTest {
     }
 
     @Test
-    void executableContent_foreach_w_index() throws XMLStreamException, IOException {
+    void executableContent_foreach_w_index() throws IOException {
         String scxml = """
                 <?xml version="1.0" encoding="UTF-8"?>
                 <scxml xmlns="http://www.w3.org/2005/07/scxml" initial="s0" version="1.0" datamodel="ecmascript">
@@ -254,7 +254,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.read(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 

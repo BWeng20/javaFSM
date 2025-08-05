@@ -1,9 +1,36 @@
 package com.bw.fsm.datamodel;
 
+import com.bw.fsm.Log;
+
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
-public interface DatamodelFactory {
+public abstract class DatamodelFactory {
 
     /// Create a NEW datamodel.
-    Datamodel create(GlobalData global_data, Map<String, String> options);
+    public abstract Datamodel create(GlobalData global_data, Map<String, String> options);
+
+    private static final Map<String, DatamodelFactory> datamodel_factories = new HashMap<>();
+
+    /**
+     * Register a new Datamodel.\
+     * The name is case-insensitive.
+     */
+    public static void register_datamodel(String name, DatamodelFactory factory) {
+        datamodel_factories.put(name.toLowerCase(Locale.CANADA), factory);
+    }
+
+    public static Datamodel create_datamodel(
+            String name, GlobalData global_data,
+            Map<String, String> options
+    ) {
+        DatamodelFactory factory = datamodel_factories.get(name.toLowerCase(Locale.CANADA));
+        if (factory != null) {
+            return factory.create(global_data, options);
+        } else {
+            Log.panic("Unsupported Data Model '%s'", name);
+            return null;
+        }
+    }
 }

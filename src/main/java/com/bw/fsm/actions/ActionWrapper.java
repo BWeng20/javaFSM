@@ -7,9 +7,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Maintains a map of actions.
+ */
 public class ActionWrapper {
-    public Map<String, Action> actions = new HashMap<>();
 
+    public Map<String, Action> actions = new HashMap<>();
 
     public void add_action(String name, Action action) {
         this.actions.put(name, action);
