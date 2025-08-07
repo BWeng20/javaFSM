@@ -177,7 +177,7 @@ public class Tester {
         try {
             session.thread.join();
         } catch (Exception e) {
-
+            e.printStackTrace();
         }
 
         if (watchdog_sender != null) {
@@ -204,9 +204,9 @@ public class Tester {
                         return true;
                     } else {
                         Log.error(
-                                "[%s] ==> Expected final state '%s' not reached. Final configuration: %s",
+                                "[%s] ==> Expected final configuration %s not reached. Final configuration: %s",
                                 test_name,
-                                session.global_data.final_configuration,
+                                expected_final_configuration,
                                 String.join(",", session.global_data.final_configuration));
                         return false;
                     }

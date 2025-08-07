@@ -18,7 +18,7 @@ public class GlobalData {
     public HashTable<State, OrderedSet<State>> historyValue = new HashTable<>();
     public boolean running = false;
 
-    Queue<Event> internalQueue = new Queue<>();
+    public Queue<Event> internalQueue = new Queue<>();
 
     public BlockingQueue<Event> externalQueue = new BlockingQueue<>();
 

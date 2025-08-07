@@ -60,7 +60,7 @@ public abstract class Datamodel {
     /// Name of field "data" of system variable "_event"
     public static final String EVENT_VARIABLE_FIELD_DATA = "data";
 
-    /// Returns the global data.\
+    /// Returns the global data.<br>
     /// As the data model needs access to other global variables and rust doesn't like
     /// accessing data of parents (Fsm in this case) from inside a child (the actual Datamodel), most global data is
     /// store in the "GlobalData" struct that is owned by the data model.
@@ -188,6 +188,18 @@ public abstract class Datamodel {
         throw new UnsupportedOperationException();
     }
 
+    /// Executes content.
+    public boolean executeContent(Fsm fsm, ExecutableContentRegion content) {
+        if (content != null) {
+            for (var ct : content.content) {
+                if (!executeContent(fsm, ct)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /// *W3C says*:\
     /// Indicates that an error internal to the execution of the document has occurred, such as one
     /// arising from expression evaluation.
@@ -198,7 +210,7 @@ public abstract class Datamodel {
     /// *W3C says*:\
     /// Indicates that an error internal to the execution of the document has occurred, such as one
     /// arising from expression evaluation.
-    public void internal_error_execution_for_event(String send_id, Integer invoke_id) {
+    public void internal_error_execution_for_event(String send_id, String invoke_id) {
         global().enqueue_internal(Event.error_execution(send_id, invoke_id));
     }
 

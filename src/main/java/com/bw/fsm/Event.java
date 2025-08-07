@@ -43,7 +43,7 @@ public class Event {
     public String sendid;
     public String origin;
     public String origin_type;
-    public Integer invoke_id;
+    public String invoke_id;
 
     /// Name-Value pairs from \<param\> elements.
     public java.util.List<ParamPair> param_values;
@@ -105,7 +105,7 @@ public class Event {
         return err;
     }
 
-    public static Event error_execution(String sendId, Integer invokeId) {
+    public static Event error_execution(String sendId, String invokeId) {
         Event err = new Event();
         err.name = "error.execution";
         err.etype = EventType.platform;
