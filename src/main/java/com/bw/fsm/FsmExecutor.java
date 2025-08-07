@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class FsmExecutor {
 
-    public ExecutorState state;
+    public ExecutorState state = new ExecutorState();
 
     public void add_processor(EventIOProcessor processor) {
         this.state.processors.add(processor);
@@ -117,7 +117,7 @@ public class FsmExecutor {
         } else if ("rfsm".equalsIgnoreCase(extension)) {
             if (StaticOptions.debug_option)
                 Log.debug("Loading FSM from binary %s", url);
-            FsmReader<DefaultProtocolReader> reader = new FsmReader<>();
+            FsmReader<DefaultProtocolReader<?>> reader = new FsmReader<>();
             // @TODO
             // sm = reader.read();
         }

@@ -10,43 +10,43 @@ import com.bw.fsm.State;
  * states inside the FSM. What is traced can be controlled by
  * {@link #enable_trace} and {@link #disable_trace}, see {@link TraceMode}.
  */
-public interface Tracer {
+public abstract class Tracer {
 
     /**
      * Needed by a minimalistic implementation. Default methods below call this
      * Method with a textual representation of the trace-event.
      */
-    void trace(String msg);
+    public abstract void trace(String msg);
 
     /**
      * Enter a sub-scope, e.g. by increase the log indentation.
      */
-    void enter();
+    public abstract void enter();
 
     /**
      * Leave the current sub-scope, e.g. by decrease the log indentation.
      */
-    void leave();
+    public abstract void leave();
 
     /**
      * Enable traces for the specified scope.
      */
-    void enable_trace(TraceMode flag);
+    public abstract void enable_trace(TraceMode flag);
 
     /**
      * Disable traces for the specified scope.
      */
-    void disable_trace(TraceMode flag);
+    public abstract void disable_trace(TraceMode flag);
 
     /**
      * Return true if the given scape is enabled.
      */
-    boolean is_trace(TraceMode flag);
+    public abstract boolean is_trace(TraceMode flag);
 
     /**
      * Called by FSM if a method is entered
      */
-    default void enter_method(String what) {
+    public void enter_method(String what) {
         if (this.is_trace(TraceMode.METHODS)) {
             this.trace(String.format(">>> %s", what));
             this.enter();
@@ -56,7 +56,7 @@ public interface Tracer {
     /**
      * Called by FSM if a method is exited
      */
-    default void exit_method(String what) {
+    public void exit_method(String what) {
         if (this.is_trace(TraceMode.METHODS)) {
             this.leave();
             this.trace(String.format("<<< %s", what));
@@ -66,7 +66,7 @@ public interface Tracer {
     /**
      * Called by FSM if an internal event is sent
      */
-    default void event_internal_send(Event what) {
+    public void event_internal_send(Event what) {
         if (this.is_trace(TraceMode.EVENTS)) {
             this.trace(String.format("Send Internal Event: %s #%s", what.name, what.invoke_id));
         }
@@ -75,7 +75,7 @@ public interface Tracer {
     /**
      * Called by FSM if an internal event is received
      */
-    default void event_internal_received(Event what) {
+    public void event_internal_received(Event what) {
         if (this.is_trace(TraceMode.EVENTS)) {
             this.trace(String.format(
                             "Received Internal Event: %s, invokeId %s, content %s, param %s",
@@ -88,7 +88,7 @@ public interface Tracer {
     /**
      * Called by FSM if an external event is send
      */
-    default void event_external_send(Event what) {
+    public void event_external_send(Event what) {
         if (this.is_trace(TraceMode.EVENTS)) {
             this.trace(String.format("Send External Event: %s #%s", what.name, what.invoke_id));
         }
@@ -97,7 +97,7 @@ public interface Tracer {
     /**
      * Called by FSM if an external event is received
      */
-    default void event_external_received(Event what) {
+    public void event_external_received(Event what) {
         if (what.name.startsWith("trace.")) {
             var p = what.name.split("\\.");
             if (p.length == 3) {
@@ -119,7 +119,7 @@ public interface Tracer {
     /**
      * Called by FSM if a state is entered or left.
      */
-    default void trace_state(String what, State s) {
+    public void trace_state(String what, State s) {
         if (this.is_trace(TraceMode.STATES)) {
             if (s.name.isEmpty()) {
                 this.trace(String.format("%s #d", what, s.id));
@@ -132,21 +132,21 @@ public interface Tracer {
     /**
      * Called by FSM if a state is entered. Calls [Tracer::trace_state].
      */
-    default void trace_enter_state(State s) {
+    public void trace_enter_state(State s) {
         this.trace_state("Enter", s);
     }
 
     /**
      * Called by FSM if a state is left. Calls [Tracer::trace_state].
      */
-    default void trace_exit_state(State s) {
+    public void trace_exit_state(State s) {
         this.trace_state("Exit", s);
     }
 
     /**
      * Called by FSM for input arguments in methods.
      */
-    default void trace_argument(String what, Object d) {
+    public void trace_argument(String what, Object d) {
         if (this.is_trace(TraceMode.ARGUMENTS)) {
             this.trace(String.format("Argument:%s=%s", what, d));
         }
@@ -155,7 +155,7 @@ public interface Tracer {
     /**
      * Called by FSM for results in methods.
      */
-    default void trace_result(String what, Object d) {
+    public void trace_result(String what, Object d) {
         if (this.is_trace(TraceMode.RESULTS)) {
             this.trace(String.format("Result:%s=%s", what, d));
         }
@@ -164,7 +164,7 @@ public interface Tracer {
     /**
      * Helper method to trace a vector of objects.
      */
-    default void trace_list(String what, List<?> l) {
+    public void trace_list(String what, List<?> l) {
         // @TODO
         this.trace(String.format("%s=[%s]", what, l.data));
     }
@@ -172,7 +172,7 @@ public interface Tracer {
     /**
      * Helper method to trace a OrderedSet of ids.
      */
-    default void trace_set(String what, OrderedSet<?> l) {
+    public void trace_set(String what, OrderedSet<?> l) {
         // @TODO
         this.trace(String.format("%s=(%s)", what, l.data));
     }
@@ -180,5 +180,18 @@ public interface Tracer {
     /**
      * Get trace mode
      */
-    TraceMode trace_mode();
+    public abstract TraceMode trace_mode();
+
+    private static TracerFactory tracer_factory = new DefaultTracerFactory();
+
+    public static void set_tracer_factory(TracerFactory tracer_factory) {
+        if (tracer_factory == null)
+            tracer_factory = new DefaultTracerFactory();
+        Tracer.tracer_factory = tracer_factory;
+    }
+
+    public static Tracer create_tracer() {
+        return tracer_factory.create();
+    }
+
 }

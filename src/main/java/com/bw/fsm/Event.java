@@ -56,6 +56,17 @@ public class Event {
         this.etype = EventType.external;
     }
 
+    public Event(String prefix, String id, java.util.List<ParamPair> data_params, Data data_content, EventType event_type) {
+        this.name = String.format("%s%s", prefix, id);
+        this.etype = event_type;
+        this.sendid = null;
+        this.origin = null;
+        this.param_values = data_params;
+        this.content = data_content;
+        this.invoke_id = null;
+        this.origin_type = null;
+    }
+
     public static Event new_external() {
         return new Event();
     }

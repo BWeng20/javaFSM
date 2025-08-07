@@ -22,7 +22,7 @@ public class Fsm {
     public static final String EVENT_DONE_INVOKE_PREFIX = "done.invoke.";
 
 
-    public Tracer tracer;
+    public Tracer tracer = Tracer.create_tracer();
     public String datamodel;
     public BindingType binding = BindingType.Early;
     public String version;

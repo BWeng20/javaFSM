@@ -1,9 +1,7 @@
 package com.bw.fsm;
 
 import com.bw.fsm.datamodel.SourceCode;
-import com.bw.fsm.executable_content.Expression;
-import com.bw.fsm.executable_content.ForEach;
-import com.bw.fsm.executable_content.If;
+import com.bw.fsm.executable_content.*;
 import com.bw.fsm.executable_content.Log;
 
 import javax.xml.stream.*;
@@ -485,24 +483,20 @@ public class ScxmlReader {
         protected String read_from_uri(String uri) throws IOException {
             try {
                 URI url_result = new URI(uri);
-                switch (url_result.getScheme()) {
-                    case "file" -> {
-                        return this.read_from_relative_path(url_result.getPath());
-                    }
-                    default -> {
-                        if (debug_option)
-                            com.bw.fsm.Log.debug("read from URL %s", url_result);
-                        ByteArrayOutputStream sb = new ByteArrayOutputStream(1024);
-                        try (InputStream is = url_result.toURL().openStream()) {
-                            byte[] buffer = new byte[1024];
-                            int len;
-                            while ((len = is.read(buffer)) > 0) {
-                                sb.write(buffer, 0, len);
-                            }
-                        }
-                        return sb.toString(StandardCharsets.UTF_8);
+                if ("file".equals(url_result.getScheme())) {
+                    return this.read_from_relative_path(url_result.getPath());
+                }
+                if (debug_option)
+                    com.bw.fsm.Log.debug("read from URL %s", url_result);
+                ByteArrayOutputStream sb = new ByteArrayOutputStream(1024);
+                try (InputStream is = url_result.toURL().openStream()) {
+                    byte[] buffer = new byte[1024];
+                    int len;
+                    while ((len = is.read(buffer)) > 0) {
+                        sb.write(buffer, 0, len);
                     }
                 }
+                return sb.toString(StandardCharsets.UTF_8);
             } catch (URISyntaxException syntaxException) {
                 if (debug_option)
                     com.bw.fsm.Log.debug(
@@ -1099,7 +1093,9 @@ public class ScxmlReader {
                             TAG_FOR_EACH,
                     }
             );
-            throw new UnsupportedOperationException();
+            var raise = new Raise();
+            raise.event = this.get_required_attr(TAG_RAISE, ATTR_EVENT, attr);
+            this.add_executable_content(raise);
 
         }
 
