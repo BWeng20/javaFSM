@@ -5,6 +5,8 @@ import com.bw.fsm.List;
 import com.bw.fsm.OrderedSet;
 import com.bw.fsm.State;
 
+import java.util.stream.Collectors;
+
 /**
  * Interface used to trace methods and
  * states inside the FSM. What is traced can be controlled by
@@ -148,7 +150,7 @@ public abstract class Tracer {
      */
     public void trace_argument(String what, Object d) {
         if (this.is_trace(TraceMode.ARGUMENTS)) {
-            this.trace(String.format("Argument:%s=%s", what, d));
+            this.trace(String.format("Argument:%s=%s", what, value_to_string(d)));
         }
     }
 
@@ -157,7 +159,7 @@ public abstract class Tracer {
      */
     public void trace_result(String what, Object d) {
         if (this.is_trace(TraceMode.RESULTS)) {
-            this.trace(String.format("Result:%s=%s", what, d));
+            this.trace(String.format("Result:%s=%s", what,value_to_string(d)));
         }
     }
 
@@ -194,4 +196,13 @@ public abstract class Tracer {
         return tracer_factory.create();
     }
 
+    protected String value_to_string(Object d) {
+        if (d instanceof OrderedSet<?> os) {
+            return "["+os.data.stream().map(String::valueOf).collect(Collectors.joining())+"]";
+        }
+        else if (d instanceof List<?> os) {
+            return "{"+os.data.stream().map(String::valueOf).collect(Collectors.joining())+"}";
+        }
+        return String.valueOf(d);
+    }
 }

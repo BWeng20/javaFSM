@@ -3,6 +3,7 @@ package com.bw.fsm;
 import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
+import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.event_io_processor.ScxmlEventIOProcessor;
 import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
@@ -291,7 +292,7 @@ public class Fsm {
 
     protected void executeGlobalScriptElement(Datamodel datamodel) {
         if (StaticOptions.trace_method) {
-            this.tracer.exit_method("executeGlobalScriptElement");
+            this.tracer.enter_method("executeGlobalScriptElement");
         }
 
         if (this.script != null) {
@@ -504,7 +505,7 @@ public class Fsm {
                         var invoke_doc_id = session.invoke_doc_id;
                         for (Iterator<Invoke> it = session.state.invoke.iterator(); it.hasNext(); ) {
                             var inv = it.next();
-                            if (Objects.equals(inv.doc_id,invoke_doc_id) && inv.finalize != null) {
+                            if (Objects.equals(inv.doc_id, invoke_doc_id) && inv.finalize != null) {
                                 toFinalize.addAll(inv.finalize.content);
                             }
                             if (inv.autoforward) {
@@ -708,10 +709,10 @@ public class Fsm {
             }
         }
         enabledTransitions = this.removeConflictingTransitions(datamodel, enabledTransitions);
-        if (StaticOptions.trace_method)
+        if (StaticOptions.trace_method) {
             this.tracer.trace_result("enabledTransitions", enabledTransitions);
-        if (StaticOptions.trace_method)
             this.tracer.exit_method("selectEventlessTransitions");
+        }
         return enabledTransitions;
     }
 
@@ -803,7 +804,32 @@ public class Fsm {
      */
     protected OrderedSet<Transition> removeConflictingTransitions(
             Datamodel datamodel, OrderedSet<Transition> enabledTransitions) {
-        throw new UnsupportedOperationException();
+
+        OrderedSet<Transition> filteredTransitions = new OrderedSet<>();
+        //toList sorts the transitions in the order of the states that selected them
+        for (Transition t1 : enabledTransitions.toList().data) {
+            boolean t1Preempted = false;
+            OrderedSet<Transition> transitionsToRemove = new OrderedSet<>();
+            var filteredTransitionList = filteredTransitions.toList();
+            for (Transition t2 : filteredTransitionList.data) {
+                if (this.computeExitSet(datamodel, List.from_array(new Transition[]{t1}))
+                        .hasIntersection(this.computeExitSet(datamodel, List.from_array(new Transition[]{t2})))) {
+                    if (this.isDescendant(t1.source, t2.source)) {
+                        transitionsToRemove.add(t2);
+                    } else {
+                        t1Preempted = true;
+                        break;
+                    }
+                }
+            }
+            if (!t1Preempted) {
+                for (Transition t3 : transitionsToRemove.toList().data) {
+                    filteredTransitions.delete(t3);
+                }
+                filteredTransitions.add(t1);
+            }
+        }
+        return filteredTransitions;
     }
 
     /**
@@ -827,7 +853,25 @@ public class Fsm {
      * </pre>
      */
     protected void microstep(Datamodel datamodel, List<Transition> enabledTransitions) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method)
+            this.tracer.enter_method("microstep");
+        if (StaticOptions.debug_option) {
+            if (enabledTransitions.size() > 0) {
+                if (enabledTransitions.size() > 1) {
+                    Log.debug("Enabled Transitions:");
+                    for (var t : enabledTransitions.data) {
+                        Log.debug("\t%s", t);
+                    }
+                } else {
+                    Log.debug("Enabled Transition %s", enabledTransitions.head());
+                }
+            }
+        }
+        this.exitStates(datamodel, enabledTransitions);
+        this.executeTransitionContent(datamodel, enabledTransitions);
+        this.enterStates(datamodel, enabledTransitions);
+        if (StaticOptions.trace_method)
+            this.tracer.exit_method("microstep");
     }
 
     /**
@@ -869,7 +913,64 @@ public class Fsm {
      * </pre>
      */
     protected void exitStates(Datamodel datamodel, List<Transition> enabledTransitions) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method)
+            this.tracer.enter_method("exitStates");
+
+        final GlobalData gd = datamodel.global();
+
+        var statesToExit = this.computeExitSet(datamodel, enabledTransitions);
+        for (State s : statesToExit.data) {
+            gd.statesToInvoke.delete(s);
+        }
+        statesToExit = statesToExit.sort(Fsm.state_exit_order);
+
+        HashTable<State, OrderedSet<State>> ahistory = new HashTable<>();
+        var configStateList = gd.configuration.toList();
+
+        for (State s : statesToExit.data) {
+            for (var h : s.history.data) {
+                if (h.history_type == HistoryType.Deep) {
+                    OrderedSet<State> stateIdList = configStateList
+                            .filter_by(s0 -> this.isAtomicState(s0) && this.isDescendant(s0, s)).to_set();
+                    ahistory.put(h, stateIdList);
+                } else {
+                    var fl = gd.configuration
+                            .toList()
+                            .filter_by(s0 -> s0.parent == s).to_set();
+                    ahistory.put(h, fl);
+                }
+            }
+        }
+
+        gd.historyValue.put_all(ahistory);
+
+        for (State s : statesToExit.data) {
+            // Use the document-id of Invoke to identify sessions to cancel.
+            HashSet<Integer> invoke_doc_ids = new HashSet<>();
+            List<ExecutableContent> exitList = new List<>();
+            if (StaticOptions.trace_state)
+                this.tracer.trace_exit_state(s);
+            for (var inv : s.invoke.data) {
+                invoke_doc_ids.add(inv.doc_id);
+            }
+            for (var ec : s.onexit) {
+                exitList.push(ec);
+            }
+            if (!invoke_doc_ids.isEmpty()) {
+                for (var item : gd.child_sessions.entrySet()) {
+                    if (invoke_doc_ids.contains(item.getKey())) {
+                        this.cancelInvoke(datamodel, item.getKey(), item.getValue());
+                    }
+                }
+            }
+
+            for (var ec : exitList.data) {
+                this.executeContent(datamodel, ec);
+            }
+            gd.configuration.delete(s);
+        }
+        if (StaticOptions.trace_method)
+            this.tracer.exit_method("exitStates");
     }
 
     /**
@@ -1109,7 +1210,7 @@ public class Fsm {
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
-        if ( StaticOptions.trace_method) {
+        if (StaticOptions.trace_method) {
             this.tracer.enter_method("computeEntrySet");
             this.tracer.trace_argument("transitions", transitions);
         }
@@ -1137,7 +1238,7 @@ public class Fsm {
                 );
             }
         }
-        if ( StaticOptions.trace_method) {
+        if (StaticOptions.trace_method) {
             this.tracer.trace_result("statesToEnter>", statesToEnter);
             this.tracer.exit_method("computeEntrySet");
         }
@@ -1195,15 +1296,15 @@ public class Fsm {
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
-        if ( StaticOptions.trace_method) {
+        if (StaticOptions.trace_method) {
             this.tracer.enter_method("addDescendantStatesToEnter");
             this.tracer.trace_argument("State", state);
         }
         var global = datamodel.global();
         if (this.isHistoryState(state)) {
             var hv = global.historyValue.get(state);
-            if ( hv != null) {
-                for (State s : hv.data ) {
+            if (hv != null) {
+                for (State s : hv.data) {
                     this.addDescendantStatesToEnter(
                             datamodel,
                             s,
@@ -1212,7 +1313,7 @@ public class Fsm {
                             defaultHistoryContent
                     );
                 }
-                for (State s : hv.data ) {
+                for (State s : hv.data) {
                     this.addAncestorStatesToEnter(
                             datamodel,
                             s,
@@ -1235,7 +1336,7 @@ public class Fsm {
                             defaultHistoryContent
                     );
                 }
-                for (State s : defaultTransition.target ) {
+                for (State s : defaultTransition.target) {
                     this.addAncestorStatesToEnter(
                             datamodel,
                             s,
@@ -1274,7 +1375,7 @@ public class Fsm {
                 }
             } else if (this.isParallelState(state)) {
                 for (var child : state.states) {
-                    if (!statesToEnter.some( (s) -> this.isDescendant(s, child))) {
+                    if (!statesToEnter.some((s) -> this.isDescendant(s, child))) {
                         this.addDescendantStatesToEnter(
                                 datamodel,
                                 child,
@@ -1286,7 +1387,7 @@ public class Fsm {
                 }
             }
         }
-        if ( StaticOptions.trace_method) {
+        if (StaticOptions.trace_method) {
             this.tracer.trace_result("statesToEnter", statesToEnter);
             this.tracer.exit_method("addDescendantStatesToEnter");
         }
@@ -1354,8 +1455,30 @@ public class Fsm {
      *         return findLCCA([t.source].append(tstates));
      * </pre>
      */
-    protected State getTransitionDomain(Datamodel datamodel, Transition t) {
-        throw new UnsupportedOperationException();
+    @Nullable
+    protected State getTransitionDomain(@NotNull Datamodel datamodel, Transition t) {
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("getTransitionDomain");
+            this.tracer.trace_argument("t", t);
+        }
+        var tstates = this.getEffectiveTargetStates(datamodel, t);
+        State domain;
+        if (tstates.isEmpty()) {
+            domain = null;
+        } else if (t.transition_type == TransitionType.Internal
+                && this.isCompoundState(t.source)
+                && tstates.every((s) -> this.isDescendant(s, t.source))) {
+            domain = t.source;
+        } else {
+            List<State> l = new List<>();
+            l.push(t.source);
+            domain = this.findLCCA(l.append_set(tstates));
+        }
+        if (StaticOptions.trace_method) {
+            this.tracer.trace_result("domain", domain);
+            this.tracer.exit_method("getTransitionDomain");
+        }
+        return domain;
     }
 
     /**
@@ -1396,7 +1519,28 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<State> getEffectiveTargetStates(Datamodel datamodel, Transition transition) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("getEffectiveTargetStates");
+            this.tracer.trace_argument("transition", transition);
+        }
+        OrderedSet<State> targets = new OrderedSet<>();
+        for (State state : transition.target) {
+            if (this.isHistoryState(state)) {
+                if (datamodel.global().historyValue.has(state)) {
+                    targets.union(datamodel.global().historyValue.get(state));
+                } else {
+                    // History states have exactly one "transition"
+                    targets.union(this.getEffectiveTargetStates(datamodel, state.transitions.head()));
+                }
+            } else {
+                targets.add(state);
+            }
+        }
+        if (StaticOptions.trace_method) {
+            this.tracer.trace_result("targets", targets);
+            this.tracer.exit_method("getEffectiveTargetStates");
+        }
+        return targets;
     }
 
     /**
@@ -1410,7 +1554,7 @@ public class Fsm {
      * or the parent's parent's parent, etc.))<br>
      * If state2 is state1's parent, or equal to state1, or a descendant of state1, this returns the empty set.
      */
-    protected OrderedSet<State> getProperAncestors( @NotNull State state1, @Nullable State state2) {
+    protected OrderedSet<State> getProperAncestors(@NotNull State state1, @Nullable State state2) {
         throw new UnsupportedOperationException();
     }
 
@@ -1468,7 +1612,7 @@ public class Fsm {
         throw new UnsupportedOperationException();
     }
 
-    protected void cancelInvoke(Datamodel datamodel, Invoke invoke, ScxmlSession session) {
+    protected void cancelInvoke(Datamodel datamodel, String invokeId, ScxmlSession session) {
         throw new UnsupportedOperationException();
     }
 

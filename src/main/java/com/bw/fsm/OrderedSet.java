@@ -29,7 +29,7 @@ public class OrderedSet<E> {
     /// *W3C says*:
     /// Adds e to the set if it is not already a member
     public void add(E e) {
-        if (data.contains(e)) {
+        if (!data.contains(e)) {
             data.add(e);
         }
     }
