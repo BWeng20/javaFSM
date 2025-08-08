@@ -106,6 +106,9 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public boolean executeContent(Fsm fsm, ExecutableContent content) {
-        return false;
+        if (this.tracer != null) {
+            content.trace(this.tracer, fsm);
+        }
+        return content.execute(this, fsm);
     }
 }

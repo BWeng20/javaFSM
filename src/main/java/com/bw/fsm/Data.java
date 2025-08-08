@@ -17,6 +17,7 @@ public abstract class Data {
 
     /**
      * Tries to convert the data to a number.
+     *
      * @return default returns 0.
      */
     public Number as_number() {
@@ -46,6 +47,7 @@ public abstract class Data {
 
     /**
      * Gets a deep copy
+     *
      * @return deep copy of the data element.
      */
     public abstract Data getCopy();

@@ -54,28 +54,44 @@ public abstract class Datamodel {
      */
     public static final String SESSION_NAME_VARIABLE_NAME = "_name";
 
-    /** Name of system variable "_event" for events */
+    /**
+     * Name of system variable "_event" for events
+     */
     public static final String EVENT_VARIABLE_NAME = "_event";
 
-    /** Name of field "name" of system variable "_event" */
+    /**
+     * Name of field "name" of system variable "_event"
+     */
     public static final String EVENT_VARIABLE_FIELD_NAME = "name";
 
-    /** Name of field "type" of system variable "_event" */
+    /**
+     * Name of field "type" of system variable "_event"
+     */
     public static final String EVENT_VARIABLE_FIELD_TYPE = "type";
 
-    /** Name of field of system variable "_event" "sendid" */
+    /**
+     * Name of field of system variable "_event" "sendid"
+     */
     public static final String EVENT_VARIABLE_FIELD_SEND_ID = "sendid";
 
-    /** Name of field "origin" of system variable "_event" */
+    /**
+     * Name of field "origin" of system variable "_event"
+     */
     public static final String EVENT_VARIABLE_FIELD_ORIGIN = "origin";
 
-    /** Name of field "origintype" of system variable "_event" */
+    /**
+     * Name of field "origintype" of system variable "_event"
+     */
     public static final String EVENT_VARIABLE_FIELD_ORIGIN_TYPE = "origintype";
 
-    /** Name of field "invokeid" of system variable "_event" */
+    /**
+     * Name of field "invokeid" of system variable "_event"
+     */
     public static final String EVENT_VARIABLE_FIELD_INVOKE_ID = "invokeid";
 
-    /** Name of field "data" of system variable "_event" */
+    /**
+     * Name of field "data" of system variable "_event"
+     */
     public static final String EVENT_VARIABLE_FIELD_DATA = "data";
 
     /**
@@ -86,7 +102,9 @@ public abstract class Datamodel {
      */
     public abstract GlobalData global();
 
-    /** Get the name of the data model as defined by the &lt;scxml> attribute "datamodel".*/
+    /**
+     * Get the name of the data model as defined by the &lt;scxml> attribute "datamodel".
+     */
     public abstract String get_name();
 
     /**
@@ -95,7 +113,9 @@ public abstract class Datamodel {
      */
     public abstract void add_functions(Fsm fsm);
 
-    /** sets '_ioprocessors'. */
+    /**
+     * sets '_ioprocessors'.
+     */
     public void set_ioprocessors() {
     }
 
@@ -114,7 +134,8 @@ public abstract class Datamodel {
     /**
      * Sets data from state data-store.<br>
      * All data-elements contain script-source and needs to be evaluated by the datamodel before use.
-     * @param data The data to set.
+     *
+     * @param data     The data to set.
      * @param set_data if true set the data, otherwise just initialize the variables.
      */
     public void set_from_state_data(Map<String, Data> data, boolean set_data) {
@@ -143,6 +164,7 @@ public abstract class Datamodel {
 
     /**
      * Execute an assign expression.
+     *
      * @return true if the assignment was correct.
      */
     public boolean assign(Data left_expr, Data right_expr) {
@@ -193,11 +215,15 @@ public abstract class Datamodel {
         }
     }
 
-    /** Clear all data. */
+    /**
+     * Clear all data.
+     */
     public void clear() {
     }
 
-    /** "log" function, use for &lt;log> content. */
+    /**
+     * "log" function, use for &lt;log> content.
+     */
     public void log(String msg) {
         Log.info("%s", msg);
     }
@@ -212,7 +238,9 @@ public abstract class Datamodel {
         throw new UnsupportedOperationException();
     }
 
-    /** Executes a for-each loop */
+    /**
+     * Executes a for-each loop
+     */
     public boolean execute_for_each(
             Data array_expression,
             String item,
@@ -233,12 +261,16 @@ public abstract class Datamodel {
         throw new UnsupportedOperationException();
     }
 
-    /** Executes content. */
+    /**
+     * Executes content.
+     */
     public boolean executeContent(Fsm fsm, ExecutableContent content) {
         throw new UnsupportedOperationException();
     }
 
-    /** Executes content. */
+    /**
+     * Executes content.
+     */
     public boolean executeContent(Fsm fsm, ExecutableContentRegion content) {
         if (content != null) {
             for (var ct : content.content) {

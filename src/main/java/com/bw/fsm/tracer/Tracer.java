@@ -159,7 +159,7 @@ public abstract class Tracer {
      */
     public void trace_result(String what, Object d) {
         if (this.is_trace(TraceMode.RESULTS)) {
-            this.trace(String.format("Result:%s=%s", what,value_to_string(d)));
+            this.trace(String.format("Result:%s=%s", what, value_to_string(d)));
         }
     }
 
@@ -198,10 +198,9 @@ public abstract class Tracer {
 
     protected String value_to_string(Object d) {
         if (d instanceof OrderedSet<?> os) {
-            return "["+os.data.stream().map(String::valueOf).collect(Collectors.joining())+"]";
-        }
-        else if (d instanceof List<?> os) {
-            return "{"+os.data.stream().map(String::valueOf).collect(Collectors.joining())+"}";
+            return "[" + os.data.stream().map(String::valueOf).collect(Collectors.joining()) + "]";
+        } else if (d instanceof List<?> os) {
+            return "{" + os.data.stream().map(String::valueOf).collect(Collectors.joining()) + "}";
         }
         return String.valueOf(d);
     }

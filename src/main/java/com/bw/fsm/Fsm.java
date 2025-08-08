@@ -744,7 +744,44 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<Transition> selectTransitions(Datamodel datamodel, Event event) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("selectTransitions");
+        }
+        final GlobalData gd = datamodel.global();
+
+        OrderedSet<Transition> enabledTransitions = new OrderedSet<>();
+        var atomicStates = gd.configuration.toList()
+                .filter_by(s -> this.isAtomicState(s))
+                .sort(Fsm.state_document_order);
+        for (State state : atomicStates.data) {
+            java.util.List<Transition> condT = new ArrayList<>();
+            for (State s : List.from_array(new State[]{state})
+                    .append_set(this.getProperAncestors(state, null))
+                    .data) {
+                java.util.List<Transition> transition = new ArrayList<>();
+                for (Transition t : s.transitions.data) {
+                    transition.add(t);
+                }
+                transition.sort(Fsm.transition_document_order::compare);
+                for (Transition t : transition) {
+                    if ((!t.events.isEmpty()) && t.nameMatch(event.name)) {
+                        condT.add(t);
+                    }
+                }
+            }
+            for (Transition ct : condT) {
+                if (this.conditionMatch(datamodel, ct)) {
+                    enabledTransitions.add(ct);
+                    break;
+                }
+            }
+        }
+        enabledTransitions = this.removeConflictingTransitions(datamodel, enabledTransitions);
+        if (StaticOptions.trace_method) {
+            this.tracer.trace_result("enabledTransitions", enabledTransitions);
+            this.tracer.exit_method("selectTransitions");
+        }
+        return enabledTransitions;
     }
 
     /**
@@ -1414,7 +1451,28 @@ public class Fsm {
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("addAncestorStatesToEnter");
+            this.tracer.trace_argument("state", state);
+        }
+        for (var anc : this.getProperAncestors(state, ancestor).data) {
+            statesToEnter.add(anc);
+            if (this.isParallelState(anc)) {
+                for (var child : anc.states) {
+                    if (!statesToEnter.some(s -> this.isDescendant(s, child))) {
+                        this.addDescendantStatesToEnter(
+                                datamodel,
+                                child,
+                                statesToEnter,
+                                statesForDefaultEntry,
+                                defaultHistoryContent
+                        );
+                    }
+                }
+            }
+        }
+        if (StaticOptions.trace_method)
+            this.tracer.exit_method("addAncestorStatesToEnter");
     }
 
     /**
@@ -1434,7 +1492,15 @@ public class Fsm {
      * </pre>
      */
     protected boolean isInFinalState(Datamodel datamodel, State s) {
-        throw new UnsupportedOperationException();
+        if (this.isCompoundState(s)) {
+            final GlobalData gd = datamodel.global();
+            return this.getChildStates(s).some(cs -> this.isFinalState(cs) && gd.configuration.isMember(cs));
+        } else if (this.isParallelState(s)) {
+            return this.getChildStates(s)
+                    .every(cs -> this.isInFinalState(datamodel, cs));
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -1555,7 +1621,25 @@ public class Fsm {
      * If state2 is state1's parent, or equal to state1, or a descendant of state1, this returns the empty set.
      */
     protected OrderedSet<State> getProperAncestors(@NotNull State state1, @Nullable State state2) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("getProperAncestors");
+            this.tracer.trace_argument("state1", state1);
+            this.tracer.trace_argument("state2", state2);
+        }
+
+        OrderedSet<State> properAncestors = new OrderedSet<>();
+        if (!this.isDescendant(state2, state1)) {
+            State currState = state1.parent;
+            while (currState != null && currState != state2) {
+                properAncestors.add(currState);
+                currState = currState.parent;
+            }
+        }
+        if (StaticOptions.trace_method) {
+            this.tracer.trace_result("properAncestors", properAncestors);
+            this.tracer.exit_method("getProperAncestors");
+        }
+        return properAncestors;
     }
 
     /**
@@ -1564,7 +1648,26 @@ public class Fsm {
      * Returns 'true' if state1 is a descendant of state2 (a child, or a child of a child, or a child of a child of a child, etc.) Otherwise returns 'false'.
      */
     protected boolean isDescendant(State state1, State state2) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("isDescendant");
+            this.tracer.trace_argument("state1", state1);
+            this.tracer.trace_argument("state2", state2);
+        }
+        boolean result;
+        if (state1 == null || state2 == null || state1 == state2) {
+            result = false;
+        } else {
+            State currState = state1.parent;
+            while (currState != null && currState != state2) {
+                currState = currState.parent;
+            }
+            result = (currState == state2);
+        }
+        if (StaticOptions.trace_method) {
+            this.tracer.trace_result("result", result);
+            this.tracer.exit_method("isDescendant");
+        }
+        return result;
     }
 
     /**
