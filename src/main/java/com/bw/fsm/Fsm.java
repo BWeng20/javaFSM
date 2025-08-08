@@ -674,7 +674,7 @@ public class Fsm {
                 .configuration
                 .toList()
                 .filter_by(this::isAtomicState)
-                .sort(this.state_document_order);
+                .sort(Fsm.state_document_order);
 
         if (StaticOptions.trace_method)
             this.tracer.trace_argument("atomicStates", atomicStates);
@@ -1106,7 +1106,38 @@ public class Fsm {
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
-        throw new UnsupportedOperationException();
+        if ( StaticOptions.trace_method) {
+            this.tracer.enter_method("computeEntrySet");
+            this.tracer.trace_argument("transitions", transitions);
+        }
+        for (Iterator<Transition> it = transitions.iterator(); it.hasNext(); ) {
+            var t = it.next();
+            for (var s : t.target) {
+                this.addDescendantStatesToEnter(
+                        datamodel,
+                        s,
+                        statesToEnter,
+                        statesForDefaultEntry,
+                        defaultHistoryContent
+                );
+            }
+            var ancestor = this.getTransitionDomain(datamodel, t);
+            for (Iterator<State> iter = this.getEffectiveTargetStates(datamodel, t).iterator(); iter.hasNext(); ) {
+                var s = iter.next();
+                this.addAncestorStatesToEnter(
+                        datamodel,
+                        s,
+                        ancestor,
+                        statesToEnter,
+                        statesForDefaultEntry,
+                        defaultHistoryContent
+                );
+            }
+        }
+        if ( StaticOptions.trace_method) {
+            this.tracer.trace_result("statesToEnter>", statesToEnter);
+            this.tracer.exit_method("computeEntrySet");
+        }
     }
 
     /**
@@ -1156,12 +1187,106 @@ public class Fsm {
      */
     protected void addDescendantStatesToEnter(
             Datamodel datamodel,
-            State sid,
+            State state,
             OrderedSet<State> statesToEnter,
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
-        throw new UnsupportedOperationException();
+        if ( StaticOptions.trace_method) {
+            this.tracer.enter_method("addDescendantStatesToEnter");
+            this.tracer.trace_argument("State", state);
+        }
+        var global = datamodel.global();
+        if (this.isHistoryState(state)) {
+            var hv = global.historyValue.get(state);
+            if ( hv != null) {
+                for (State s : hv.data ) {
+                    this.addDescendantStatesToEnter(
+                            datamodel,
+                            s,
+                            statesToEnter,
+                            statesForDefaultEntry,
+                            defaultHistoryContent
+                    );
+                }
+                for (State s : hv.data ) {
+                    this.addAncestorStatesToEnter(
+                            datamodel,
+                            s,
+                            state.parent,
+                            statesToEnter,
+                            statesForDefaultEntry,
+                            defaultHistoryContent
+                    );
+                }
+            } else {
+                // A history state have exactly one transition which specified the default history configuration.
+                var defaultTransition = state.transitions.head();
+                defaultHistoryContent.put(state.parent, defaultTransition.content);
+                for (State s : defaultTransition.target) {
+                    this.addDescendantStatesToEnter(
+                            datamodel,
+                            s,
+                            statesToEnter,
+                            statesForDefaultEntry,
+                            defaultHistoryContent
+                    );
+                }
+                for (State s : defaultTransition.target ) {
+                    this.addAncestorStatesToEnter(
+                            datamodel,
+                            s,
+                            state.parent,
+                            statesToEnter,
+                            statesForDefaultEntry,
+                            defaultHistoryContent
+                    );
+                }
+            }
+        } else {
+            statesToEnter.add(state);
+            if (this.isCompoundState(state)) {
+                statesForDefaultEntry.add(state);
+                if (state.initial != null) {
+                    var initialTransition = state.initial;
+                    for (State s : initialTransition.target) {
+                        this.addDescendantStatesToEnter(
+                                datamodel,
+                                s,
+                                statesToEnter,
+                                statesForDefaultEntry,
+                                defaultHistoryContent
+                        );
+                    }
+                    for (State s : initialTransition.target) {
+                        this.addAncestorStatesToEnter(
+                                datamodel,
+                                s,
+                                state,
+                                statesToEnter,
+                                statesForDefaultEntry,
+                                defaultHistoryContent
+                        );
+                    }
+                }
+            } else if (this.isParallelState(state)) {
+                for (var child : state.states) {
+                    if (!statesToEnter.some( (s) -> this.isDescendant(s, child))) {
+                        this.addDescendantStatesToEnter(
+                                datamodel,
+                                child,
+                                statesToEnter,
+                                statesForDefaultEntry,
+                                defaultHistoryContent
+                        );
+                    }
+                }
+            }
+        }
+        if ( StaticOptions.trace_method) {
+            this.tracer.trace_result("statesToEnter", statesToEnter);
+            this.tracer.exit_method("addDescendantStatesToEnter");
+        }
     }
 
     /**
