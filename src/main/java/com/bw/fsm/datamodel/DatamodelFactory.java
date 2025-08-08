@@ -1,6 +1,8 @@
 package com.bw.fsm.datamodel;
 
 import com.bw.fsm.Log;
+import com.bw.fsm.datamodel.null_datamodel.NullDatamodel;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -21,6 +23,7 @@ public abstract class DatamodelFactory {
         datamodel_factories.put(name.toLowerCase(Locale.CANADA), factory);
     }
 
+    @NotNull
     public static Datamodel create_datamodel(
             String name, GlobalData global_data,
             Map<String, String> options
@@ -30,7 +33,7 @@ public abstract class DatamodelFactory {
             return factory.create(global_data, options);
         } else {
             Log.panic("Unsupported Data Model '%s'", name);
-            return null;
+            return datamodel_factories.get(NullDatamodel.NULL_DATAMODEL).create(global_data, options);
         }
     }
 }

@@ -5,6 +5,8 @@ import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.event_io_processor.ScxmlEventIOProcessor;
 import com.bw.fsm.tracer.Tracer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -73,22 +75,23 @@ public class Fsm {
     /**
      * Starts the FSM inside a worker thread.
      */
-    public ScxmlSession start_fsm(ActionWrapper actions, FsmExecutor executor) {
+    public @NotNull ScxmlSession start_fsm(ActionWrapper actions, FsmExecutor executor) {
         return start_fsm_with_data(actions, executor, new ArrayList<>());
     }
 
-    public ScxmlSession start_fsm_with_data(
+    public @NotNull ScxmlSession start_fsm_with_data(
             ActionWrapper actions,
             FsmExecutor executor,
             java.util.List<ParamPair> data) {
         return start_fsm_with_data_and_finish_mode(actions, executor, data, FinishMode.DISPOSE);
     }
 
+    @NotNull
     public ScxmlSession start_fsm_with_data_and_finish_mode(
-            ActionWrapper actions,
-            FsmExecutor executor,
-            java.util.List<ParamPair> data,
-            FinishMode finish_mode) {
+            @NotNull ActionWrapper actions,
+            @NotNull FsmExecutor executor,
+            @NotNull java.util.List<ParamPair> data,
+            @NotNull FinishMode finish_mode) {
         BlockingQueue<Event> externalQueue = new BlockingQueue<>();
 
         Integer session_id = SESSION_ID_COUNTER.incrementAndGet();
@@ -501,7 +504,7 @@ public class Fsm {
                         var invoke_doc_id = session.invoke_doc_id;
                         for (Iterator<Invoke> it = session.state.invoke.iterator(); it.hasNext(); ) {
                             var inv = it.next();
-                            if (inv.doc_id == invoke_doc_id && inv.finalize != null) {
+                            if (Objects.equals(inv.doc_id,invoke_doc_id) && inv.finalize != null) {
                                 toFinalize.addAll(inv.finalize.content);
                             }
                             if (inv.autoforward) {
@@ -1407,7 +1410,7 @@ public class Fsm {
      * or the parent's parent's parent, etc.))<br>
      * If state2 is state1's parent, or equal to state1, or a descendant of state1, this returns the empty set.
      */
-    protected OrderedSet<State> getProperAncestors(State state1, State state2) {
+    protected OrderedSet<State> getProperAncestors( @NotNull State state1, @Nullable State state2) {
         throw new UnsupportedOperationException();
     }
 

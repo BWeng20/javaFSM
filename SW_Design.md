@@ -1,12 +1,12 @@
 # The Software Design
 
 SCXML is parsed via a SAX parser.
-The resulting model is then executed by a worker thread where the FSM waits for events.
+The resulting model is then executed by a worker thread. The FSM waits for events and process transition until a final state is reached.<br>
 Multiple FSM can work in parallel and communicate via their external event-queues (using communication queues).
 
 A Datamodel-instance is associated with each FSM-instance.
 
-All active Fsm-sessions are managed by the FsmExecutor. 
+All active FSM-sessions are managed by the FsmExecutor. 
 
 ## Details
 
@@ -58,10 +58,10 @@ SCXML defines an API to _"storing, reading, and modifying a set of data that is 
 See the abstract base class [Datamodel](src/main/java/com/bw/fsm/datamodel/Datamodel.java) for details.
 
 The projekt contains these Datamodel implementations:
-+ [ECMAScript-Datamodel](src/main/java/com/bw/fsm/datamodel/ECMADatamodel.java)</br>
++ [ECMAScript-Datamodel](src/main/java/com/bw/fsm/datamodel/ecma/ECMAScriptDatamodel.java)</br>
   _TODO_<br>
   It uses TODO. You check the requirements for ECMA in SCXML [here](https://www.w3.org/TR/scxml/#ecma-profile)
-+ [Expression-Engine-Datamodel](src/main/java/com/bw/fsm/datamodel/ExpressionEngine.java)
++ [Expression-Engine-Datamodel](src/main/java/com/bw/fsm/datamodel/expression_engine/RFsmExpressionDatamodel.java)
   A datamodel based on a fast expression like language. As this language is a java based re-implementation of our RUST version,
   it is __not__ using JE (Java Expression Language).
   _TODO_<br>
@@ -92,3 +92,10 @@ The schema for the configuration files is _[schema/test_specification_schema.jso
 
 For a practical application of automated testing see how the W3C tests are applied:
 [W3C Tests Readme](W3C_TESTS_README.md).
+
+### Nullability Code Annotations
+
+This project is using jetbrains annotations to model restrictions of arguments and return values.<br>
+It is only used for static checks during development and shall not support any runtime checks.<br> 
+There is no technical reason to use this specific library. It was chosen because IntelliJ was also used as primary IDE.<br>
+The library is not needed during runtime. 
