@@ -8,6 +8,7 @@ public interface StaticOptions {
     boolean trace = true;
     boolean trace_method = true;
     boolean trace_event = true;
+    boolean trace_state = true;
 
     boolean ecma_script_model = true;
 }
