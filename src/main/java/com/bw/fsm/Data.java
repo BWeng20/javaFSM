@@ -12,10 +12,12 @@ import java.util.Objects;
 /**
  * Data Variant used to handle data in a type-safe but Datamodel-agnostic way.
  */
+@SuppressWarnings("unused")
 public abstract class Data {
 
     /**
      * Tries to convert the data to a number.
+     * @return default returns 0.
      */
     public Number as_number() {
         return NUL;
@@ -44,6 +46,7 @@ public abstract class Data {
 
     /**
      * Gets a deep copy
+     * @return deep copy of the data element.
      */
     public abstract Data getCopy();
 
@@ -93,13 +96,14 @@ public abstract class Data {
             return false;
         }
 
+        @Override
         public Data getCopy() {
             return new Integer(this.value);
         }
     }
 
     public static class Double extends Data {
-        double value;
+        private double value;
 
         public Double(double value) {
             this.value = value;
@@ -143,13 +147,14 @@ public abstract class Data {
             return false;
         }
 
+        @Override
         public Data getCopy() {
             return new Double(this.value);
         }
     }
 
     public static class String extends Data {
-        java.lang.String value;
+        private java.lang.String value;
 
         public String(java.lang.String value) {
             this.value = value;
@@ -186,6 +191,7 @@ public abstract class Data {
             return false;
         }
 
+        @Override
         public Data getCopy() {
             return new String(this.value);
         }
@@ -228,6 +234,7 @@ public abstract class Data {
             return false;
         }
 
+        @Override
         public Data getCopy() {
             return new Boolean(this.value);
         }
@@ -270,9 +277,7 @@ public abstract class Data {
             return false;
         }
 
-        /**
-         * Get a deep copy
-         */
+        @Override
         public Data getCopy() {
             Array a = new Array(new ArrayList<>(this.values.size()));
             for (Data d : values) {
@@ -323,9 +328,6 @@ public abstract class Data {
             return false;
         }
 
-        /**
-         * Get a deep copy
-         */
         @Override
         public Data getCopy() {
             HashMap<java.lang.String, Data> a = new HashMap<>();

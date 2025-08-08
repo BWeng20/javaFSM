@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 /**
  * Reads SCXML files via SAX parser and produces an FSM model.<br>
  */
+@SuppressWarnings("unused")
 public class ScxmlReader {
 
     public static final String TAG_SCXML = "scxml";
@@ -318,7 +319,7 @@ public class ScxmlReader {
          * This stack works independent of the main element stack, but should be
          * considered as synchronized with it.<br>
          * <b>Arguments</b>
-         * <table>
+         * <table><caption>Arguments</caption>
          * <tr><td>stack</td><td>If true, the current region is put on stack,
          *     continued after the matching {@link #end_executable_content_region(String)}.
          *     If false, the current stack is discarded.</td></tr>
@@ -966,8 +967,7 @@ public class ScxmlReader {
             StringWriter writer = getWriter();
             try {
                 int depth = 1;
-                XMLStreamWriter xmlWriter = null;
-                xmlWriter = outputFactory.createXMLStreamWriter(writer);
+                XMLStreamWriter xmlWriter = outputFactory.createXMLStreamWriter(writer);
 
                 outer_while:
                 while (reader.hasNext()) {

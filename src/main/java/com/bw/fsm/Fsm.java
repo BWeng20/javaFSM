@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * The FSM implementation, according to W3C proposal.
  */
+@SuppressWarnings("unused")
 public class Fsm {
     public static final AtomicInteger ID_COUNTER = new AtomicInteger(1);
     public static final AtomicInteger SESSION_ID_COUNTER = new AtomicInteger(1);
@@ -37,14 +38,7 @@ public class Fsm {
     public static final Comparator<Transition> transition_document_order =
             Comparator.comparingInt(t -> t.doc_id);
 
-    public static final Comparator<Invoke> invoke_document_order = (s1, s2) -> {
-        if (s1.doc_id > s2.doc_id)
-            return 1;
-        else if (s1.doc_id == s2.doc_id)
-            return 0;
-        else
-            return -1;
-    };
+    public static final Comparator<Invoke> invoke_document_order = Comparator.comparing(s -> s.doc_id);
 
 
     public Tracer tracer = Tracer.create_tracer();
@@ -234,7 +228,7 @@ public class Fsm {
 
         this.executeGlobalScriptElement(datamodel);
 
-        var inital_states = new List();
+        var inital_states = new List<Transition>();
         var itid = this.pseudo_root.initial;
         if (itid != null) {
             inital_states.push(itid);
@@ -423,7 +417,7 @@ public class Fsm {
             }
             // or we've completed a macrostep, so we start a new macrostep by waiting for an external event
             // Here we invoke whatever needs to be invoked. The implementation of 'invoke' is platform-specific
-            var sortedStatesToInvoke = datamodel.global().statesToInvoke.sort(this.state_entry_order);
+            var sortedStatesToInvoke = datamodel.global().statesToInvoke.sort(Fsm.state_entry_order);
             for (Iterator<State> it = sortedStatesToInvoke.iterator(); it.hasNext(); ) {
                 var state = it.next();
                 for (Iterator<Invoke> iter = state.invoke.sort(Fsm.invoke_document_order).iterator(); iter.hasNext(); ) {
@@ -552,7 +546,7 @@ public class Fsm {
 
     /**
      * <b>W3C says</b>:<br>
-     * # procedure exitInterpreter()
+     * <b>procedure exitInterpreter()</b><br>
      * The purpose of this procedure is to exit the current SCXML process by exiting all active
      * states. If the machine is in a top-level final state, a Done event is generated.
      * (Note that in this case, the final state will be the only active state.)
@@ -584,7 +578,7 @@ public class Fsm {
         List<State> statesToExit = global
                 .configuration
                 .toList()
-                .sort(this.state_exit_order);
+                .sort(Fsm.state_exit_order);
 
         for (var session : global.child_sessions.values()) {
             datamodel.send(
@@ -679,13 +673,13 @@ public class Fsm {
         var atomicStates = datamodel.global()
                 .configuration
                 .toList()
-                .filter_by((sid) -> this.isAtomicState(sid))
+                .filter_by(this::isAtomicState)
                 .sort(this.state_document_order);
 
         if (StaticOptions.trace_method)
             this.tracer.trace_argument("atomicStates", atomicStates);
 
-        List<State> states = new List();
+        List<State> states = new List<>();
         for (Iterator<State> it = atomicStates.iterator(); it.hasNext(); ) {
             var sid = it.next();
             states.data.clear();
@@ -695,7 +689,7 @@ public class Fsm {
             for (Iterator<State> iter = states.iterator(); iter.hasNext(); ) {
                 var state = iter.next();
                 for (Iterator<Transition> iterator = state.transitions
-                        .sort(this.transition_document_order)
+                        .sort(Fsm.transition_document_order)
                         .iterator(); iterator.hasNext(); ) {
                     var t = iterator.next();
                     if (t.events.isEmpty()) {
@@ -774,7 +768,7 @@ public class Fsm {
      * For each t1 in enabledTransitions, we test it against all t2 that are already selected in
      * filteredTransitions. If there is a conflict, then if t1's source state is a descendant of
      * t2's source state, we prefer t1 and say that it preempts t2
-     * (so we we make a note to remove t2 from filteredTransitions).<br>
+     * (so we make a note to remove t2 from filteredTransitions).<br>
      * Otherwise, we prefer t2 since it was selected in an earlier state in document order,
      * so we say that it preempts t1.
      * (There's no need to do anything in this case since t2 is already in filteredTransitions.
@@ -823,10 +817,10 @@ public class Fsm {
      * per active atomic state (though some states may not select a transition.) In this case, the transitions are
      * taken in the document order of the atomic states that selected them.
      * <pre>
-     * procedure microstep(enabledTransitions):
-     *     exitStates(enabledTransitions)
-     *     executeTransitionContent(enabledTransitions)
-     *     enterStates(enabledTransitions)
+     *  procedure microstep(enabledTransitions):
+     *      exitStates(enabledTransitions)
+     *      executeTransitionContent(enabledTransitions)
+     *      enterStates(enabledTransitions)
      * </pre>
      */
     protected void microstep(Datamodel datamodel, List<Transition> enabledTransitions) {
@@ -877,7 +871,7 @@ public class Fsm {
 
     /**
      * <b>W3C says</b>:<br>
-     * <b>procedure enterStates(enabledTransitions)</b>
+     * <b>procedure enterStates(enabledTransitions)</b><br>
      * First, compute the list of all the states that will be entered as a result of taking the
      * transitions in enabledTransitions. Add them to statesToInvoke so that invoke processing can
      * be done at the start of the next macrostep. Convert statesToEnter to a list and sort it in
@@ -925,13 +919,13 @@ public class Fsm {
             this.tracer.enter_method("enterStates");
 
         var gd = datamodel.global();
-        OrderedSet<State> statesToEnter = new OrderedSet();
-        OrderedSet<State> statesForDefaultEntry = new OrderedSet();
+        OrderedSet<State> statesToEnter = new OrderedSet<>();
+        OrderedSet<State> statesForDefaultEntry = new OrderedSet<>();
 
         // initialize the temporary table for default content in history states
-        HashTable<State, ExecutableContentRegion> defaultHistoryContent = new HashTable();
+        HashTable<State, ExecutableContentRegion> defaultHistoryContent = new HashTable<>();
         this.computeEntrySet(datamodel, enabledTransitions, statesToEnter, statesForDefaultEntry, defaultHistoryContent);
-        for (Iterator<State> it = statesToEnter.toList().sort(this.state_entry_order).iterator(); it.hasNext(); ) {
+        for (Iterator<State> it = statesToEnter.toList().sort(Fsm.state_entry_order).iterator(); it.hasNext(); ) {
             State s = it.next();
             if (StaticOptions.trace_state)
                 this.tracer.trace_enter_state(s);
@@ -947,15 +941,12 @@ public class Fsm {
             if (to_init != null) {
                 datamodel.initializeDataModel(this, to_init, true);
             }
-            java.util.List<ExecutableContent> exe = new ArrayList<>();
-            {
-                exe.addAll(s.onentry);
-                if (statesForDefaultEntry.isMember(s) && s.initial != null) {
-                    exe.addAll(s.initial.content.content);
-                }
-                if (defaultHistoryContent.has(s)) {
-                    exe.addAll(defaultHistoryContent.get(s).content);
-                }
+            java.util.List<ExecutableContent> exe = new ArrayList<>(s.onentry);
+            if (statesForDefaultEntry.isMember(s) && s.initial != null) {
+                exe.addAll(s.initial.content.content);
+            }
+            if (defaultHistoryContent.has(s)) {
+                exe.addAll(defaultHistoryContent.get(s).content);
             }
 
             for (ExecutableContent ct : exe) {
@@ -969,7 +960,7 @@ public class Fsm {
                 if (this.isSCXMLElement(parent)) {
                     gd.running = false;
                 } else {
-                    java.util.List<ParamPair> name_values = new ArrayList();
+                    java.util.List<ParamPair> name_values = new ArrayList<>();
                     Data content = null;
                     if (s.donedata != null) {
                         datamodel.evaluate_params(s.donedata.params, name_values);
@@ -1006,7 +997,7 @@ public class Fsm {
     }
 
     /**
-     * Put an event into the internal queue.
+     * Puts an event into the internal queue.
      */
     protected void enqueue_internal(Datamodel datamodel, Event event) {
         if (StaticOptions.trace_event)
@@ -1053,7 +1044,7 @@ public class Fsm {
 
     /**
      * <b>W3C says</b>:<br>
-     * # procedure computeExitSet(enabledTransitions)
+     * <b>procedure computeExitSet(enabledTransitions)</b><br>
      * For each transition t in enabledTransitions, if t is targetless then do nothing, else compute the transition's domain.
      * (This will be the source state in the case of internal transitions) or the least common compound ancestor
      * state of the source state and target states of t (in the case of external transitions. Add to the statesToExit
@@ -1336,11 +1327,11 @@ public class Fsm {
 
     /**
      * <b>W3C says</b>:<br>
-     * function getChildStates(state1)<br>
+     * <b>function getChildStates(state1)</b><br>
      * Returns a list containing all &lt;state\>, &lt;final\>, and &lt;parallel\> children of state1.
      */
     protected List<State> getChildStates(State state1) {
-        List<State> l = new List();
+        List<State> l = new List<>();
         l.data.addAll(state1.states);
         return l;
     }
@@ -1361,7 +1352,7 @@ public class Fsm {
      * its evaluation causes an error, the SCXML Processor must treat the expression as if it evaluated to
      * 'false' and must place the error 'error.execution' in the internal event queue.<br>
      * <br>
-     * See {@link Datamodel#execute_condition(Data)} )
+     * See {@link Datamodel#execute_condition(Data)}
      */
     protected boolean conditionMatch(Datamodel datamodel, Transition tid) {
         throw new UnsupportedOperationException();

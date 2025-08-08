@@ -28,3 +28,5 @@ tasks.register('w3cTest', JavaExec) {
     // jvmArgs = ['-Xmx512m']
     args = [layout.projectDirectory.asFile.absolutePath + '/w3ctest', layout.projectDirectory.asFile.absolutePath+ "/W3C_TEST_REPORT.MD"]
 }
+
+javadoc.options.addStringOption('Xdoclint:none', '-quiet')
