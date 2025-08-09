@@ -1067,7 +1067,7 @@ public class ScxmlReader {
             }
         }
 
-        protected void start_assign(Attributes attr, XMLStreamReader reader, boolean has_content) {
+        protected void start_assign(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
             this.verify_parent_tag(
                     TAG_ASSIGN,
                     new String[]{
@@ -1079,7 +1079,35 @@ public class ScxmlReader {
                             TAG_FINALIZE
                     }
             );
-            throw new UnsupportedOperationException();
+
+            Assign assign = new Assign();
+            assign.location = this.create_source(get_required_attr(TAG_ASSIGN, ATTR_LOCATION, attr));
+
+            String expr = attr.getValue(ATTR_EXPR);
+            if (expr != null) {
+                assign.expr = this.create_source(expr);
+            }
+
+            String assign_text;
+            if (has_content) {
+                assign_text = this.read_content(TAG_ASSIGN, reader);
+                if (!assign_text.isEmpty())
+                    assign_text = String.format("\"%s\"", assign_text);
+            } else {
+                assign_text = "";
+            }
+            ;
+
+            String assign_src = assign_text.trim();
+
+            if (!assign_src.isEmpty()) {
+                if (!assign.expr.is_empty()) {
+                    com.bw.fsm.Log.panic("<assign> with 'expr' attribute shall not have content.");
+                }
+                assign.expr = create_source(assign_src);
+            }
+
+            this.add_executable_content(assign);
         }
 
         protected void start_raise(Attributes attr) {
