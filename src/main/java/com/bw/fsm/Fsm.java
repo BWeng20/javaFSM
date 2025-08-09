@@ -9,6 +9,7 @@ import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -517,10 +518,8 @@ public class Fsm {
             }
 
             datamodel.set_event(externalEvent);
-            for (ExecutableContent finalizeContent : toFinalize) {
-                // applyFinalize
-                this.executeContent(datamodel, finalizeContent);
-            }
+            // applyFinalize
+            this.executeContent(datamodel, toFinalize);
             for (var invokeId : toForward) {
                 // When the 'autoforward' attribute is set to true, the SCXML Processor must send an
                 // exact copy of every external event it receives to the invoked process.
@@ -595,9 +594,7 @@ public class Fsm {
 
         for (Iterator<State> it = statesToExit.iterator(); it.hasNext(); ) {
             State s = it.next();
-            for (var ct : s.onexit) {
-                this.executeContent(datamodel, ct);
-            }
+            this.executeContent(datamodel, s.onexit);
             global.configuration.delete(s);
             if (this.isFinalState(s) && this.isSCXMLElement(s.parent)) {
                 this.returnDoneEvent(s.donedata, datamodel);
@@ -758,11 +755,8 @@ public class Fsm {
             for (State s : List.from_array(new State[]{state})
                     .append_set(this.getProperAncestors(state, null))
                     .data) {
-                java.util.List<Transition> transition = new ArrayList<>();
-                for (Transition t : s.transitions.data) {
-                    transition.add(t);
-                }
-                transition.sort(Fsm.transition_document_order::compare);
+                java.util.List<Transition> transition = new ArrayList<>(s.transitions.data);
+                transition.sort(Fsm.transition_document_order);
                 for (Transition t : transition) {
                     if ((!t.events.isEmpty()) && t.nameMatch(event.name)) {
                         condT.add(t);
@@ -995,15 +989,12 @@ public class Fsm {
             }
             if (!invoke_doc_ids.isEmpty()) {
                 for (var item : gd.child_sessions.entrySet()) {
-                    if (invoke_doc_ids.contains(item.getKey())) {
+                    if (invoke_doc_ids.contains(item.getValue().invoke_doc_id)) {
                         this.cancelInvoke(datamodel, item.getKey(), item.getValue());
                     }
                 }
             }
-
-            for (var ec : exitList.data) {
-                this.executeContent(datamodel, ec);
-            }
+            this.executeContent(datamodel, exitList.data);
             gd.configuration.delete(s);
         }
         if (StaticOptions.trace_method)
@@ -1066,8 +1057,7 @@ public class Fsm {
         // initialize the temporary table for default content in history states
         HashTable<State, ExecutableContentRegion> defaultHistoryContent = new HashTable<>();
         this.computeEntrySet(datamodel, enabledTransitions, statesToEnter, statesForDefaultEntry, defaultHistoryContent);
-        for (Iterator<State> it = statesToEnter.toList().sort(Fsm.state_entry_order).iterator(); it.hasNext(); ) {
-            State s = it.next();
+        for (State s : statesToEnter.toList().sort(Fsm.state_entry_order).data) {
             if (StaticOptions.trace_state)
                 this.tracer.trace_enter_state(s);
             gd.configuration.add(s);
@@ -1090,11 +1080,7 @@ public class Fsm {
                 exe.addAll(defaultHistoryContent.get(s).content);
             }
 
-            for (ExecutableContent ct : exe) {
-                if (ct != null) {
-                    this.executeContent(datamodel, ct);
-                }
-            }
+            this.executeContent(datamodel, exe);
 
             if (this.isFinalState(s)) {
                 State parent = s.parent;
@@ -1146,16 +1132,28 @@ public class Fsm {
         datamodel.global().internalQueue.enqueue(event);
     }
 
-    protected void executeContent(Datamodel datamodel, ExecutableContent content) {
-        if (StaticOptions.trace_method) {
-            this.tracer.enter_method("executeContent");
-            this.tracer.trace_argument("content", content);
-        }
+    protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContentRegion content) {
+        if (content != null)
+            executeContent(datamodel, content.content);
+    }
+
+    protected void executeContent(@NotNull Datamodel datamodel, @Nullable java.util.List<ExecutableContent> content) {
+        if (content != null)
+            for (var ct : content)
+                executeContent(datamodel, ct);
+    }
+
+
+    protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContent content) {
         if (content != null) {
+            if (StaticOptions.trace_method) {
+                this.tracer.enter_method("executeContent");
+                this.tracer.trace_argument("content", content);
+            }
             datamodel.executeContent(this, content);
+            if (StaticOptions.trace_method)
+                this.tracer.exit_method("executeContent");
         }
-        if (StaticOptions.trace_method)
-            this.tracer.exit_method("executeContent");
     }
 
     public boolean isParallelState(State state) {
@@ -1203,7 +1201,26 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<State> computeExitSet(Datamodel datamodel, List<Transition> transitions) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("computeExitSet");
+            this.tracer.trace_argument("transitions", transitions);
+        }
+        OrderedSet<State> statesToExit = new OrderedSet<>();
+        for (var t : transitions.data) {
+            if (!t.target.isEmpty()) {
+                State domain = this.getTransitionDomain(datamodel, t);
+                for (var s : datamodel.global().configuration.data) {
+                    if (this.isDescendant(s, domain)) {
+                        statesToExit.add(s);
+                    }
+                }
+            }
+        }
+        if (StaticOptions.trace_method) {
+            this.tracer.trace_result("statesToExit", statesToExit);
+            this.tracer.exit_method("computeExitSet");
+        }
+        return statesToExit;
     }
 
     /**
@@ -1217,7 +1234,9 @@ public class Fsm {
      * </pre>
      */
     protected void executeTransitionContent(Datamodel datamodel, List<Transition> enabledTransitions) {
-        throw new UnsupportedOperationException();
+        for (Transition t : enabledTransitions.data) {
+            this.executeContent(datamodel, t.content);
+        }
     }
 
     /**
@@ -1251,8 +1270,7 @@ public class Fsm {
             this.tracer.enter_method("computeEntrySet");
             this.tracer.trace_argument("transitions", transitions);
         }
-        for (Iterator<Transition> it = transitions.iterator(); it.hasNext(); ) {
-            var t = it.next();
+        for (Transition t : transitions.data) {
             for (var s : t.target) {
                 this.addDescendantStatesToEnter(
                         datamodel,
@@ -1263,8 +1281,7 @@ public class Fsm {
                 );
             }
             var ancestor = this.getTransitionDomain(datamodel, t);
-            for (Iterator<State> iter = this.getEffectiveTargetStates(datamodel, t).iterator(); iter.hasNext(); ) {
-                var s = iter.next();
+            for (State s : this.getEffectiveTargetStates(datamodel, t).data) {
                 this.addAncestorStatesToEnter(
                         datamodel,
                         s,
@@ -1563,7 +1580,23 @@ public class Fsm {
      * </pre>
      */
     protected State findLCCA(List<State> stateList) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("findLCCA");
+            this.tracer.trace_argument("stateList", stateList);
+        }
+        State lcca = null;
+        for (var anc : this.getProperAncestors(stateList.head(), null).toList()
+                .filter_by(this::isCompoundStateOrScxmlElement).data) {
+            if (stateList.tail().every(s -> this.isDescendant(s, anc))) {
+                lcca = anc;
+                break;
+            }
+        }
+        if (StaticOptions.trace_method) {
+            this.tracer.trace_result("lcca", lcca);
+            this.tracer.exit_method("findLCCA");
+        }
+        return lcca;
     }
 
     /**
@@ -1712,11 +1745,156 @@ public class Fsm {
     }
 
     protected void invoke(Datamodel datamodel, State state, Invoke inv) {
-        throw new UnsupportedOperationException();
+
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("invoke");
+            this.tracer.trace_argument("state", state);
+            this.tracer.trace_argument("inv", inv);
+        }
+
+        final GlobalData global = datamodel.global();
+
+        // W3C: if the evaluation of its arguments produces an error, the SCXML Processor must
+        // terminate the processing of the element without further action.
+
+        Data type_name_data = datamodel.get_expression_alternative_value(inv.type_name, inv.type_expr);
+        if (type_name_data == null || type_name_data instanceof Data.Error) {
+            // Error -> abort
+            if (StaticOptions.trace_method) {
+                this.tracer.exit_method("invoke");
+            }
+            return;
+        }
+
+        String type_name = type_name_data.toString();
+        if (Datamodel.SCXML_INVOKE_TYPE_SHORT.equals(type_name)) {
+            type_name = Datamodel.SCXML_INVOKE_TYPE;
+        }
+
+        if (!(type_name.isEmpty()
+                || (type_name.startsWith(Datamodel.SCXML_INVOKE_TYPE) && type_name.length() <= (Datamodel.SCXML_INVOKE_TYPE.length() + 1)))) {
+            Log.error("Unsupported <invoke> type %s", type_name);
+            if (StaticOptions.trace_method) {
+                this.tracer.exit_method("invoke");
+            }
+            return;
+        }
+
+        String invokeId = inv.invoke_id;
+        if (invokeId.isEmpty()) {
+            // W3C:
+            // A conformant SCXML document may specify either the 'id' or 'idlocation' attribute, but
+            // must not specify both. If the 'idlocation' attribute is present, the SCXML Processor
+            // must generate an id automatically when the <invoke> element is evaluated and store it
+            // in the location specified by 'idlocation'. (In the rest of this document, we will refer
+            // to this identifier as the "invokeid", regardless of whether it is specified by the
+            // author or generated by the platform). The automatically generated identifier must have
+            // the form stateid.platformid, where stateid is the id of the state containing this
+            // element and platformid is automatically generated. platformid must be unique within
+            // the current session.
+            invokeId = String.format("%s.%d", inv.parent_state_name, PLATFORM_ID_COUNTER.incrementAndGet());
+        }
+
+        Data src = datamodel.get_expression_alternative_value(inv.src, inv.src_expr);
+        if (src == null || src instanceof Data.Error) {
+            // Error -> Abort
+            if (StaticOptions.trace_method) {
+                this.tracer.exit_method("invoke");
+            }
+            return;
+        }
+        java.util.List<ParamPair> name_values = new ArrayList<>();
+        for (String name : inv.name_list) {
+            Data value = datamodel.get_by_location(name);
+            if (value == null || value instanceof Data.Error) {
+                // Error -> Abort
+                if (StaticOptions.trace_method) {
+                    this.tracer.exit_method("invoke");
+                }
+                return;
+            }
+            name_values.add(new ParamPair(name, value));
+        }
+        datamodel.evaluate_params(inv.params, name_values);
+
+        if (StaticOptions.debug_option)
+            Log.debug(
+                    "Invoke: type '%s' invokeId '%s' src '%s' namelist '%s'",
+                    type_name, invokeId, src, name_values
+            );
+
+        // We currently don't check if id and idLocation are exclusive set.
+        if (!inv.external_id_location.isEmpty()) {
+            // If "idlocation" is specified, we have to store the generated id to this location
+            datamodel.set(
+                    inv.external_id_location,
+                    new Data.String(invokeId),
+                    true
+            );
+        }
+
+        ScxmlSession session;
+
+        if (src.is_empty()) {
+            var content = datamodel.evaluate_content(inv.content);
+            if (content == null || content instanceof Data.Error) {
+                Log.error("No content to execute");
+                if (StaticOptions.trace_method) {
+                    this.tracer.exit_method("invoke");
+                }
+                return;
+            } else {
+                try {
+                    session = global
+                            .executor
+                            .execute_with_data_from_xml(
+                                    content.as_script(),
+                                    global.actions,
+                                    name_values,
+                                    global.session_id,
+                                    invokeId,
+                                    FinishMode.DISPOSE,
+                                    this.tracer.trace_mode()
+                            );
+                } catch (IOException ioe) {
+                    Log.error("Execute of '%s' failed: %s", content.toString(), ioe.getMessage());
+                    if (StaticOptions.trace_method) {
+                        this.tracer.exit_method("invoke");
+                    }
+                    return;
+                }
+            }
+        } else {
+            session = global.executor.execute_with_data(
+                    src.as_script(),
+                    global.actions,
+                    name_values,
+                    global.session_id, invokeId, this.tracer.trace_mode()
+            );
+        }
+
+        session.state = state;
+        session.invoke_doc_id = inv.doc_id;
+
+        global.child_sessions.put(invokeId, session);
+        if (StaticOptions.trace_method) {
+            this.tracer.exit_method("invoke");
+        }
     }
 
     protected void cancelInvoke(Datamodel datamodel, String invokeId, ScxmlSession session) {
-        throw new UnsupportedOperationException();
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method("cancelInvoke");
+        }
+        datamodel.global().child_sessions.remove(invokeId);
+        datamodel.send(
+                ScxmlEventIOProcessor.SCXML_EVENT_PROCESSOR_SHORT_TYPE,
+                new Data.String(String.format("%s%s", ScxmlEventIOProcessor.SCXML_TARGET_SESSION_ID_PREFIX, session.session_id.toString())),
+                Event.new_simple(EVENT_CANCEL_SESSION)
+        );
+        if (StaticOptions.trace_method) {
+            this.tracer.exit_method("cancelInvoke");
+        }
     }
 
     /**
@@ -1729,8 +1907,17 @@ public class Fsm {
      * <br>
      * See {@link Datamodel#execute_condition(Data)}
      */
-    protected boolean conditionMatch(Datamodel datamodel, Transition tid) {
-        throw new UnsupportedOperationException();
+    protected boolean conditionMatch(Datamodel datamodel, Transition t) {
+        if (t.cond == null || t.cond.is_empty()) {
+            return true;
+        } else {
+            if (datamodel.execute_condition(t.cond)) {
+                return true;
+            } else {
+                datamodel.internal_error_execution();
+                return false;
+            }
+        }
     }
 
 }

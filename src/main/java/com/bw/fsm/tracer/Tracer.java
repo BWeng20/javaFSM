@@ -124,7 +124,7 @@ public abstract class Tracer {
     public void trace_state(String what, State s) {
         if (this.is_trace(TraceMode.STATES)) {
             if (s.name.isEmpty()) {
-                this.trace(String.format("%s #d", what, s.id));
+                this.trace(String.format("%s #%d", what, s.id));
             } else {
                 this.trace(String.format("%s <%s> #%d", what, s.name, s.id));
             }
@@ -198,9 +198,9 @@ public abstract class Tracer {
 
     protected String value_to_string(Object d) {
         if (d instanceof OrderedSet<?> os) {
-            return "[" + os.data.stream().map(String::valueOf).collect(Collectors.joining()) + "]";
+            return "[" + os.data.stream().map(String::valueOf).collect(Collectors.joining(",")) + "]";
         } else if (d instanceof List<?> os) {
-            return "{" + os.data.stream().map(String::valueOf).collect(Collectors.joining()) + "}";
+            return "{" + os.data.stream().map(String::valueOf).collect(Collectors.joining(",")) + "}";
         }
         return String.valueOf(d);
     }
