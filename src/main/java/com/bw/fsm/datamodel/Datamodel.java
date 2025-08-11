@@ -225,7 +225,7 @@ public abstract class Datamodel {
      * "log" function, use for &lt;log> content.
      */
     public void log(String msg) {
-        Log.info("%s", msg);
+        Log.info("Log: %s", msg);
     }
 
     /**

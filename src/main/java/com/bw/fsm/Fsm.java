@@ -216,7 +216,7 @@ public class Fsm {
         var session_id = datamodel.global().session_id;
         datamodel.initialize_read_only(Datamodel.SESSION_ID_VARIABLE_NAME, new Data.Integer(session_id));
         // TODO :Escape name
-        datamodel.initialize_read_only(Datamodel.SESSION_NAME_VARIABLE_NAME, new Data.String(this.name));
+        datamodel.initialize_read_only(Datamodel.SESSION_NAME_VARIABLE_NAME, this.name == null ? Data.Null.NULL : new Data.String(this.name));
 
         gd.internalQueue.clear();
         gd.historyValue.clear();

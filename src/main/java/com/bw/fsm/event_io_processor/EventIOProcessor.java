@@ -13,6 +13,8 @@ import java.util.Map;
 /// but may share backends with other sessions, e.g. a http server.
 public abstract class EventIOProcessor {
 
+    public static final String SYS_IO_PROCESSORS = "_ioprocessors";
+
     /// Returns the location of this session and processor.
     public abstract String get_location(Integer id);
 

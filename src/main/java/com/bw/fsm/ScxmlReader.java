@@ -102,8 +102,11 @@ public class ScxmlReader {
      * Read and parse the FSM from an XML file
      */
     public Fsm parse_from_xml_file(Path path) throws IOException {
+        com.bw.fsm.Log.info("Reading " + path);
         try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
-            return parse(input);
+            Fsm fsm = parse(input);
+            fsm.name = path.toString();
+            return fsm;
         }
     }
 
@@ -662,6 +665,8 @@ public class ScxmlReader {
                         })
                         .collect(Collectors.toList());
                 t.wildcard = t.events.contains("*");
+            } else {
+                t.events = Collections.emptyList();
             }
 
             String cond = attr.getValue(ATTR_COND);

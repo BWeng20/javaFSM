@@ -10,8 +10,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.graalvm.js:js:22.0.0'
-    implementation 'org.graalvm.js:js-scriptengine:22.0.0'
+    implementation 'org.graalvm.sdk:graal-sdk:22.3.0'
+    implementation 'org.graalvm.js:js:22.3.0'
 
     compileOnly 'org.jetbrains:annotations:26.0.2'
     testImplementation platform('org.junit:junit-bom:5.10.0')

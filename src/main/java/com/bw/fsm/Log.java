@@ -65,6 +65,13 @@ public class Log {
     }
 
     public static void error(String message, Object... arguments) {
+        System.out.flush();
         logInternal(System.err, "error", message, arguments);
+    }
+
+    public static void exception( String message, Throwable t) {
+        System.out.flush();
+        logInternal(System.err, "error", message, null );
+        t.printStackTrace(System.err);
     }
 }

@@ -1,6 +1,8 @@
 package com.bw.fsm;
 
 import com.bw.fsm.datamodel.SourceCode;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -37,7 +39,7 @@ public abstract class Data {
     private static final java.lang.Integer ONE = 1;
     private static NumberFormat nf = NumberFormat.getInstance(Locale.UK);
 
-    private static Number parseNumber(java.lang.String s) {
+    private static @NotNull Number parseNumber(java.lang.String s) {
         try {
             return nf.parse(s);
         } catch (ParseException e) {
@@ -50,7 +52,7 @@ public abstract class Data {
      *
      * @return deep copy of the data element.
      */
-    public abstract Data getCopy();
+    public abstract @NotNull Data getCopy();
 
     public static class Integer extends Data {
         int value;
@@ -156,30 +158,35 @@ public abstract class Data {
     }
 
     public static class String extends Data {
-        private java.lang.String value;
+        final public @NotNull java.lang.String value;
+        private @Nullable java.lang.String script_value;
 
-        public String(java.lang.String value) {
+        public String(@NotNull java.lang.String value) {
             this.value = value;
         }
 
         @Override
-        public Number as_number() {
+        public @NotNull Number as_number() {
             return value == null ? NUL : parseNumber(value);
         }
 
         @Override
-        public java.lang.String as_script() {
-            // @TODO
-            return "'" + value + "'";
+        public @NotNull java.lang.String as_script() {
+            if (script_value == null) {
+                script_value =
+                        value.replace("\\", "\\\\")
+                                .replace("'", "\\'");
+            }
+            return "'" + script_value + "'";
         }
 
         @Override
         public boolean is_empty() {
-            return value == null || value.isEmpty();
+            return value.isEmpty();
         }
 
         @Override
-        public java.lang.String toString() {
+        public @NotNull java.lang.String toString() {
             return value;
         }
 
@@ -194,13 +201,13 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return new String(this.value);
         }
     }
 
     public static class Boolean extends Data {
-        boolean value;
+        public boolean value;
 
         public Boolean(boolean value) {
             this.value = value;
@@ -244,7 +251,7 @@ public abstract class Data {
 
     public static class Array extends Data {
 
-        java.util.List<Data> values;
+        public java.util.List<Data> values;
 
         public Array(java.util.List<Data> values) {
             this.values = values;
@@ -294,7 +301,7 @@ public abstract class Data {
      */
     public static class Map extends Data {
 
-        java.util.Map<java.lang.String, Data> values;
+        public java.util.Map<java.lang.String, Data> values;
 
         public Map(java.util.Map<java.lang.String, Data> values) {
             this.values = values;
