@@ -24,8 +24,8 @@ public class FsmExecutor {
     }
 
     public FsmExecutor(boolean withIoProcessors) {
+        this.add_processor(new ScxmlEventIOProcessor());
         if (withIoProcessors) {
-            this.add_processor(new ScxmlEventIOProcessor());
             /* TODO
             var w = new BasicHTTPEventIOProcessor(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), "localhost", 5555, e.state )
             this.add_processor(w);

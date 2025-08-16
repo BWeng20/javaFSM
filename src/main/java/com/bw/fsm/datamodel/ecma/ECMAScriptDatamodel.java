@@ -5,7 +5,6 @@ import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.event_io_processor.EventIOProcessor;
-import com.bw.fsm.executable_content.ExecutableContentTracer;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
@@ -33,7 +32,6 @@ public class ECMAScriptDatamodel extends Datamodel {
 
 
     public final GlobalData global_data;
-    public ExecutableContentTracer tracer;
     public boolean strict_mode;
 
     protected Value bindings;
@@ -106,7 +104,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         try {
             evalSource(functions.toString());
         } catch (Exception e) {
-            Log.exception( "Failed to add functions", e);
+            Log.exception("Failed to add functions", e);
         }
     }
 
@@ -134,35 +132,33 @@ public class ECMAScriptDatamodel extends Datamodel {
     @Override
     public void set_from_state_data(Map<String, Data> data, boolean set_data) {
         for (var entry : data.entrySet()) {
-            if (set_data) {
-                Data value = entry.getValue();
-                if (value instanceof Data.Source src) {
-                    if (!src.is_empty()) {
-                        try {
+            try {
+                if (set_data) {
+                    Data value = entry.getValue();
+                    if (value instanceof Data.Source src) {
+                        if (!src.is_empty())
                             // The data from state-data needs to be evaluated
-                            evalSource("var " + entry.getKey() + "=" + src.as_script());
-                        } catch (Exception se) {
-                            Log.error("Error on Initialize '%s': %s", entry.getKey(), se.getMessage());
-                            Log.exception( "Trace", se);
-                            // W3C says:
-                            // If the value specified for a <data> element (by 'src', children, or
-                            // the environment) is not a legal data value, the SCXML Processor MUST
-                            // raise place error.execution in the internal event queue and MUST
-                            // create an empty data element in the data model with the specified id.
-                            try {
-                                evalSource(entry.getKey() + "= undefined;");
-                            } catch (Exception seInner) {
-                                Log.error("Error on error handling for setting '%s': %s", entry.getKey(), seInner.getMessage());
-                            }
-                            this.internal_error_execution();
-                        }
+                            evalSource("var " + entry.getKey() + "=" + value.as_script() + ";");
+                    } else {
+                        evalSource("var " + entry.getKey() + "=" + value.as_script() + ";");
                     }
                 } else {
-                    // let ds = self.data_value_to_js(value.lock().unwrap().deref());
-                    //  self.set_js_property(name.as_str(), ds);
+                    evalSource(entry.getKey() + "= undefined;");
                 }
-            } else {
-                // self.set_js_property(name.as_str(), JsValue::Undefined);
+            } catch (Exception se) {
+                Log.error("Error on Initialize '%s': %s", entry.getKey(), se.getMessage());
+                Log.exception("Trace", se);
+                // W3C says:
+                // If the value specified for a <data> element (by 'src', children, or
+                // the environment) is not a legal data value, the SCXML Processor MUST
+                // raise place error.execution in the internal event queue and MUST
+                // create an empty data element in the data model with the specified id.
+                try {
+                    evalSource(entry.getKey() + "= undefined;");
+                } catch (Exception seInner) {
+                    Log.error("Error on error handling for setting '%s': %s", entry.getKey(), seInner.getMessage());
+                }
+                this.internal_error_execution();
             }
         }
     }
@@ -172,7 +168,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         try {
             evalSource("const " + name + "= " + value.as_script() + ";");
         } catch (Exception se) {
-            Log.exception( "failed to set read only member '"+name+"'", se);
+            Log.exception("failed to set read only member '" + name + "'", se);
         }
 
     }
@@ -190,14 +186,14 @@ public class ECMAScriptDatamodel extends Datamodel {
             if (event.content == null)
                 data_value = null;
             else
-                data_value = null; // self.data_value_to_js(c),
+                data_value = data_value_to_js(event.content);
         } else {
             java.util.Map<String, Object> data = new HashMap<>(event.param_values.size());
 
             for (var pair : event.param_values) {
                 data.put(pair.name, data_value_to_js(pair.value));
             }
-            data_value = null;
+            data_value = Value.asValue(data);
         }
 
         eventMember.put(EVENT_VARIABLE_FIELD_NAME, event.name);
@@ -215,7 +211,7 @@ public class ECMAScriptDatamodel extends Datamodel {
             evalSource(EVENT_VARIABLE_NAME + ".name = 1;");
             evalSource("log( 'Event '+" + EVENT_VARIABLE_NAME + ".name);");
         } catch (Exception e) {
-            Log.exception( "Failed to set event", e);
+            Log.exception("Failed to set event", e);
         }
     }
 
@@ -264,16 +260,13 @@ public class ECMAScriptDatamodel extends Datamodel {
             return false;
         } catch (Exception se) {
             // TODO
-            Log.exception( "Failed to execute condition "+script.as_script(), se);
+            Log.exception("Failed to execute condition " + script.as_script(), se);
         }
         return false;
     }
 
     @Override
     public boolean executeContent(Fsm fsm, ExecutableContent content) {
-        if (this.tracer != null) {
-            content.trace(this.tracer, fsm);
-        }
         return content.execute(this, fsm);
     }
 
@@ -352,7 +345,7 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     protected boolean assign_internal(String left_expr, String right_expr, boolean allow_undefined) {
-        String exp = String.format("%s=%s", left_expr, right_expr);
+        String exp = String.format("%s=%s;", left_expr, right_expr);
         if (allow_undefined && this.strict_mode) {
             // this.context.strict(false);
         }

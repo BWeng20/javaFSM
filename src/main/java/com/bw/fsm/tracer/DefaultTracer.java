@@ -1,6 +1,7 @@
 package com.bw.fsm.tracer;
 
 import com.bw.fsm.Log;
+import com.bw.fsm.StaticOptions;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -9,31 +10,58 @@ public class DefaultTracer extends Tracer {
 
     protected Set<TraceMode> trace_flags = new HashSet<>();
 
-    private static ThreadLocal<String> trace_prefix = ThreadLocal.withInitial(() -> "");
+    private static ThreadLocal<Integer> trace_indent = ThreadLocal.withInitial(() -> 1);
 
-    public static String get_prefix() {
-        return trace_prefix.get();
+    public static int get_indent() {
+        return trace_indent.get();
     }
 
-    public static void set_prefix(String p) {
-        trace_prefix.set(p);
+    public static void increase_indent() {
+        trace_indent.set(trace_indent.get() + 1);
+    }
+
+    public static void decrease_indent() {
+        trace_indent.set(trace_indent.get() - 1);
     }
 
     @Override
     public void trace(String msg) {
-        Log.info("%s%s", DefaultTracer.get_prefix(), msg);
+        if (StaticOptions.trace) {
+            Log.info("Trace>%" + get_indent() + "s%s", "", msg);
+        }
     }
 
     @Override
     public void enter() {
-        DefaultTracer.set_prefix(DefaultTracer.get_prefix() + " ");
+        if (StaticOptions.trace) {
+            DefaultTracer.increase_indent();
+        }
+    }
+
+    @Override
+    public void enter_method_with_arguments(String what, Argument... arguments) {
+        if (this.is_trace(TraceMode.METHODS)) {
+            this.trace(String.format(">>> %s", what));
+            this.enter();
+            if (arguments.length > 0) {
+                this.trace("Arguments: {");
+                DefaultTracer.increase_indent();
+                for (Argument a : arguments) {
+                    this.trace(String.format("%s = %s", a.name, value_to_string(a.value)));
+                }
+                DefaultTracer.decrease_indent();
+                this.trace("}");
+            }
+        }
     }
 
     @Override
     public void leave() {
-        String prefix = DefaultTracer.get_prefix();
-        if (!prefix.isEmpty()) {
-            DefaultTracer.set_prefix(prefix.substring(1));
+        if (StaticOptions.trace) {
+            int prefix = DefaultTracer.get_indent();
+            if (prefix > 2) {
+                DefaultTracer.decrease_indent();
+            }
         }
     }
 
@@ -49,21 +77,7 @@ public class DefaultTracer extends Tracer {
 
     @Override
     public boolean is_trace(TraceMode flag) {
-        return this.trace_flags.contains(flag) || this.trace_flags.contains(TraceMode.ALL);
+        return StaticOptions.trace && (this.trace_flags.contains(flag) || this.trace_flags.contains(TraceMode.ALL));
     }
 
-    @Override
-    public TraceMode trace_mode() {
-        if (is_trace(TraceMode.ALL)) {
-            return TraceMode.ALL;
-        } else if (is_trace(TraceMode.EVENTS)) {
-            return TraceMode.EVENTS;
-        } else if (this.is_trace(TraceMode.STATES)) {
-            return TraceMode.STATES;
-        } else if (is_trace(TraceMode.METHODS)) {
-            return TraceMode.METHODS;
-        } else {
-            return TraceMode.NONE;
-        }
-    }
 }

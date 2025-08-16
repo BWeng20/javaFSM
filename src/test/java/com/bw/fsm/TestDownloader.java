@@ -27,13 +27,16 @@ public class TestDownloader {
     static String XSL_FILE = "confEcma.xsl";
     static String MANIFEST_URL = "https://www.w3.org/Voice/2013/scxml-irp/manifest.xml";
 
-    static int downloaded = 0;
+    private int downloaded = 0;
 
     static DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
     static XPathFactory xPathFactory = XPathFactory.newInstance();
 
+    public TestDownloader(Path scriptDir) {
+        this.scriptDir = scriptDir;
+    }
 
-    static boolean downloadIfMissing(Path local, String urlSource) throws IOException {
+    private boolean downloadIfMissing(Path local, String urlSource) throws IOException {
         if (!Files.exists(local)) {
             Log.info(" downloading " + urlSource + " (-> " + local + ")");
 
@@ -52,7 +55,7 @@ public class TestDownloader {
      * If missing, downloads the file.
      * if file name ends with ".txml" it is transformed, otherwise copied to scxml directory.
      */
-    static int downloadAndTransform(Path manifest, String xpathQuery, Path txml, Path scxml, Path xslPath) throws Exception {
+    private int downloadAndTransform(Path manifest, String xpathQuery, Path txml, Path scxml, Path xslPath) throws Exception {
         DocumentBuilder builder = domFactory.newDocumentBuilder();
         Document manifestDoc = builder.parse(manifest.toFile());
         XPath xpath = xPathFactory.newXPath();
@@ -112,20 +115,31 @@ public class TestDownloader {
         return testCount;
     }
 
-    public static void downloadAndTransform(Path scriptDir) {
+    public Path manualTxml;
+    public Path manualScxml;
+    public Path optionalTxml;
+    public Path optionalScxml;
+    public Path txml;
+    public Path scxml;
+    public Path dependencies;
+    public Path dependenciesScxml;
+
+    private Path scriptDir;
+
+    public void downloadAndTransform() {
 
         try {
 
             Log.info("Working in " + scriptDir);
 
-            Path manualTxml = scriptDir.resolve("manual_txml");
-            Path manualScxml = scriptDir.resolve("manual_scxml");
-            Path optionalTxml = scriptDir.resolve("optional_txml");
-            Path optionalScxml = scriptDir.resolve("optional_scxml");
-            Path txml = scriptDir.resolve("txml");
-            Path scxml = scriptDir.resolve("scxml");
-            Path dependencies = scriptDir.resolve("dependencies");
-            Path dependenciesScxml = dependencies.resolve("scxml");
+            manualTxml = scriptDir.resolve("manual_txml");
+            manualScxml = scriptDir.resolve("manual_scxml");
+            optionalTxml = scriptDir.resolve("optional_txml");
+            optionalScxml = scriptDir.resolve("optional_scxml");
+            txml = scriptDir.resolve("txml");
+            scxml = scriptDir.resolve("scxml");
+            dependencies = scriptDir.resolve("dependencies");
+            dependenciesScxml = dependencies.resolve("scxml");
 
             int testCount = 0;
             int depCount = 0;

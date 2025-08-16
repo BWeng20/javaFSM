@@ -1,7 +1,9 @@
 package com.bw.fsm;
 
 import com.bw.fsm.datamodel.Datamodel;
-import com.bw.fsm.executable_content.ExecutableContentTracer;
+import com.bw.fsm.expression_engine.ExpressionLexer;
+
+import java.util.Map;
 
 public interface ExecutableContent {
     boolean execute(Datamodel datamodel, Fsm fsm);
@@ -11,7 +13,7 @@ public interface ExecutableContent {
      */
     int get_type();
 
-    void trace(ExecutableContentTracer tracer, Fsm fsm);
+    Map<String, Object> get_trace();
 
     String TARGET_SCXML_EVENT_PROCESSOR = "http://www.w3.org/TR/scxml/#SCXMLEventProcessor";
 
@@ -37,4 +39,60 @@ public interface ExecutableContent {
             "assign"
     };
 
+    static int parse_duration_to_milliseconds(String ms) {
+        if (ms == null || ms.isEmpty()) {
+            return 0;
+        } else {
+            var exp = new ExpressionLexer(ms);
+            var value_result = exp.next_number();
+            String unit = exp.next_name();
+
+            var v = value_result.as_double();
+            switch (unit) {
+                case "D", "d" -> {
+                    v *= 24.0 * 60.0 * 60.0 * 1000.0;
+                }
+                case "H", "h" -> {
+                    v *= 60.0 * 60.0 * 1000.0;
+                }
+                case "M", "m" -> {
+                    v *= 60000.0;
+                }
+                case "S", "s" -> {
+                    v *= 1000.0;
+                }
+                case "MS", "ms" -> {
+                }
+                default -> {
+                    return -1;
+                }
+            }
+            return (int) Math.round(v);
+        }
+    }
+
+    static Map<String, Object> toMap(String k, Object o) {
+        return Map.of(k, o == null ? "null" : o);
+    }
+
+    static Map<String, Object> toMap(String k1, Object o1, String k2, Object o2) {
+        return Map.of(k1, o1 == null ? "null" : o1,
+                k2, o2 == null ? "null" : o2
+        );
+    }
+
+    static Map<String, Object> toMap(String k1, Object o1, String k2, Object o2, String k3, Object o3) {
+        return Map.of(k1, o1 == null ? "null" : o1,
+                k2, o2 == null ? "null" : o2,
+                k3, o3 == null ? "null" : o3
+        );
+    }
+
+    static Map<String, Object> toMap(String k1, Object o1, String k2, Object o2, String k3, Object o3, String k4, Object o4) {
+        return Map.of(k1, o1 == null ? "null" : o1,
+                k2, o2 == null ? "null" : o2,
+                k3, o3 == null ? "null" : o3,
+                k4, o4 == null ? "null" : o4
+        );
+    }
 }

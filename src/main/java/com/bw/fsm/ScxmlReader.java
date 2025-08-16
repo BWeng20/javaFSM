@@ -944,7 +944,95 @@ public class ScxmlReader {
                             TAG_FOR_EACH
                     }
             );
-            throw new UnsupportedOperationException();
+            var send_params = new SendParameters();
+
+            String eventName = attr.getValue(ATTR_EVENT);
+            String eventexpr = attr.getValue(ATTR_EVENTEXPR);
+
+            if (eventName != null) {
+                if (eventexpr != null) {
+                    com.bw.fsm.Log.panic("%s: attributes %s and %s must not occur both",
+                            TAG_SEND, ATTR_EVENT, ATTR_EVENTEXPR);
+                }
+                send_params.event = this.create_source(eventName);
+            } else if (eventexpr != null) {
+                send_params.event_expr = this.create_source(eventexpr);
+            }
+
+            String target = attr.getValue(ATTR_TARGET);
+            String targetexpr = attr.getValue(ATTR_TARGETEXPR);
+            if (target != null) {
+                if (targetexpr != null) {
+                    com.bw.fsm.Log.panic("%s: attributes %s and %s must not occur both",
+                            TAG_SEND, ATTR_TARGET, ATTR_TARGETEXPR);
+                }
+                send_params.target = this.create_source(target);
+            } else if (targetexpr != null) {
+                send_params.target_expr = this.create_source(targetexpr);
+            }
+
+            String type_attr = attr.getValue(ATTR_TYPE);
+            String typeexpr = attr.getValue(ATTR_TYPEEXPR);
+            if (type_attr != null) {
+                if (typeexpr != null) {
+                    com.bw.fsm.Log.panic("%s: attributes %s and %s must not occur both",
+                            TAG_SEND, ATTR_TYPE, ATTR_TYPEEXPR);
+                }
+                send_params.type_value = this.create_source(type_attr);
+            } else if (typeexpr != null) {
+                send_params.type_expr = this.create_source(typeexpr);
+            }
+
+            String id = attr.getValue(ATTR_ID);
+            String idlocation = attr.getValue(ATTR_IDLOCATION);
+            if (id != null) {
+                if (idlocation != null) {
+                    com.bw.fsm.Log.panic("%s: attributes %s and %s must not occur both", TAG_SEND, ATTR_ID, ATTR_IDLOCATION);
+                }
+                send_params.name = id;
+            } else if (idlocation != null) {
+                send_params.name_location = idlocation;
+            }
+
+            String delay_attr = attr.getValue(ATTR_DELAY);
+            String delay_expr_attr = attr.getValue(ATTR_DELAYEXPR);
+
+            if (delay_expr_attr != null) {
+                if (delay_attr != null) {
+                    com.bw.fsm.Log.panic("%s: attributes %s and %s must not occur both",
+                            TAG_SEND, ATTR_DELAY, ATTR_DELAYEXPR);
+                }
+                send_params.delay_expr = this.create_source(delay_expr_attr);
+            } else if (delay_attr != null) {
+                if ((!delay_attr.isEmpty()) && (type_attr != null) && TARGET_INTERNAL.equals(type_attr)) {
+                    com.bw.fsm.Log.panic(
+                            "%s: %s with %s %s is not possible",
+                            TAG_SEND,
+                            ATTR_DELAY,
+                            ATTR_TARGET,
+                            type_attr
+                    );
+                }
+                int delayms = ExecutableContent.parse_duration_to_milliseconds(delay_attr);
+                if (delayms < 0) {
+                    com.bw.fsm.Log.panic(
+                            "%s: %s with illegal value '%s'",
+                            TAG_SEND,
+                            ATTR_DELAY,
+                            delay_attr
+                    );
+                } else {
+                    send_params.delay_ms = delayms;
+                }
+            }
+
+            String name_list = attr.getValue(ATTR_NAMELIST);
+            if (name_list != null) {
+                this.parse_location_expressions(name_list, send_params.name_list);
+            }
+            send_params.parent_state_name = this.get_current_state().name;
+            this.add_executable_content(send_params);
+
         }
 
         private final static List<StringWriter> stringWriters = new ArrayList<>(10);
@@ -1042,14 +1130,81 @@ public class ScxmlReader {
 
         }
 
-        protected void start_content(Attributes attr, XMLStreamReader reader, boolean has_content) {
+        protected void start_content(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
             this.verify_parent_tag(TAG_CONTENT, new String[]{TAG_SEND, TAG_INVOKE, TAG_DONEDATA});
-            throw new UnsupportedOperationException();
+            var parent_tag = get_parent_tag();
+            var expr = attr.getValue(ATTR_EXPR);
+
+            var content = has_content ? read_content(TAG_CONTENT, reader) : null;
+
+            // W3C:
+            // A conformant SCXML document must not specify both the 'expr' attribute and child content.
+            if (expr != null && content != null) {
+                com.bw.fsm.Log.panic("%s shall have only %s or children, but not both.", TAG_CONTENT, ATTR_EXPR);
+            }
+
+            switch (parent_tag) {
+                case TAG_DONEDATA -> {
+                    var state = get_current_state();
+                    if (state.donedata != null) {
+                        state.donedata.content = new CommonContent(content, expr);
+                    } else {
+                        com.bw.fsm.Log.panic("Internal Error: donedata-Option not initialized");
+                    }
+                }
+                case TAG_INVOKE -> {
+                    var state = get_current_state();
+                    var invoke = state.invoke.last();
+                    invoke.content = new CommonContent(content, expr);
+                }
+                case TAG_SEND -> {
+                    var ec = get_last_executable_content_entry_for_region(current_executable_content);
+                    if (ec != null) {
+                        if (ec instanceof SendParameters send) {
+                            if (expr != null || content != null) {
+                                send.content = new CommonContent(expr, content);
+                            }
+                        }
+                    }
+                }
+                default -> com.bw.fsm.Log.panic("Internal Error: invalid parent-tag <%s> in start_content", parent_tag);
+            }
         }
 
         protected void start_param(Attributes attr) {
             this.verify_parent_tag(TAG_PARAM, new String[]{TAG_SEND, TAG_INVOKE, TAG_DONEDATA});
-            throw new UnsupportedOperationException();
+
+            var parent_tag = get_parent_tag();
+            var param = new Parameter();
+
+            param.name = get_required_attr(TAG_PARAM, ATTR_NAME, attr);
+            param.expr = attr.getValue(ATTR_EXPR);
+
+            param.location = attr.getValue(ATTR_LOCATION);
+            if (param.location != null && param.expr != null) {
+                com.bw.fsm.Log.panic("%s shall have only %s or %s, but not both.", TAG_PARAM, ATTR_LOCATION, ATTR_EXPR);
+            }
+
+            switch (parent_tag) {
+                case TAG_SEND -> {
+                    var ec = get_last_executable_content_entry_for_region(current_executable_content);
+                    if (ec instanceof SendParameters send) {
+                        send.push_param(param);
+                    } else {
+                        com.bw.fsm.Log.panic("Internal Error: unexpected type of executable content");
+                    }
+                }
+                case TAG_INVOKE -> get_current_state().invoke.last().push_param(param);
+                case TAG_DONEDATA -> {
+                    var state = get_current_state();
+                    if (state.donedata != null) {
+                        state.donedata.push_param(param);
+                    } else {
+                        com.bw.fsm.Log.panic("Internal Error: donedata-Option not initialized");
+                    }
+                }
+                default -> com.bw.fsm.Log.panic("Internal Error: invalid parent-tag <%s> in start_param", parent_tag);
+            }
         }
 
         protected void start_log(Attributes attr) {

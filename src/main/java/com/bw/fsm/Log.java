@@ -28,20 +28,29 @@ public class Log {
         }
     }
 
+    private static long start_time = System.currentTimeMillis();
+
     private static void logInternal(PrintStream ps, String context, String message, Object[] arguments) {
-        String output = String.format("[%5s] %s\n", context, String.format(message, arguments));
-        ps.print(output);
-        if (writer != null) {
-            try {
-                writer.write(output);
-            } catch (Exception e) {
-                System.err.printf("Failed to write to log: %s\n", e.getMessage());
+        try {
+            String msg = String.format(message, arguments);
+            String output = String.format("[%5s] [%6s] [+%7d] %s\n", context,
+                    Thread.currentThread().getName(),
+                    (System.currentTimeMillis() - start_time), msg);
+            ps.print(output);
+            if (writer != null) {
                 try {
-                    writer.close();
-                } catch (Exception ignored) {
+                    writer.write(output);
+                } catch (Exception e) {
+                    System.err.printf("Failed to write to log: %s\n", e.getMessage());
+                    try {
+                        writer.close();
+                    } catch (Exception ignored) {
+                    }
+                    writer = null;
                 }
-                writer = null;
             }
+        } catch (Exception e) {
+            System.err.println("Internal Error in logInternal: " + e.getMessage());
         }
     }
 
@@ -67,11 +76,13 @@ public class Log {
     public static void error(String message, Object... arguments) {
         System.out.flush();
         logInternal(System.err, "error", message, arguments);
+        System.err.flush();
     }
 
-    public static void exception( String message, Throwable t) {
+    public static void exception(String message, Throwable t) {
         System.out.flush();
-        logInternal(System.err, "error", message, null );
+        logInternal(System.err, "error", message, null);
         t.printStackTrace(System.err);
+        System.err.flush();
     }
 }

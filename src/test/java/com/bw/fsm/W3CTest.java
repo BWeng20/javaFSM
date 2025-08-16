@@ -1,12 +1,19 @@
 package com.bw.fsm;
 
+import com.bw.fsm.tracer.TraceMode;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
+/**
+ * Downloads and executes W3E Tests
+ */
 public class W3CTest {
 
     public static void main(String[] args) {
@@ -34,12 +41,42 @@ public class W3CTest {
         }
 
         Log.info("=== Download and transform tests to %s", testDirectory);
-        TestDownloader.downloadAndTransform(testDirectory);
+        TestDownloader downloader = new TestDownloader(testDirectory);
+        downloader.downloadAndTransform();
 
         Log.info("=== Running Tests. Report file: %s", reportFile);
-        System.out.println("TODO");
 
-        Log.setLogFile(null);
+        java.util.List<Path> scxmlFiles;
+        try (var dirStream = Files.list(downloader.scxml)) {
+            scxmlFiles = dirStream.filter(path -> "scxml".equalsIgnoreCase(IOTool.getFileExtension(path)))
+                    .toList();
+        } catch (IOException e) {
+            Log.exception("Failed to list files", e);
+            System.exit(1);
+            scxmlFiles = null;
+        }
+
+        List<Path> includePaths = new ArrayList<>();
+        includePaths.add( downloader.dependenciesScxml );
+
+        try {
+            TestSpecification config = Tester.load_test_config(testDirectory.resolve("test_config.json"));
+
+            Tester tester = new Tester( config );
+
+
+            for (Path p : scxmlFiles) {
+                if ( tester.runTest( Tester.load_fsm( p, includePaths), includePaths, TraceMode.ALL) ) {
+                    System.out.println("===== Test "+p+" succeeded");
+                } else {
+                    System.out.println("===== Test "+p+" failed");
+                }
+            }
+
+            Log.setLogFile(null);
+        } catch (IOException ioe) {
+            Log.exception("Failed in Test loop.", ioe);
+        }
 
     }
 }

@@ -5,6 +5,8 @@ import com.bw.fsm.ExecutableContent;
 import com.bw.fsm.Fsm;
 import com.bw.fsm.datamodel.Datamodel;
 
+import java.util.Map;
+
 public class Assign implements ExecutableContent {
     public Data location = Data.None.NONE;
     public Data expr = Data.None.NONE;
@@ -25,11 +27,8 @@ public class Assign implements ExecutableContent {
     }
 
     @Override
-    public void trace(ExecutableContentTracer tracer, Fsm fsm) {
-        tracer.print_name_and_attributes(
-                this,
-                new String[][]{
-                        {"location", this.location.toString()},
-                        {"expr", this.expr.toString()}});
+    public Map<String, Object> get_trace() {
+        return ExecutableContent.toMap("location", String.valueOf(this.location),
+                "expr", String.valueOf(this.expr));
     }
 }

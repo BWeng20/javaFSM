@@ -6,6 +6,8 @@ import com.bw.fsm.ExecutableContentRegion;
 import com.bw.fsm.Fsm;
 import com.bw.fsm.datamodel.Datamodel;
 
+import java.util.Map;
+
 public class If implements ExecutableContent {
     public Data condition;
     public ExecutableContentRegion content;
@@ -41,11 +43,10 @@ public class If implements ExecutableContent {
     }
 
     @Override
-    public void trace(ExecutableContentTracer tracer, Fsm fsm) {
-        tracer.print_name_and_attributes(this, new String[][]
-                {{"condition", this.condition.toString()}});
-        tracer.print_sub_content("then", fsm, this.content);
-        tracer.print_sub_content("else", fsm, this.else_content);
+    public Map<String, Object> get_trace() {
+        return ExecutableContent.toMap("condition", this.condition,
+                "then", this.content,
+                "else", this.else_content);
     }
 
     @Override

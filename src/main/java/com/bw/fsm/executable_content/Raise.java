@@ -6,6 +6,8 @@ import com.bw.fsm.ExecutableContent;
 import com.bw.fsm.Fsm;
 import com.bw.fsm.datamodel.Datamodel;
 
+import java.util.Map;
+
 /**
  * <b>W3C says</b>:<br>
  * The &lt;raise> element raises an event in the current SCXML session.<br>
@@ -37,7 +39,7 @@ public class Raise implements ExecutableContent {
     }
 
     @Override
-    public void trace(ExecutableContentTracer tracer, Fsm fsm) {
-        tracer.print_name_and_attributes(this, new String[][]{{"event", this.event}});
+    public Map<String, Object> get_trace() {
+        return Map.of("event", this.event);
     }
 }

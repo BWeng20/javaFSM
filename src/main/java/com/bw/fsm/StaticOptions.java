@@ -2,13 +2,13 @@ package com.bw.fsm;
 
 public interface StaticOptions {
 
-    boolean debug_option = true;
+    boolean debug_option = false;
 
 
     boolean trace = true;
-    boolean trace_method = true;
-    boolean trace_event = true;
-    boolean trace_state = true;
+    boolean trace_method = trace;
+    boolean trace_event = trace;
+    boolean trace_state = trace;
 
     boolean ecma_script_model = true;
 }

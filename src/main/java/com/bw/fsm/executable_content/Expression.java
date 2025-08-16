@@ -5,6 +5,8 @@ import com.bw.fsm.ExecutableContent;
 import com.bw.fsm.Fsm;
 import com.bw.fsm.datamodel.Datamodel;
 
+import java.util.Map;
+
 public class Expression implements ExecutableContent {
     public Data content = new Data.Source("");
 
@@ -19,9 +21,9 @@ public class Expression implements ExecutableContent {
         return TYPE_EXPRESSION;
     }
 
+
     @Override
-    public void trace(ExecutableContentTracer tracer, Fsm fsm) {
-        tracer.print_name_and_attributes(this, new String[][]
-                {{"content", content.toString()}});
+    public Map<String, Object> get_trace() {
+        return ExecutableContent.toMap("content", content);
     }
 }

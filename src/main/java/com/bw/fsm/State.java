@@ -1,5 +1,7 @@
 package com.bw.fsm;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,8 +49,8 @@ public class State {
     /// True if the state was never entered before.
     public boolean isFirstEntry = true;
 
-    public State parent;
-    public DoneData donedata;
+    public @Nullable State parent;
+    public @Nullable DoneData donedata;
 
     public State(String name) {
         id = 0;

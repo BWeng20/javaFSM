@@ -6,6 +6,8 @@ import com.bw.fsm.ExecutableContentRegion;
 import com.bw.fsm.Fsm;
 import com.bw.fsm.datamodel.Datamodel;
 
+import java.util.Map;
+
 public class ForEach implements ExecutableContent {
 
     public Data array;
@@ -37,15 +39,11 @@ public class ForEach implements ExecutableContent {
     }
 
     @Override
-    public void trace(ExecutableContentTracer tracer, Fsm fsm) {
-        tracer.print_name_and_attributes(this,
-                new String[][]{
-                        {"array", String.valueOf(this.array)},
-                        {"item", String.valueOf(this.item)},
-                        {"index", String.valueOf(this.index)}
-                }
-        );
-        tracer.print_sub_content("content", fsm, this.content);
+    public Map<String, Object> get_trace() {
+        return ExecutableContent.toMap("array", this.array,
+                "item", this.item,
+                "index", this.index,
+                "content", this.content);
     }
 
     public ForEach() {

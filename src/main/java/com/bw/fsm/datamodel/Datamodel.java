@@ -2,6 +2,7 @@ package com.bw.fsm.datamodel;
 
 import com.bw.fsm.*;
 import com.bw.fsm.event_io_processor.EventIOProcessor;
+import com.bw.fsm.executable_content.Parameter;
 
 import java.util.List;
 import java.util.Map;
@@ -357,7 +358,7 @@ public abstract class Datamodel {
     public void evaluate_params(List<Parameter> params, List<ParamPair> values) {
         if (params != null) {
             for (Parameter param : params) {
-                if (!param.location.isEmpty()) {
+                if (param.hasLocation()) {
                     Data data = get_by_location(param.location);
                     if (data == null) {
                         // W3C:<br>
@@ -370,7 +371,7 @@ public abstract class Datamodel {
                     } else {
                         values.add(new ParamPair(param.name, data));
                     }
-                } else if (!param.expr.isEmpty()) {
+                } else if (param.hasExpression()) {
                     Data data = execute(new Data.Source(param.expr));
                     if (data == null) {
                         //  W3C:<br>

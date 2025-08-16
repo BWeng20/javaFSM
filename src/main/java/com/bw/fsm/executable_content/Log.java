@@ -5,6 +5,8 @@ import com.bw.fsm.ExecutableContent;
 import com.bw.fsm.Fsm;
 import com.bw.fsm.datamodel.Datamodel;
 
+import java.util.Map;
+
 public class Log implements ExecutableContent {
 
     public String label;
@@ -28,8 +30,8 @@ public class Log implements ExecutableContent {
     }
 
     @Override
-    public void trace(ExecutableContentTracer tracer, Fsm fsm) {
-        tracer.print_name_and_attributes(this, new String[][]{{"expression", this.expression.toString()}});
+    public Map<String, Object> get_trace() {
+        return ExecutableContent.toMap("expression", this.expression);
     }
 
     @Override

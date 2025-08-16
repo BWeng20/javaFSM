@@ -1,9 +1,6 @@
 package com.bw.fsm.tracer;
 
-import com.bw.fsm.Event;
-import com.bw.fsm.List;
-import com.bw.fsm.OrderedSet;
-import com.bw.fsm.State;
+import com.bw.fsm.*;
 
 import java.util.stream.Collectors;
 
@@ -54,6 +51,12 @@ public abstract class Tracer {
             this.enter();
         }
     }
+
+    /**
+     * Called by FSM if a method is entered
+     */
+    public abstract void enter_method_with_arguments(String what, Argument... arguments);
+
 
     /**
      * Called by FSM if a method is exited
@@ -146,15 +149,6 @@ public abstract class Tracer {
     }
 
     /**
-     * Called by FSM for input arguments in methods.
-     */
-    public void trace_argument(String what, Object d) {
-        if (this.is_trace(TraceMode.ARGUMENTS)) {
-            this.trace(String.format("Argument:%s=%s", what, value_to_string(d)));
-        }
-    }
-
-    /**
      * Called by FSM for results in methods.
      */
     public void trace_result(String what, Object d) {
@@ -182,7 +176,19 @@ public abstract class Tracer {
     /**
      * Get trace mode
      */
-    public abstract TraceMode trace_mode();
+    public TraceMode trace_mode() {
+        if (is_trace(TraceMode.ALL)) {
+            return TraceMode.ALL;
+        } else if (is_trace(TraceMode.EVENTS)) {
+            return TraceMode.EVENTS;
+        } else if (this.is_trace(TraceMode.STATES)) {
+            return TraceMode.STATES;
+        } else if (is_trace(TraceMode.METHODS)) {
+            return TraceMode.METHODS;
+        } else {
+            return TraceMode.NONE;
+        }
+    }
 
     private static TracerFactory tracer_factory = new DefaultTracerFactory();
 
@@ -201,7 +207,26 @@ public abstract class Tracer {
             return "[" + os.data.stream().map(String::valueOf).collect(Collectors.joining(",")) + "]";
         } else if (d instanceof List<?> os) {
             return "{" + os.data.stream().map(String::valueOf).collect(Collectors.joining(",")) + "}";
+        } else if (d instanceof Data data) {
+            return data.toString();
+        } else if (d instanceof ExecutableContent ec) {
+            return executable_content_to_string(ec);
         }
         return String.valueOf(d);
+    }
+
+
+    protected String executable_content_to_string(ExecutableContent ec) {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append("{EC type:").append(ec.get_type());
+        for (var a : ec.get_trace().entrySet()) {
+            sb
+                    .append(',')
+                    .append(a.getKey())
+                    .append(':')
+                    .append(value_to_string(a.getValue()));
+        }
+        sb.append('}');
+        return sb.toString();
     }
 }

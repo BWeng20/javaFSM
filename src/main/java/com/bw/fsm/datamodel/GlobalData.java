@@ -6,7 +6,6 @@ import com.bw.fsm.event_io_processor.EventIOProcessor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Future;
 
 public class GlobalData {
 
@@ -37,7 +36,7 @@ public class GlobalData {
     public Map<String, Data> environment = new HashMap<>();
 
     /// Stores any delayed send (with a "sendid"), Key: sendid
-    public Map<String, Future> delayed_send = new HashMap<>();
+    public Map<String, FsmTimer> delayed_send = new HashMap<>();
     public Map<String, EventIOProcessor> io_processors = new HashMap<>();
 
     public DataStore data = new DataStore();

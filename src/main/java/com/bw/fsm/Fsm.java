@@ -5,6 +5,7 @@ import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.event_io_processor.ScxmlEventIOProcessor;
+import com.bw.fsm.tracer.Argument;
 import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -152,6 +153,7 @@ public class Fsm {
                 }, String.format("fsm_%s", THREAD_ID_COUNTER.incrementAndGet()));
 
         session.thread = thread;
+        Log.info("Starting " + name + " in tread " + thread.getName());
         thread.start();
         return session;
     }
@@ -667,10 +669,6 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<Transition> selectEventlessTransitions(Datamodel datamodel) {
-        if (StaticOptions.trace_method)
-            this.tracer.enter_method("selectEventlessTransitions");
-
-        OrderedSet<Transition> enabledTransitions = new OrderedSet<>();
         var atomicStates = datamodel.global()
                 .configuration
                 .toList()
@@ -678,7 +676,11 @@ public class Fsm {
                 .sort(Fsm.state_document_order);
 
         if (StaticOptions.trace_method)
-            this.tracer.trace_argument("atomicStates", atomicStates);
+            this.tracer.enter_method_with_arguments(
+                    "selectEventlessTransitions",
+                    new Argument("atomicStates", atomicStates));
+
+        OrderedSet<Transition> enabledTransitions = new OrderedSet<>();
 
         List<State> states = new List<>();
         for (Iterator<State> it = atomicStates.iterator(); it.hasNext(); ) {
@@ -1147,8 +1149,8 @@ public class Fsm {
     protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContent content) {
         if (content != null) {
             if (StaticOptions.trace_method) {
-                this.tracer.enter_method("executeContent");
-                this.tracer.trace_argument("content", content);
+                this.tracer.enter_method_with_arguments("executeContent",
+                        new Argument("content", content));
             }
             datamodel.executeContent(this, content);
             if (StaticOptions.trace_method)
@@ -1158,8 +1160,8 @@ public class Fsm {
 
     public boolean isParallelState(State state) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("isParallelState");
-            this.tracer.trace_argument("state", state.name);
+            this.tracer.enter_method_with_arguments("isParallelState",
+                    new Argument("state", state.name));
         }
         final boolean b = state != null && state.is_parallel;
         if (StaticOptions.trace_method) {
@@ -1202,8 +1204,8 @@ public class Fsm {
      */
     protected OrderedSet<State> computeExitSet(Datamodel datamodel, List<Transition> transitions) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("computeExitSet");
-            this.tracer.trace_argument("transitions", transitions);
+            this.tracer.enter_method_with_arguments("computeExitSet",
+                    new Argument("transitions", transitions));
         }
         OrderedSet<State> statesToExit = new OrderedSet<>();
         for (var t : transitions.data) {
@@ -1267,8 +1269,8 @@ public class Fsm {
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("computeEntrySet");
-            this.tracer.trace_argument("transitions", transitions);
+            this.tracer.enter_method_with_arguments("computeEntrySet",
+                    new Argument("transitions", transitions));
         }
         for (Transition t : transitions.data) {
             for (var s : t.target) {
@@ -1351,8 +1353,8 @@ public class Fsm {
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("addDescendantStatesToEnter");
-            this.tracer.trace_argument("State", state);
+            this.tracer.enter_method_with_arguments("addDescendantStatesToEnter",
+                    new Argument("State", state));
         }
         var global = datamodel.global();
         if (this.isHistoryState(state)) {
@@ -1469,8 +1471,8 @@ public class Fsm {
             HashTable<State, ExecutableContentRegion> defaultHistoryContent
     ) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("addAncestorStatesToEnter");
-            this.tracer.trace_argument("state", state);
+            this.tracer.enter_method_with_arguments("addAncestorStatesToEnter",
+                    new Argument("state", state));
         }
         for (var anc : this.getProperAncestors(state, ancestor).data) {
             statesToEnter.add(anc);
@@ -1541,8 +1543,8 @@ public class Fsm {
     @Nullable
     protected State getTransitionDomain(@NotNull Datamodel datamodel, Transition t) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("getTransitionDomain");
-            this.tracer.trace_argument("t", t);
+            this.tracer.enter_method_with_arguments("getTransitionDomain",
+                    new Argument("t", t));
         }
         var tstates = this.getEffectiveTargetStates(datamodel, t);
         State domain;
@@ -1581,8 +1583,8 @@ public class Fsm {
      */
     protected State findLCCA(List<State> stateList) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("findLCCA");
-            this.tracer.trace_argument("stateList", stateList);
+            this.tracer.enter_method_with_arguments("findLCCA",
+                    new Argument("stateList", stateList));
         }
         State lcca = null;
         for (var anc : this.getProperAncestors(stateList.head(), null).toList()
@@ -1619,8 +1621,8 @@ public class Fsm {
      */
     protected OrderedSet<State> getEffectiveTargetStates(Datamodel datamodel, Transition transition) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("getEffectiveTargetStates");
-            this.tracer.trace_argument("transition", transition);
+            this.tracer.enter_method_with_arguments("getEffectiveTargetStates",
+                    new Argument("transition", transition));
         }
         OrderedSet<State> targets = new OrderedSet<>();
         for (State state : transition.target) {
@@ -1655,9 +1657,9 @@ public class Fsm {
      */
     protected OrderedSet<State> getProperAncestors(@NotNull State state1, @Nullable State state2) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("getProperAncestors");
-            this.tracer.trace_argument("state1", state1);
-            this.tracer.trace_argument("state2", state2);
+            this.tracer.enter_method_with_arguments("getProperAncestors",
+                    new Argument("state1", state1),
+                    new Argument("state2", state2));
         }
 
         OrderedSet<State> properAncestors = new OrderedSet<>();
@@ -1682,9 +1684,9 @@ public class Fsm {
      */
     protected boolean isDescendant(State state1, State state2) {
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("isDescendant");
-            this.tracer.trace_argument("state1", state1);
-            this.tracer.trace_argument("state2", state2);
+            this.tracer.enter_method_with_arguments("isDescendant",
+                    new Argument("state1", state1),
+                    new Argument("state2", state2));
         }
         boolean result;
         if (state1 == null || state2 == null || state1 == state2) {
@@ -1747,9 +1749,9 @@ public class Fsm {
     protected void invoke(Datamodel datamodel, State state, Invoke inv) {
 
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("invoke");
-            this.tracer.trace_argument("state", state);
-            this.tracer.trace_argument("inv", inv);
+            this.tracer.enter_method_with_arguments("invoke",
+                    new Argument("state", state),
+                    new Argument("inv", inv));
         }
 
         final GlobalData global = datamodel.global();
@@ -1918,6 +1920,15 @@ public class Fsm {
                 return false;
             }
         }
+    }
+
+    public synchronized FsmTimer schedule(int delay_ms, @NotNull Runnable r) {
+        if (timer == null)
+            timer = new Timer();
+
+        FsmTimer fsmTimer = new FsmTimer(r);
+        timer.schedule(fsmTimer, delay_ms);
+        return fsmTimer;
     }
 
 }
