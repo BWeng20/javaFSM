@@ -77,12 +77,8 @@ public class Tester {
         TestSpecification config = null;
         String ext = IOTool.getFileExtension(path);
         switch (ext.toLowerCase(Locale.CANADA)) {
-            case "yaml", "yml" -> {
-                config = TestSpecification.fromYaml(path);
-            }
-            case "json", "js" -> {
-                config = TestSpecification.fromJson(path);
-            }
+            case "yaml", "yml" -> config = TestSpecification.fromYaml(path);
+            case "json", "js" -> config = TestSpecification.fromJson(path);
         }
         return config;
 
@@ -108,7 +104,7 @@ public class Tester {
         this.config = config;
     }
 
-    public boolean runTest( Fsm fsm, List<Path> include_paths, TraceMode traceMode) throws IOException {
+    public boolean runTest( Fsm fsm, List<Path> include_paths, TraceMode traceMode) {
         if (config != null) {
             if ( !modelsInitialized) {
                 modelsInitialized = true;
@@ -281,7 +277,7 @@ public class Tester {
 
     protected static void abort_test(String message) {
         Log.error("Test Failed: %s", message);
-        Log.setLogFile(null);
+        Log.setLogFile(null, false);
         throw new RuntimeException("Test Aborted");
     }
 

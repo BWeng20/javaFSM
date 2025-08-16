@@ -1,5 +1,7 @@
 package com.bw.fsm;
 
+import java.util.Locale;
+
 /**
  * Datamodel binding type.
  *
@@ -8,5 +10,14 @@ package com.bw.fsm;
 public enum BindingType {
     // Default
     Early,
-    Late
+    Late;
+
+
+    public static BindingType fromString(String e) {
+        return switch (e.toUpperCase(Locale.CANADA)) {
+            case "EARLY" -> Early;
+            case "LATE" -> Late;
+            default -> Early;
+        };
+    }
 }

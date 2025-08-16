@@ -1,8 +1,8 @@
 package com.bw.fsm;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,25 +10,50 @@ import java.nio.file.StandardOpenOption;
 
 public class Log {
 
-    private static Writer writer;
+    private static ThreadLocal<PrintStream> thread_writer = new ThreadLocal<>();
+    private static ThreadLocal<Boolean> autoclose_writer = new ThreadLocal<>();
 
-    public static void setLogFile(Path logFile) {
+    public static void setLogFile(Path logFile, boolean append) {
         try {
-            System.out.flush();
-            System.err.flush();
+            PrintStream writer = thread_writer.get();
+            Boolean oldAutoClose = autoclose_writer.get();
+
             if (writer != null) {
                 writer.flush();
-                writer.close();
-                writer = null;
+                if (oldAutoClose)
+                    writer.close();
+                thread_writer.set(null);
+            } else {
+                System.out.flush();
+                System.err.flush();
             }
-            if (logFile != null)
-                writer = Files.newBufferedWriter(logFile, StandardCharsets.UTF_8, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            if (logFile != null) {
+                thread_writer.set(new PrintStream(new BufferedOutputStream(Files.newOutputStream(logFile, append ? StandardOpenOption.APPEND : StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)), false, StandardCharsets.UTF_8));
+                autoclose_writer.set(true);
+            }
         } catch (IOException ioe) {
             ioe.printStackTrace();
         }
     }
 
+    public static void setLogStream(PrintStream logStream, boolean autoClose) {
+        PrintStream writer = thread_writer.get();
+        Boolean oldAutoClose = autoclose_writer.get();
+        if (writer != null) {
+            writer.flush();
+            if (oldAutoClose)
+                writer.close();
+        } else {
+            System.out.flush();
+            System.err.flush();
+        }
+        thread_writer.set(logStream);
+        autoclose_writer.set(autoClose);
+    }
+
+
     private static long start_time = System.currentTimeMillis();
+    private static boolean outputToConsole = false;
 
     private static void logInternal(PrintStream ps, String context, String message, Object[] arguments) {
         try {
@@ -36,17 +61,21 @@ public class Log {
             String output = String.format("[%5s] [%6s] [+%7d] %s\n", context,
                     Thread.currentThread().getName(),
                     (System.currentTimeMillis() - start_time), msg);
-            ps.print(output);
+            PrintStream writer = thread_writer.get();
+            if (outputToConsole || writer == null)
+                ps.print(output);
             if (writer != null) {
                 try {
-                    writer.write(output);
+                    writer.print(output);
                 } catch (Exception e) {
                     System.err.printf("Failed to write to log: %s\n", e.getMessage());
-                    try {
-                        writer.close();
-                    } catch (Exception ignored) {
+                    thread_writer.set(null);
+                    if (autoclose_writer.get()) {
+                        try {
+                            writer.close();
+                        } catch (Exception ignored) {
+                        }
                     }
-                    writer = null;
                 }
             }
         } catch (Exception e) {
@@ -74,15 +103,31 @@ public class Log {
     }
 
     public static void error(String message, Object... arguments) {
-        System.out.flush();
-        logInternal(System.err, "error", message, arguments);
-        System.err.flush();
+        if (thread_writer.get() == null) {
+            System.out.flush();
+            logInternal(System.err, "error", message, arguments);
+            System.err.flush();
+        } else {
+            logInternal(System.err, "error", message, arguments);
+        }
     }
 
     public static void exception(String message, Throwable t) {
-        System.out.flush();
-        logInternal(System.err, "error", message, null);
-        t.printStackTrace(System.err);
-        System.err.flush();
+        PrintStream writer = thread_writer.get();
+        if (writer == null) {
+            System.out.flush();
+            logInternal(System.err, "error", message, null);
+            t.printStackTrace(System.err);
+            System.err.flush();
+        } else {
+            logInternal(System.err, "error", message, null);
+            t.printStackTrace(writer);
+
+        }
+    }
+
+    public static PrintStream getPrintStream() {
+        PrintStream ps = thread_writer.get();
+        return ps == null ? System.out : ps;
     }
 }

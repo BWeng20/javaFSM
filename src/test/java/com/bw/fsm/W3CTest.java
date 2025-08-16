@@ -16,6 +16,9 @@ import java.util.List;
  */
 public class W3CTest {
 
+    static int succeededCount = 0;
+    static int failedCount = 0;
+
     public static void main(String[] args) {
         if (args.length != 2) {
             Log.error("Wrong number of arguments.");
@@ -30,11 +33,11 @@ public class W3CTest {
         Path testDirectory = Paths.get(args[0]);
         Path reportFile = Paths.get(args[1]);
 
-        Path logDirectory = testDirectory.resolve("logs");
+        final Path logDirectory = testDirectory.resolve("logs");
         try {
             Files.createDirectories(logDirectory);
             String date = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
-            Log.setLogFile(logDirectory.resolve("LOG_" + date + ".txt"));
+            Log.setLogFile(logDirectory.resolve("LOG_" + date + ".txt"), true);
         } catch (IOException io) {
             io.printStackTrace();
             Log.error("Failed to initialize logging. %s", io.getMessage());
@@ -59,24 +62,42 @@ public class W3CTest {
         List<Path> includePaths = new ArrayList<>();
         includePaths.add( downloader.dependenciesScxml );
 
+
         try {
             TestSpecification config = Tester.load_test_config(testDirectory.resolve("test_config.json"));
 
             Tester tester = new Tester( config );
 
 
-            for (Path p : scxmlFiles) {
-                if ( tester.runTest( Tester.load_fsm( p, includePaths), includePaths, TraceMode.ALL) ) {
-                    System.out.println("===== Test "+p+" succeeded");
-                } else {
-                    System.out.println("===== Test "+p+" failed");
-                }
-            }
+            scxmlFiles.parallelStream().forEach( scxmlFile -> {
+                        try {
+                            Log.setLogFile(logDirectory.resolve( scxmlFile.getFileName()+".log"), false);
+                            if ( tester.runTest( Tester.load_fsm( scxmlFile, includePaths), includePaths, TraceMode.ALL) ) {
+                                System.out.println("===== Test "+scxmlFile+" succeeded");
+                                ++succeededCount;
+                            } else {
+                                System.out.println("===== Test "+scxmlFile+" failed");
+                                ++failedCount;
+                            }
+                        } catch (Exception e) {
+                            Log.exception("===== Test \"+scxmlFile+\" failed due to exception.", e);
+                            ++failedCount;
+                        } finally {
+                            Log.setLogFile(  null, false );
+                        }
+                    });
 
-            Log.setLogFile(null);
-        } catch (IOException ioe) {
-            Log.exception("Failed in Test loop.", ioe);
+            Log.setLogFile(null, false);
+        } catch (Exception e) {
+            Log.exception("Failed in Test loop.", e);
+            ++failedCount;
         }
+        System.err.flush();
+        System.out.println("==== Results:");
+        System.out.println(" Tests     "+scxmlFiles.size() );
+        System.out.println(" Succeeded "+succeededCount);
+        System.out.println(" Failed    "+failedCount);
+        System.exit(failedCount > 0 ? 1 : 0);
 
     }
 }

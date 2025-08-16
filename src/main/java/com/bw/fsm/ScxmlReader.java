@@ -1004,7 +1004,7 @@ public class ScxmlReader {
                 }
                 send_params.delay_expr = this.create_source(delay_expr_attr);
             } else if (delay_attr != null) {
-                if ((!delay_attr.isEmpty()) && (type_attr != null) && TARGET_INTERNAL.equals(type_attr)) {
+                if ((!delay_attr.isEmpty()) && TARGET_INTERNAL.equals(type_attr)) {
                     com.bw.fsm.Log.panic(
                             "%s: %s with %s %s is not possible",
                             TAG_SEND,
@@ -1256,7 +1256,6 @@ public class ScxmlReader {
             } else {
                 assign_text = "";
             }
-            ;
 
             String assign_src = assign_text.trim();
 
@@ -1308,7 +1307,7 @@ public class ScxmlReader {
             String binding = attr.getValue(ATTR_BINDING);
             if (binding != null) {
                 try {
-                    this.fsm.binding = BindingType.valueOf(binding);
+                    this.fsm.binding = BindingType.fromString(binding);
                 } catch (IllegalArgumentException iae) {
                     com.bw.fsm.Log.panic("%s: unsupported value %s", ATTR_BINDING, binding);
                 }

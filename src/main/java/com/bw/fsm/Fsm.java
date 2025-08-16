@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -121,33 +122,41 @@ public class Fsm {
             }
         }
 
+        // Take over the current log stream to new Thread
+        final PrintStream os = Log.getPrintStream();
+
         var thread = new Thread(
                 () -> {
-                    if (StaticOptions.debug_option)
-                        Log.debug("SM Session %s starting...", session_id);
-                    Datamodel datamodel = DatamodelFactory.create_datamodel(this.datamodel, session.global_data, options);
-                    var global = datamodel.global();
-                    global.externalQueue = externalQueue;
-                    global.session_id = session_id;
-                    global.caller_invoke_id = this.caller_invoke_id;
-                    global.parent_session_id = this.parent_session_id;
-                    global.executor = executor;
+                    try {
+                        Log.setLogStream(os, false);
+                        if (StaticOptions.debug_option)
+                            Log.debug("SM Session %s starting...", session_id);
+                        Datamodel datamodel = DatamodelFactory.create_datamodel(this.datamodel, session.global_data, options);
+                        var global = datamodel.global();
+                        global.externalQueue = externalQueue;
+                        global.session_id = session_id;
+                        global.caller_invoke_id = this.caller_invoke_id;
+                        global.parent_session_id = this.parent_session_id;
+                        global.executor = executor;
 
-                    // W3C:
-                    // If the value of a key ... matches the 'id' of a <data> element
-                    // in the top-level data model of the invoked session, the SCXML Processor
-                    // MUST use the value of the key as the initial value of the corresponding
-                    // <data> element.
-                    if (!data.isEmpty()) {
-                        var root_state = this.pseudo_root;
-                        for (var val : data) {
-                            if (root_state.data.get(val.name) != null) {
-                                root_state.data
-                                        .put(val.name, val.value.getCopy());
+                        // W3C:
+                        // If the value of a key ... matches the 'id' of a <data> element
+                        // in the top-level data model of the invoked session, the SCXML Processor
+                        // MUST use the value of the key as the initial value of the corresponding
+                        // <data> element.
+                        if (!data.isEmpty()) {
+                            var root_state = this.pseudo_root;
+                            for (var val : data) {
+                                if (root_state.data.get(val.name) != null) {
+                                    root_state.data
+                                            .put(val.name, val.value.getCopy());
+                                }
                             }
                         }
+                        this.interpret(datamodel);
+                    } catch (Exception e) {
+                        Log.exception("FSM terminated with exception.", e);
                     }
-                    this.interpret(datamodel);
                     if (StaticOptions.debug_option)
                         Log.debug("SM finished");
                 }, String.format("fsm_%s", THREAD_ID_COUNTER.incrementAndGet()));
@@ -750,7 +759,7 @@ public class Fsm {
 
         OrderedSet<Transition> enabledTransitions = new OrderedSet<>();
         var atomicStates = gd.configuration.toList()
-                .filter_by(s -> this.isAtomicState(s))
+                .filter_by(this::isAtomicState)
                 .sort(Fsm.state_document_order);
         for (State state : atomicStates.data) {
             java.util.List<Transition> condT = new ArrayList<>();
@@ -1163,7 +1172,7 @@ public class Fsm {
             this.tracer.enter_method_with_arguments("isParallelState",
                     new Argument("state", state.name));
         }
-        final boolean b = state != null && state.is_parallel;
+        final boolean b = state.is_parallel;
         if (StaticOptions.trace_method) {
             this.tracer.trace_result("parallel", Boolean.toString(b));
             this.tracer.exit_method("isParallelState");
