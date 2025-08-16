@@ -60,32 +60,32 @@ public class W3CTest {
         }
 
         List<Path> includePaths = new ArrayList<>();
-        includePaths.add( downloader.dependenciesScxml );
+        includePaths.add(downloader.dependenciesScxml);
 
 
         try {
             TestSpecification config = Tester.load_test_config(testDirectory.resolve("test_config.json"));
 
-            Tester tester = new Tester( config );
+            Tester tester = new Tester(config);
 
 
-            scxmlFiles.parallelStream().forEach( scxmlFile -> {
-                        try {
-                            Log.setLogFile(logDirectory.resolve( scxmlFile.getFileName()+".log"), false);
-                            if ( tester.runTest( Tester.load_fsm( scxmlFile, includePaths), includePaths, TraceMode.ALL) ) {
-                                System.out.println("===== Test "+scxmlFile+" succeeded");
-                                ++succeededCount;
-                            } else {
-                                System.out.println("===== Test "+scxmlFile+" failed");
-                                ++failedCount;
-                            }
-                        } catch (Exception e) {
-                            Log.exception("===== Test \"+scxmlFile+\" failed due to exception.", e);
-                            ++failedCount;
-                        } finally {
-                            Log.setLogFile(  null, false );
-                        }
-                    });
+            scxmlFiles.parallelStream().forEach(scxmlFile -> {
+                try {
+                    Log.setLogFile(logDirectory.resolve(scxmlFile.getFileName() + ".log"), false);
+                    if (tester.runTest(Tester.load_fsm(scxmlFile, includePaths), includePaths, TraceMode.ALL)) {
+                        System.out.println("===== Test " + scxmlFile + " succeeded");
+                        ++succeededCount;
+                    } else {
+                        System.out.println("===== Test " + scxmlFile + " failed");
+                        ++failedCount;
+                    }
+                } catch (Exception e) {
+                    Log.exception("===== Test \"+scxmlFile+\" failed due to exception.", e);
+                    ++failedCount;
+                } finally {
+                    Log.setLogFile(null, false);
+                }
+            });
 
             Log.setLogFile(null, false);
         } catch (Exception e) {
@@ -94,9 +94,9 @@ public class W3CTest {
         }
         System.err.flush();
         System.out.println("==== Results:");
-        System.out.println(" Tests     "+scxmlFiles.size() );
-        System.out.println(" Succeeded "+succeededCount);
-        System.out.println(" Failed    "+failedCount);
+        System.out.println(" Tests     " + scxmlFiles.size());
+        System.out.println(" Succeeded " + succeededCount);
+        System.out.println(" Failed    " + failedCount);
         System.exit(failedCount > 0 ? 1 : 0);
 
     }

@@ -105,7 +105,8 @@ public class ScxmlReader {
         com.bw.fsm.Log.info("Reading " + path);
         try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
             Fsm fsm = parse(input);
-            fsm.name = path.toString();
+            if (fsm.name == null)
+                fsm.name = path.toString();
             return fsm;
         }
     }
@@ -276,12 +277,6 @@ public class ScxmlReader {
         }
 
         protected Data create_source(String src) {
-            return new Data.Source(new SourceCode(
-                    src,
-                    SOURCE_ID_COUNTER.incrementAndGet()));
-        }
-
-        protected Data create_source_moved(String src) {
             return new Data.Source(new SourceCode(
                     src,
                     SOURCE_ID_COUNTER.incrementAndGet()));
@@ -737,7 +732,7 @@ public class ScxmlReader {
                 if (source != null) {
                     if (StaticOptions.debug_option)
                         com.bw.fsm.Log.debug("src='%s':\n%s", file_src, source);
-                    s.content = this.create_source_moved(source);
+                    s.content = this.create_source(source);
                 } else {
                     com.bw.fsm.Log.panic("Can't read script '%s'", file_src);
                 }
@@ -750,7 +745,7 @@ public class ScxmlReader {
                 if (!s.content.is_empty()) {
                     com.bw.fsm.Log.panic("<script> with 'src' attribute shall not have content.");
                 }
-                s.content = this.create_source_moved(file_src);
+                s.content = this.create_source(script_text);
             }
 
             this.add_executable_content(s);

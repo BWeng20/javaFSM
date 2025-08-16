@@ -57,23 +57,23 @@ public class Tester {
                     default -> abort_test(String.format("File '%s' has unsupported extension.", arg));
                 }
             }
-            if ( config == null)
+            if (config == null)
                 abort_test("no config given.");
             Tester tester = new Tester(config);
-            if ( fsms.isEmpty())
+            if (fsms.isEmpty())
                 abort_test("no FSMs given.");
             for (Fsm fsm : fsms)
                 tester.runTest(fsm, include_paths, arguments.getTraceMode());
 
             System.exit(0);
 
-        }  catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         }
     }
 
-    public static TestSpecification load_test_config( Path path) throws IOException {
+    public static TestSpecification load_test_config(Path path) throws IOException {
         TestSpecification config = null;
         String ext = IOTool.getFileExtension(path);
         switch (ext.toLowerCase(Locale.CANADA)) {
@@ -99,14 +99,13 @@ public class Tester {
 
     private TestSpecification config;
 
-    public Tester(TestSpecification config)
-    {
+    public Tester(TestSpecification config) {
         this.config = config;
     }
 
-    public boolean runTest( Fsm fsm, List<Path> include_paths, TraceMode traceMode) {
+    public boolean runTest(Fsm fsm, List<Path> include_paths, TraceMode traceMode) {
         if (config != null) {
-            if ( !modelsInitialized) {
+            if (!modelsInitialized) {
                 modelsInitialized = true;
                 if (StaticOptions.ecma_script_model)
                     ECMAScriptDatamodel.register();
@@ -191,7 +190,7 @@ public class Tester {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            Log.info("FSM '%s' terminated.", fsm.name );
+            Log.info("FSM '%s' terminated.", fsm.name);
 
             if (watchdog_sender != null) {
                 // Inform watchdog

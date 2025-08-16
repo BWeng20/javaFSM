@@ -116,6 +116,16 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     }
 
+    protected Data evalSourceNoThrow(String sourceText) {
+        try {
+            return evalSource(sourceText);
+        } catch (Exception e) {
+            Data d = new Data.Error(String.format("Eval of '%s' failed: %s", sourceText, e.getMessage()));
+            Log.error("%s", d.toString());
+            return d;
+        }
+    }
+
     @Override
     public void set_ioprocessors() {
         final GlobalData gd = this.global();
@@ -128,7 +138,7 @@ public class ECMAScriptDatamodel extends Datamodel {
             processor.put("location", entry.getValue().get_location(session_id));
             processors.put(entry.getKey(), processor);
         }
-        bindings.putMember(EventIOProcessor.SYS_IO_PROCESSORS, processors);
+        setReadOnly(EventIOProcessor.SYS_IO_PROCESSORS, processors);
     }
 
     @Override
@@ -145,7 +155,7 @@ public class ECMAScriptDatamodel extends Datamodel {
                         evalSource("var " + entry.getKey() + "=" + value.as_script() + ";");
                     }
                 } else {
-                    evalSource(entry.getKey() + "= undefined;");
+                    evalSource("var " + entry.getKey() + "= undefined;");
                 }
             } catch (Exception se) {
                 Log.error("Error on Initialize '%s': %s", entry.getKey(), se.getMessage());
@@ -177,7 +187,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public void set(String name, Data data, boolean allow_undefined) {
-        bindings.putMember(name, eval(data));
+        evalSourceNoThrow(String.format("%s%s=%s;", allow_undefined ? "var " : "", name, data.as_script()));
     }
 
     @Override
@@ -200,21 +210,31 @@ public class ECMAScriptDatamodel extends Datamodel {
 
         eventMember.put(EVENT_VARIABLE_FIELD_NAME, event.name);
         eventMember.put(EVENT_VARIABLE_FIELD_TYPE, event.etype.name());
-        eventMember.put(EVENT_VARIABLE_FIELD_SEND_ID, event.sendid);
+        if (event.sendid != null)
+            eventMember.put(EVENT_VARIABLE_FIELD_SEND_ID, event.sendid);
         eventMember.put(EVENT_VARIABLE_FIELD_ORIGIN, event.origin);
         eventMember.put(EVENT_VARIABLE_FIELD_ORIGIN_TYPE, event.origin_type);
         eventMember.put(EVENT_VARIABLE_FIELD_INVOKE_ID, event.invoke_id);
         eventMember.put(EVENT_VARIABLE_FIELD_DATA, data_value);
 
-        bindings.putMember(EVENT_VARIABLE_NAME, Value.asValue(eventMember));
+        setReadOnly(EVENT_VARIABLE_NAME, eventMember);
+    }
+
+    private Value defineGlobalReadOnly;
+
+    protected void setReadOnly(String name, Map<String, Object> object) {
 
         try {
-            evalSource("Object.freeze(" + EVENT_VARIABLE_NAME + ");");
-            evalSource(EVENT_VARIABLE_NAME + ".name = 1;");
-            evalSource("log( 'Event '+" + EVENT_VARIABLE_NAME + ".name);");
+            if (bindings.hasMember(name)) {
+                bindings.removeMember(name);
+            }
+            if (defineGlobalReadOnly == null)
+                defineGlobalReadOnly = context.eval("js", "(name,data) => { Object.defineProperty(globalThis, name, {value: data, writable: false, configurable:true, enumerable: true});}");
+            defineGlobalReadOnly.executeVoid(name, context.asValue(object));
         } catch (Exception e) {
-            Log.exception("Failed to set event", e);
+            Log.exception("Failed to set " + name, e);
         }
+
     }
 
     @Override
@@ -228,7 +248,11 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public Data get_by_location(String location) {
-        throw new UnsupportedOperationException();
+        Data r = evalSourceNoThrow(location);
+        if (r instanceof Data.Error err) {
+            internal_error_execution();
+        }
+        return r;
     }
 
     @Override
@@ -245,8 +269,65 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     @Override
-    public boolean execute_for_each(Data array_expression, String item, String index, Supplier<Boolean> execute_body) {
-        throw new UnsupportedOperationException();
+    public boolean execute_for_each(Data array_expression, String item_name, String index, Supplier<Boolean> execute_body) {
+        if (StaticOptions.debug_option)
+            Log.debug("ForEach: array: %s", array_expression);
+        Data r = evalSourceNoThrow(array_expression.as_script());
+        if (r != null) {
+            if (r instanceof Data.Map obj) {
+                // Iterate through all members
+                int idx = 0;
+
+                if (assign_internal(item_name, "null", true)) {
+                    for (var item_prop : obj.values.keySet()) {
+                        Data item = obj.values.get(item_prop);
+                        if (StaticOptions.debug_option)
+                            Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
+                        var str = item.toString();
+                        if (assign(new Data.Source(item_name), new Data.Source(str))) {
+                            if (!index.isEmpty()) {
+                                evalSourceNoThrow("var " + index + "=" + idx + ";");
+                            }
+                            if (!execute_body.get()) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                        idx += 1;
+                    }
+                }
+            } else if (r instanceof Data.Array array) {
+                // Iterate through all elements
+                int idx = 0;
+
+                if (assign_internal(item_name, "null", true)) {
+                    for (var item : array.values) {
+                        if (StaticOptions.debug_option)
+                            Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
+                        var str = item.toString();
+                        if (assign(new Data.Source(item_name), new Data.Source(str))) {
+                            if (!index.isEmpty()) {
+                                evalSourceNoThrow("var " + index + "=" + idx + ";");
+                            }
+                            if (!execute_body.get()) {
+                                return false;
+                            }
+                        } else {
+                            return false;
+                        }
+                        idx += 1;
+                    }
+                }
+            } else {
+                Log.error("Resulting value is not a supported collection.");
+                internal_error_execution();
+            }
+            return true;
+        } else {
+            Log.error("Failed to eval");
+            return false;
+        }
     }
 
     @Override
@@ -255,9 +336,9 @@ public class ECMAScriptDatamodel extends Datamodel {
             Data r = evalSource(script.as_script());
             if (r instanceof Data.Boolean b)
                 return b.value;
-            else if (r instanceof Data.String s)
-                return Boolean.parseBoolean(s.value);
-            else if (r.is_numeric())
+            else if (r instanceof Data.String s) {
+                return !s.value.isEmpty();
+            } else if (r.is_numeric())
                 return r.as_number().doubleValue() != 0;
             return false;
         } catch (Exception se) {
@@ -347,7 +428,7 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     protected boolean assign_internal(String left_expr, String right_expr, boolean allow_undefined) {
-        String exp = String.format("%s=%s;", left_expr, right_expr);
+        String exp = String.format("%s%s=%s;", allow_undefined ? "var " : "", left_expr, right_expr);
         if (allow_undefined && this.strict_mode) {
             // this.context.strict(false);
         }

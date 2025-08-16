@@ -1084,7 +1084,7 @@ public class Fsm {
                 datamodel.initializeDataModel(this, to_init, true);
             }
             java.util.List<ExecutableContent> exe = new ArrayList<>(s.onentry);
-            if (statesForDefaultEntry.isMember(s) && s.initial != null) {
+            if (statesForDefaultEntry.isMember(s) && s.initial != null && s.initial.content != null) {
                 exe.addAll(s.initial.content.content);
             }
             if (defaultHistoryContent.has(s)) {
@@ -1117,7 +1117,7 @@ public class Fsm {
                                     EventType.external)
                     );
                     State grandparent = parent.parent;
-                    if (this.isParallelState(grandparent)
+                    if (grandparent != null && this.isParallelState(grandparent)
                             && this.getChildStates(grandparent)
                             .every((state) -> this.isInFinalState(datamodel, state))) {
                         this.enqueue_internal(

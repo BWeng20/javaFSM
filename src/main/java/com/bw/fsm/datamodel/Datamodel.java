@@ -212,6 +212,7 @@ public abstract class Datamodel {
         if (ioc != null) {
             return ioc.send(this.global(), target.toString(), event);
         } else {
+            global().enqueue_internal(Event.error_execution(event.sendid, event.invoke_id));
             return false;
         }
     }

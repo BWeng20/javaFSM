@@ -79,7 +79,6 @@ public class SendParameters implements ExecutableContent {
 
             datamodel.set(this.name_location, new Data.String(send_id), true);
         }
-        ;
 
         var data_vec = new ArrayList<ParamPair>();
 
@@ -103,7 +102,7 @@ public class SendParameters implements ExecutableContent {
                 }
             }
         }
-        int delay_ms = 0;
+        int delay_ms;
         if (!this.delay_expr.is_empty()) {
             Data delay = datamodel.execute(this.delay_expr);
             if (delay == null || delay instanceof Data.Error) {
@@ -115,7 +114,6 @@ public class SendParameters implements ExecutableContent {
         } else {
             delay_ms = this.delay_ms;
         }
-        ;
 
         if (delay_ms < 0) {
             // Delay is invalid -> Abort
@@ -176,19 +174,18 @@ public class SendParameters implements ExecutableContent {
                 Log.error("Unknown io-processor %s", type_val);
                 result = false;
             }
+            if (!result) {
+                // W3C:  If the SCXML Processor does not support the type that is specified,
+                // it must place the event error.execution on the internal event queue.
+                datamodel.internal_error_execution_for_event(send_id, fsm.caller_invoke_id);
+            }
+
         } else {
             if (StaticOptions.debug_option)
                 Log.debug("send '%s' to '%s'", event, target);
+            // "send" triggers error events already, no need to check the result here
             result = datamodel.send(type_val_string, target, event);
         }
-        ;
-
-        if (!result) {
-            // W3C:  If the SCXML Processor does not support the type that is specified,
-            // it must place the event error.execution on the internal event queue.
-            datamodel.internal_error_execution_for_event(send_id, fsm.caller_invoke_id);
-        }
-        ;
         return result;
     }
 
