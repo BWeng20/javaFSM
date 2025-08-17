@@ -67,11 +67,12 @@ public class W3CTest {
         Path reportFile = Paths.get(arguments.final_args.get(1));
 
         final Path logDirectory = testDirectory.resolve("logs");
+        Log.LogPrintStream logPrintStream = null;
         if (!dry) {
             try {
                 Files.createDirectories(logDirectory);
                 String date = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
-                Log.setLogFile(logDirectory.resolve("LOG_" + date + ".txt"), true);
+                logPrintStream = Log.setLogFile(logDirectory.resolve("LOG_" + date + ".txt"), true);
             } catch (IOException io) {
                 io.printStackTrace();
                 Log.error("Failed to initialize logging. %s", io.getMessage());
@@ -98,25 +99,28 @@ public class W3CTest {
         List<Path> includePaths = new ArrayList<>();
         includePaths.add(downloader.dependenciesScxml);
 
-        final PrintStream log = Log.getPrintStream(true);
+        final PrintStream log;
+        if (logPrintStream != null) {
+            logPrintStream.lock();
+            log = logPrintStream;
+        } else {
+            log = Log.getPrintStream();
+        }
 
         try {
             TestSpecification config = Tester.load_test_config(testDirectory.resolve("test_config.json"));
-
             Tester tester = new Tester(config);
 
             Stream<Path> s = parallel ? scxmlFiles.parallelStream() : scxmlFiles.stream();
-
 
             s.forEach(scxmlFile -> {
                 ByteArrayOutputStream os = null;
                 boolean succeeded = false;
                 Path logFile = logDirectory.resolve(scxmlFile.getFileName() + ".log");
                 try {
-
                     if (logOnlyFailure) {
                         os = new ByteArrayOutputStream(10240);
-                        Log.setLogStream(new PrintStream(os, false, StandardCharsets.UTF_8), true);
+                        Log.setLogStream(new PrintStream(os, false, StandardCharsets.UTF_8));
                     } else if (!dry)
                         Log.setLogFile(logFile, false);
                     if (tester.runTest(Tester.load_fsm(scxmlFile, includePaths), includePaths, TraceMode.ALL)) {
@@ -132,7 +136,7 @@ public class W3CTest {
                     Log.exception("===== Test " + scxmlFile + " failed due to exception.", e);
                     ++failedCount;
                 } finally {
-                    Log.setLogFile(null, false);
+                    Log.releaseStream();
                     if (os != null && !succeeded) {
                         if (dry)
                             log.print(os.toString(StandardCharsets.UTF_8));
@@ -151,13 +155,13 @@ public class W3CTest {
             Log.exception("Failed in Test loop.", e);
             ++failedCount;
         }
-        log.flush();
         log.println("==== Results:");
         log.println(" Tests     " + scxmlFiles.size());
         log.println(" Succeeded " + succeededCount);
         log.println(" Failed    " + failedCount);
 
-        log.close();
+        if (logPrintStream != null)
+            logPrintStream.close();
         System.exit(failedCount > 0 ? 1 : 0);
 
     }

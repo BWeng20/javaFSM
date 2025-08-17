@@ -123,12 +123,12 @@ public class Fsm {
         }
 
         // Take over the current log stream to new Thread
-        final PrintStream os = Log.getPrintStream(false);
+        final PrintStream os = Log.getPrintStream();
 
         var thread = new Thread(
                 () -> {
                     try {
-                        Log.setLogStream(os, false);
+                        Log.setLogStream(os);
                         if (StaticOptions.debug_option)
                             Log.debug("SM Session %s starting...", session_id);
                         Datamodel datamodel = DatamodelFactory.create_datamodel(this.datamodel, session.global_data, options);
@@ -154,11 +154,13 @@ public class Fsm {
                             }
                         }
                         this.interpret(datamodel);
+                        if (StaticOptions.debug_option)
+                            Log.debug("SM finished");
                     } catch (Exception e) {
                         Log.exception("FSM terminated with exception.", e);
+                    } finally {
+                        Log.releaseStream();
                     }
-                    if (StaticOptions.debug_option)
-                        Log.debug("SM finished");
                 }, String.format("fsm_%s", THREAD_ID_COUNTER.incrementAndGet()));
 
         session.thread = thread;

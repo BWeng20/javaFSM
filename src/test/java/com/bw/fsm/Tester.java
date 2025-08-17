@@ -276,7 +276,7 @@ public class Tester {
 
     protected static void abort_test(String message) {
         Log.error("Test Failed: %s", message);
-        Log.setLogFile(null, false);
+        Log.releaseStream();
         throw new RuntimeException("Test Aborted");
     }
 
