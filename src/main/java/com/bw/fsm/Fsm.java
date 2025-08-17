@@ -123,7 +123,7 @@ public class Fsm {
         }
 
         // Take over the current log stream to new Thread
-        final PrintStream os = Log.getPrintStream();
+        final PrintStream os = Log.getPrintStream(false);
 
         var thread = new Thread(
                 () -> {

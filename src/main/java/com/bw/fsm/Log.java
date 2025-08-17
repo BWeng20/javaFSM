@@ -10,8 +10,8 @@ import java.nio.file.StandardOpenOption;
 
 public class Log {
 
-    private static ThreadLocal<PrintStream> thread_writer = new ThreadLocal<>();
-    private static ThreadLocal<Boolean> autoclose_writer = new ThreadLocal<>();
+    private static final ThreadLocal<PrintStream> thread_writer = new ThreadLocal<>();
+    private static final ThreadLocal<Boolean> autoclose_writer = new ThreadLocal<>();
 
     public static void setLogFile(Path logFile, boolean append) {
         try {
@@ -126,8 +126,10 @@ public class Log {
         }
     }
 
-    public static PrintStream getPrintStream() {
+    public static PrintStream getPrintStream(boolean detach) {
         PrintStream ps = thread_writer.get();
+        if ( ps != null && detach)
+            autoclose_writer.set(false);
         return ps == null ? System.out : ps;
     }
 }

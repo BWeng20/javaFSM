@@ -26,6 +26,7 @@ public class TestDownloader {
     static String TEST_SOURCE_URL = "https://www.w3.org/Voice/2013/scxml-irp/";
     static String XSL_FILE = "confEcma.xsl";
     static String MANIFEST_URL = "https://www.w3.org/Voice/2013/scxml-irp/manifest.xml";
+    public boolean dry = false;
 
     private int downloaded = 0;
 
@@ -37,9 +38,20 @@ public class TestDownloader {
     }
 
     private boolean downloadIfMissing(Path local, String urlSource) throws IOException {
-        if (!Files.exists(local)) {
-            Log.info(" downloading " + urlSource + " (-> " + local + ")");
+        return downloadRequiredIfMissing(local, urlSource, false);
+    }
 
+    private boolean downloadRequiredIfMissing(Path local, String urlSource, boolean throwIfMissing) throws IOException {
+
+        if (!Files.exists(local)) {
+
+            if (dry) {
+                if (throwIfMissing)
+                    throw new IOException("File missing (dry run): " + urlSource);
+                return false;
+            }
+
+            Log.info(" downloading " + urlSource + " (-> " + local + ")");
             URL url = new URL(urlSource);
 
             try (InputStream in = url.openStream()) {
@@ -94,21 +106,25 @@ public class TestDownloader {
                     if (Files.size(transformedFile) == 0) {
                         // Possible a previous transformer error
                         Log.info(" transformed file empty: " + transformedFile);
-                        Files.deleteIfExists(transformedFile);
+                        if (!dry) {
+                            Files.deleteIfExists(transformedFile);
+                        }
                     }
                 }
 
                 if (!Files.exists(transformedFile)) {
-                    try {
-                        XmlTransformer.transform(testFile, xslPath, transformedFile);
-                        Log.info(" transformed to file: " + transformedFile);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        System.err.println(" transformation failed: " + e.getMessage());
+                    if (!dry) {
+                        try {
+                            XmlTransformer.transform(testFile, xslPath, transformedFile);
+                            Log.info(" transformed to file: " + transformedFile);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            System.err.println(" transformation failed: " + e.getMessage());
+                        }
                     }
                 }
             }
-            if (copiedFile != null && !Files.exists(copiedFile)) {
+            if ((!dry) && copiedFile != null && !Files.exists(copiedFile)) {
                 Files.copy(testFile, copiedFile);
             }
         }
@@ -144,19 +160,20 @@ public class TestDownloader {
             int testCount = 0;
             int depCount = 0;
 
-            Files.createDirectories(manualTxml);
-            Files.createDirectories(manualScxml);
-            Files.createDirectories(optionalTxml);
-            Files.createDirectories(optionalScxml);
-            Files.createDirectories(txml);
-            Files.createDirectories(scxml);
-            Files.createDirectories(dependenciesScxml);
-
+            if (!dry) {
+                Files.createDirectories(manualTxml);
+                Files.createDirectories(manualScxml);
+                Files.createDirectories(optionalTxml);
+                Files.createDirectories(optionalScxml);
+                Files.createDirectories(txml);
+                Files.createDirectories(scxml);
+                Files.createDirectories(dependenciesScxml);
+            }
             Path xslPath = txml.resolve(XSL_FILE);
-            downloadIfMissing(xslPath, TEST_SOURCE_URL + XSL_FILE);
+            downloadRequiredIfMissing(xslPath, TEST_SOURCE_URL + XSL_FILE, true);
 
             Path manifest = txml.resolve("manifest.xml");
-            downloadIfMissing(manifest, MANIFEST_URL);
+            downloadRequiredIfMissing(manifest, MANIFEST_URL, true);
 
             {
                 DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -185,7 +202,7 @@ public class TestDownloader {
 
             }
 
-            Log.info("Statistics:");
+            Log.info((dry) ? "Statistics (dry run):" : "Statistics:");
             Log.info(" tests detected: " + testCount);
             Log.info(" downloaded files: " + downloaded);
             Log.info(" transformed files: " + XmlTransformer.fileCount);

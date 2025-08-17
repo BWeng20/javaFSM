@@ -45,8 +45,8 @@ public class ECMAScriptDatamodel extends Datamodel {
                 .option("engine.WarnInterpreterOnly", StaticOptions.debug_option ? "true" : "false")
                 .option("js.strict", "true")
                 .allowHostAccess(HostAccess.ALL)
-                .out(Log.getPrintStream())
-                .err(Log.getPrintStream())
+                .out(Log.getPrintStream(false))
+                .err(Log.getPrintStream(false))
                 .build();
         bindings = context.getBindings("js");
         valueUndefined = context.eval("js", "undefined;");
