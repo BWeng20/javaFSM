@@ -31,7 +31,7 @@ public class Arguments {
     public final java.util.List<String> final_args;
 
     /// Parse program arguments.
-    public Arguments(String[] appArgs, Option[] arguments) {
+    public Arguments(String[] appArgs, Option[] arguments) throws IllegalArgumentException {
 
         final_args = new ArrayList<>();
         var args = Arrays.asList(appArgs);
@@ -62,7 +62,7 @@ public class Arguments {
                     }
                 }
                 if (!match_found) {
-                    Log.panic("Unknown option '%s'", arg);
+                    throw new IllegalArgumentException(String.format("Unknown option '%s'", arg));
                 }
             } else {
                 final_args.add(arg);

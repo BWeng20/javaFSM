@@ -6,6 +6,7 @@ import com.bw.fsm.datamodel.null_datamodel.NullDatamodel;
 import com.bw.fsm.tracer.TraceMode;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -37,6 +38,8 @@ public class Tester {
             List<Fsm> fsms = new ArrayList<>();
             TestSpecification config = null;
 
+            Tester tester = new Tester(null);
+
             for (String arg : arguments.final_args) {
                 final String ext;
                 int extIdx = arg.lastIndexOf('.');
@@ -48,20 +51,20 @@ public class Tester {
                 switch (ext.toLowerCase(Locale.CANADA)) {
                     case "yaml", "yml", "json", "js" -> {
                         if (config != null)
-                            abort_test("more then one config given.");
+                            tester.abort_test("more then one config given.");
                         config = load_test_config(Paths.get(arg));
                         if (config.file != null)
                             fsms.add(load_fsm(Paths.get(config.file), include_paths));
                     }
                     case "rfsm", "scxml", "xml" -> fsms.add(load_fsm(Paths.get(arg), include_paths));
-                    default -> abort_test(String.format("File '%s' has unsupported extension.", arg));
+                    default -> tester.abort_test(String.format("File '%s' has unsupported extension.", arg));
                 }
             }
             if (config == null)
-                abort_test("no config given.");
-            Tester tester = new Tester(config);
+                tester.abort_test("no config given.");
+            tester = new Tester(config);
             if (fsms.isEmpty())
-                abort_test("no FSMs given.");
+                tester.abort_test("no FSMs given.");
             for (Fsm fsm : fsms)
                 tester.runTest(fsm, include_paths, arguments.getTraceMode());
 
@@ -97,7 +100,7 @@ public class Tester {
         }
     }
 
-    private TestSpecification config;
+    private final TestSpecification config;
 
     public Tester(TestSpecification config) {
         this.config = config;
@@ -111,13 +114,13 @@ public class Tester {
                     ECMAScriptDatamodel.register();
                 NullDatamodel.register();
             }
-            TestUseCase uc = new TestUseCase();
-            uc.name = fsm.name;
-            uc.fsm = fsm;
-            uc.specification = config;
-            uc.trace_mode = traceMode;
-            uc.include_paths.addAll(include_paths);
-            return runTestCase(uc);
+            TestUseCase test = new TestUseCase();
+            test.name = fsm.name;
+            test.fsm = fsm;
+            test.specification = config;
+            test.trace_mode = traceMode;
+            test.include_paths.addAll(include_paths);
+            return runTestCase(test);
         } else {
             abort_test("No test specification given.");
             return false;
@@ -152,6 +155,9 @@ public class Tester {
                 });
     }
 
+    ScxmlSession session;
+    boolean test_running;
+
     public boolean run_test_manual_with_send(
             String test_name,
             Map<String, String> options,
@@ -167,7 +173,7 @@ public class Tester {
             executor.set_global_options_from_arguments(options);
             executor.set_include_paths(include_paths);
 
-            ScxmlSession session = fsm.start_fsm_with_data_and_finish_mode(
+            session = fsm.start_fsm_with_data_and_finish_mode(
                     new ActionWrapper(),
                     executor, Collections.emptyList(),
                     FinishMode.KEEP_CONFIGURATION
@@ -184,12 +190,16 @@ public class Tester {
             if (session.thread == null) {
                 Log.panic("Internal error: session_thread not available");
             }
-            try {
-                Log.info("FSM started. Waiting to terminate...");
-                session.thread.join();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            test_running = true;
+            do {
+                try {
+                    Log.info("FSM started. Waiting to terminate...");
+                    session.thread.join();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } while (test_running && session.thread.isAlive());
+
             Log.info("FSM '%s' terminated.", fsm.name);
 
             if (watchdog_sender != null) {
@@ -226,6 +236,7 @@ public class Tester {
         } finally {
             System.err.flush();
             System.out.flush();
+            session = null;
         }
         return true;
     }
@@ -235,15 +246,20 @@ public class Tester {
     public BlockingQueue<Event> start_watchdog(String test_name, int timeout) {
         BlockingQueue<Event> watchdog_queue = new BlockingQueue<>();
 
+        final PrintStream ps = Log.getPrintStream();
+
         TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
-                if (!watchdog_queue.data.isEmpty()) {
-                    // All ok, FSM terminated in time.
-                } else {
-                    abort_test(String.format("[%s] ==> FSM timed out after %d milliseconds", test_name, timeout));
+                try {
+                    if (!watchdog_queue.data.isEmpty()) {
+                        // All ok, FSM terminated in time.
+                    } else {
+                        Log.setLogStream(ps);
+                        abort_test(String.format("[%s] ==> FSM timed out after %d milliseconds", test_name, timeout));
+                    }
+                } catch (Exception ignored) {
                 }
-
             }
         };
         watchdog.schedule(timerTask, timeout);
@@ -274,11 +290,22 @@ public class Tester {
         return true;
     }
 
-    protected static void abort_test(String message) {
-        Log.error("Test Failed: %s", message);
+    protected void abort_test(String message) {
+        test_running = false;
+        Log.error("Test aborted: %s", message);
+        if (session != null) {
+            if (session.thread != null && session.thread.isAlive()) {
+                session.sender.enqueue(Event.new_simple(Fsm.EVENT_CANCEL_SESSION));
+                do {
+                    try {
+                        session.thread.join();
+                    } catch (Exception e) {
+                    }
+                } while (session.global_data.running);
+            }
+        }
         Log.releaseStream();
         throw new RuntimeException("Test Aborted");
     }
-
 
 }
