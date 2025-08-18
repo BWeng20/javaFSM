@@ -52,7 +52,7 @@
       "description": "Maximal time the FSM shall run.",
       "type": "integer"
     },
-    "options":  {
+    "options": {
       "description": "Global options for executor.",
       "type": "object",
       "additionalProperties": true

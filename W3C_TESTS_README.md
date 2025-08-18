@@ -4,7 +4,40 @@ The project contains an application to execute the tests described in [SCXML 1.0
 
 See [class W3CTest](src/test/java/com/bw/fsm/W3CTest.java).
 
-## Download and Transform
+## Usage
+
+The run the default test application, use the gradle task `w3cTest`.
+
+It will print the progress to the console.<br> 
+Log output of each test is also redirected to a file in folder "w3ctest/logs".<br>
+
+This task also writes the report-file, see the link below _Current status_.
+
+### Manually call
+
+During development, it is useful to manually call these tests.
+
+``` java com.bw.fsm.W3CTest <testDirectory> [-report <file>] [-logOnlyFailure] [-stopOnError] [-dry] [-parallel] [-help]```
+
+| Option            | Comment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|-------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-logOnlyFailure` | 	Create logs only if a test fails.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `-stopOnError`	   | Stops tests on first error.<br> Remind that the stop may be delayed if also -parallel is given.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `-dry`             | Tests the existing files in scxml without writing any files.<br> No download, no transformation, no report file.<br> All log output is written to console.<br> Useful during development to speed up test cycles.                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `-parallel`        | Use a parallel stream to process the tests.<br> Without this option the tests waits for each FSM to terminate.<br> The order of execution of different tests is not deterministic.<br>Useful for pipelines.                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `-optionals`       | Run also the tests in "optional_scxml".                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `-help`            | Prints usage message and exists.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `-report <file>`   | Creates a report file (not yet).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `testDirectory`   | Folder to put all tests files.<br> Must contain at least the test-config "test_config.json".<br>Created sub-folders:<br><ul><li>`logs`: main and test logs. One for each test file</li><li>`txml`: downloaded manifest, transformation and test files</li><li>`scxml`: transformed scxml test files</li><li>`dependencies`: downloaded includes</li><li>`dependencies/scxml`: transformed includes</li><li>`manual_txml`: downloaded manual tests</li><li>`manual_scxml`: transformed manual tests (not used)</li><li>`optional_txml`: downloaded optional tests</li><li>`optional_scxml`: transformed optional tests (not used)</li></ul> |
+
+Very useful if fixing broken w3c tests after some "minor" change in your data model implementation:<br>
+Call once ```java com.bw.fsm.W3CTest w3cTests``` to download the tests.<br>
+Then for each iteration:<br>```java com.bw.fsm.W3CTest w3cTests -dry -logOnlyFailure -stopOnError```
+
+
+## Implementation
+
+### Download and Transform
 
 See [class TestDownloader](src/test/java/com/bw/fsm/TestDownloader.java).
 
@@ -26,24 +59,13 @@ To spare time and costs, all needed w3c files are added to the repository with t
 
 The transformed test are placed in the sub-folder `w3ctest/scxml`.
 
-## Execution of Tests
+### Execution of Tests
 
-All transformed test-files in the folder `w3ctest/scxml` are executed by [class Tester](src/test/java/com/bw/fsm/Tester.java).
+All transformed test-files in the folder `w3ctest/scxml` and (with `-optionals`) `w3ctest/optional_scxml` are executed by [class Tester](src/test/java/com/bw/fsm/Tester.java).
 
 
-## Running the tests
-
-The run the test application, use the gradle task `w3cTest`.
-
-It will print the progress to the console.<br>
-Output of the tests is also redirected to a file in folder "w3ctest/logs".
-
-The application writes also the Report-file, that is linked below.
-
-## Test status
+## Current status
 
 The following table gives the current test result for javaFSM:
 
 [REPORT.MD](W3C_TEST_REPORT.MD)
-
-The latest version is available in the repository.

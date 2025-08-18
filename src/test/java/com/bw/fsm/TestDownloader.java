@@ -199,6 +199,8 @@ public class TestDownloader {
                 depCount +=
                         downloadAndTransform(manifest, "//assert/test[@conformance='mandatory']/dep/@uri",
                                 dependencies, dependenciesScxml, xslPath);
+                depCount += downloadAndTransform(manifest, "//assert/test[@conformance='optional']/dep/@uri",
+                        dependencies, dependenciesScxml, xslPath);
 
             }
 

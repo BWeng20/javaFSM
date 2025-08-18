@@ -30,7 +30,19 @@ tasks.register('w3cTest', JavaExec) {
     classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
 
     // jvmArgs = ['-Xmx512m']
-    args = [layout.projectDirectory.asFile.absolutePath + '/w3ctest', layout.projectDirectory.asFile.absolutePath+ "/W3C_TEST_REPORT.MD"]
+    args = [layout.projectDirectory.asFile.absolutePath + '/w3ctest', "-report", layout.projectDirectory.asFile.absolutePath+ "/W3C_TEST_REPORT.MD", "-parallel", "-logOnlyFailure"]
+}
+
+tasks.register('w3cTestWithOptionals', JavaExec) {
+    group = 'verification'
+    description = 'Starts the w3c test, including optional tests'
+
+    mainClass = 'com.bw.fsm.W3CTest'
+
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
+
+    // jvmArgs = ['-Xmx512m']
+    args = [layout.projectDirectory.asFile.absolutePath + '/w3ctest', "-report", layout.projectDirectory.asFile.absolutePath+ "/W3C_TEST_REPORT.MD", "-parallel", "-logOnlyFailure", "-optionals"]
 }
 
 javadoc.options.addStringOption('Xdoclint:none', '-quiet')

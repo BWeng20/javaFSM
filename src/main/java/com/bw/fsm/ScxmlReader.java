@@ -132,6 +132,7 @@ public class ScxmlReader {
     public Fsm parse(InputStream input) throws IOException {
         try {
             StatefulReader statefulReader = new StatefulReader();
+            statefulReader.include_paths.addAll(this.includePaths);
             XMLStreamReader reader = factory.createXMLStreamReader(input);
 
             while (reader.hasNext()) {
@@ -483,7 +484,7 @@ public class ScxmlReader {
             try {
                 URI url_result = new URI(uri);
                 if ("file".equals(url_result.getScheme())) {
-                    return this.read_from_relative_path(url_result.getPath());
+                    return this.read_from_relative_path(url_result.getSchemeSpecificPart());
                 }
                 if (debug_option)
                     com.bw.fsm.Log.debug("read from URL %s", url_result);
@@ -1395,8 +1396,9 @@ public class ScxmlReader {
                 return to_current;
             } else {
                 for (Path ip : this.include_paths) {
-                    if (Files.exists(ip)) {
-                        return ip;
+                    Path rp = ip.resolve(src);
+                    if (Files.exists(rp)) {
+                        return rp;
                     }
                 }
             }

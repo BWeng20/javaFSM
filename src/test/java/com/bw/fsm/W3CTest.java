@@ -48,7 +48,7 @@ public class W3CTest {
                             -parallel       Use a parallel stream to process the tests.
                                             Without this option the tests waits for each FSM to terminate.
                                             The order of execution of different tests is not deterministic.
-                                            Useful for pipelines.  
+                                            Useful for pipelines.
                         
                             -optionals      Run also the tests in "optional_scxml".
                         
@@ -71,7 +71,7 @@ public class W3CTest {
                         
                         Examples:
                         
-                        In a CI/CD pipeline you may want:                        
+                        In a CI/CD pipeline you may want:
                            java com.bw.fsm.W3CTest w3cTests w3cTestReport.md -parallel -optionals
                         
                         During local development to test your code you may want (after an initial full run):
@@ -129,7 +129,9 @@ public class W3CTest {
             try {
                 Files.createDirectories(logDirectory);
                 String date = new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
-                logPrintStream = Log.setLogFile(logDirectory.resolve("LOG_" + date + ".txt"), true);
+                Path mainLog = logDirectory.resolve("LOG_" + date + ".txt");
+                logPrintStream = Log.setLogFile(mainLog, true);
+                System.out.println("Logging to: " + mainLog);
             } catch (IOException io) {
                 io.printStackTrace();
                 Log.error("Failed to initialize logging. %s", io.getMessage());
@@ -221,9 +223,6 @@ public class W3CTest {
                                 }
                             }
                         }
-                    }
-                    if (stopOnError && !succeeded) {
-
                     }
                 }
             });
