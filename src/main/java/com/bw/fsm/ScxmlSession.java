@@ -1,6 +1,7 @@
 package com.bw.fsm;
 
 import com.bw.fsm.datamodel.GlobalData;
+import com.bw.fsm.tracer.Tracer;
 
 /// Represents some external session.
 /// Holds thread-id and channel-sender to the external queue of the session.
@@ -22,9 +23,9 @@ public class ScxmlSession {
     /// State of the invoke or null.
     public State state;
 
-    public ScxmlSession(Integer id, BlockingQueue<Event> sender) {
+    public ScxmlSession(Integer id, BlockingQueue<Event> sender, Tracer tracer) {
         this.session_id = id;
         this.sender = sender;
-        this.global_data = new GlobalData();
+        this.global_data = new GlobalData(tracer);
     }
 }

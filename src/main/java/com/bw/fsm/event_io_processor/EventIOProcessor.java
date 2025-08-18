@@ -7,18 +7,19 @@ import com.bw.fsm.datamodel.GlobalData;
 import java.util.List;
 import java.util.Map;
 
-/// Trait for Event I/O Processors. \
-/// See [../../../doc/W3C_SCXML_2024_07_13/index.html#eventioprocessors].
-/// As the I/O Processors hold session related data, an instance of this trait must be bound to one session,
-/// but may share backends with other sessions, e.g. a http server.
+/**
+ * Interface for Event I/O Processors.<br>
+ * As the I/O Processors hold session related data, an instance of this trait must be bound to one session,
+ * but may share backends with other sessions, e.g. an http server.
+ */
 public abstract class EventIOProcessor {
 
     public static final String SYS_IO_PROCESSORS = "_ioprocessors";
 
-    /// Returns the location of this session and processor.
+    /** Returns the location of this session and processor. */
     public abstract String get_location(Integer id);
 
-    /// Returns the type names of this processor.
+    /**  Returns the type names of this processor.*/
     public abstract List<String> get_types();
 
     public abstract Map<Integer, BlockingQueue<Event>> get_external_queues();
@@ -32,7 +33,6 @@ public abstract class EventIOProcessor {
     public abstract boolean send(GlobalData global, String target, Event event);
 
     public abstract void shutdown();
-
 
     protected void shutdownQueues(Map<Integer, BlockingQueue<Event>> queues) {
         Event cancel_event = Event.new_simple(Fsm.EVENT_CANCEL_SESSION);

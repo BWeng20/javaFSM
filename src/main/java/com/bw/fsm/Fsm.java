@@ -47,7 +47,7 @@ public class Fsm {
     public static final Comparator<Invoke> invoke_document_order = Comparator.comparing(s -> s.doc_id);
 
 
-    public Tracer tracer = Tracer.create_tracer();
+    public final Tracer tracer = Tracer.create_tracer();
     public String datamodel;
     public BindingType binding = BindingType.Early;
     public String version;
@@ -99,7 +99,7 @@ public class Fsm {
         BlockingQueue<Event> externalQueue = new BlockingQueue<>();
 
         Integer session_id = SESSION_ID_COUNTER.incrementAndGet();
-        final var session = new ScxmlSession(session_id, externalQueue);
+        final var session = new ScxmlSession(session_id, externalQueue, tracer);
         session.global_data.source = this.name;
 
         switch (finish_mode) {
@@ -1139,10 +1139,8 @@ public class Fsm {
     /**
      * Puts an event into the internal queue.
      */
-    protected void enqueue_internal(Datamodel datamodel, Event event) {
-        if (StaticOptions.trace_event)
-            this.tracer.event_internal_send(event);
-        datamodel.global().internalQueue.enqueue(event);
+    public void enqueue_internal(Datamodel datamodel, Event event) {
+        datamodel.global().enqueue_internal(event);
     }
 
     protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContentRegion content) {

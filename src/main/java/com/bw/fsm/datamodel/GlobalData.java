@@ -3,15 +3,19 @@ package com.bw.fsm.datamodel;
 import com.bw.fsm.*;
 import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.event_io_processor.EventIOProcessor;
+import com.bw.fsm.tracer.Tracer;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class GlobalData {
 
     public String source;
     public FsmExecutor executor;
     public ActionWrapper actions = new ActionWrapper();
+    public @NotNull final Tracer tracer;
     public OrderedSet<State> configuration = new OrderedSet<>();
     public OrderedSet<State> statesToInvoke = new OrderedSet<>();
     public HashTable<State, OrderedSet<State>> historyValue = new HashTable<>();
@@ -41,10 +45,14 @@ public class GlobalData {
 
     public DataStore data = new DataStore();
 
-    public GlobalData() {
+    public GlobalData(@NotNull Tracer tracer) {
+        this.tracer = Objects.requireNonNull(tracer);
     }
 
     public void enqueue_internal(Event event) {
+        if ( StaticOptions.trace_event) {
+            tracer.event_internal_send(event);
+        }
         this.internalQueue.enqueue(event);
     }
 }

@@ -91,7 +91,8 @@ public class TestDownloader {
                 transformedFile = null;
                 copiedFile = scxml.resolve(fileName);
             }
-            Log.info("Test file: " + testFile);
+            if ( StaticOptions.debug_option)
+                 Log.debug("Test file: " + testFile);
             ++testCount;
 
             if (downloadIfMissing(testFile, TEST_SOURCE_URL + testUri)) {
