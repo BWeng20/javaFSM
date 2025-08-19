@@ -50,7 +50,7 @@ public class GlobalData {
     }
 
     public void enqueue_internal(Event event) {
-        if ( StaticOptions.trace_event) {
+        if (StaticOptions.trace_event) {
             tracer.event_internal_send(event);
         }
         this.internalQueue.enqueue(event);

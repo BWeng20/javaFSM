@@ -41,7 +41,7 @@ public class Invoke {
      * <b>W3C says</b>:<br>
      * List of valid location expressions
      */
-    public java.util.List<String> name_list;
+    public final java.util.List<String> name_list = new ArrayList<>();
 
     /**
      * <b>W3C says</b>:<br>

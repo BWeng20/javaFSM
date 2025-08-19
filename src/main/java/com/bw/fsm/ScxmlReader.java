@@ -257,11 +257,6 @@ public class ScxmlReader {
             throw new UnsupportedOperationException();
         }
 
-        /// Process all events from current content
-        public void process() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
         protected void push(String tag) {
             this.stack.push(new ReaderStackItem(this.current));
             this.current.current_tag = tag;
@@ -608,11 +603,65 @@ public class ScxmlReader {
 
         /// A "initial" element started (the element, not the attribute)
         protected void start_initial() {
-            throw new UnsupportedOperationException();
+            String parent_tag = this
+                    .verify_parent_tag(
+                            TAG_INITIAL,
+                            new String[]{TAG_STATE, TAG_PARALLEL}
+                    );
+            if (get_current_state().initial != null) {
+                com.bw.fsm.Log.panic(
+                        "<%s> must not be specified if %s-attribute was given",
+                        TAG_INITIAL, ATTR_INITIAL);
+            }
         }
 
         protected void start_invoke(Attributes attr) {
-            throw new UnsupportedOperationException();
+            String parent_tag = this
+                    .verify_parent_tag(
+                            TAG_INVOKE,
+                            new String[]{TAG_STATE, TAG_PARALLEL}
+                    );
+
+            var invoke = new Invoke();
+
+            String type_opt = attr.getValue(ATTR_TYPE);
+            if (type_opt != null) {
+                invoke.type_name = create_source(type_opt);
+            }
+            String typeexpr = attr.getValue(ATTR_TYPEEXPR);
+            if (typeexpr != null) {
+                invoke.type_expr = create_source(typeexpr);
+            }
+
+            // W3c: Must not occur with the 'srcexpr' attribute or the <content> element.
+            String src = attr.getValue(ATTR_SRC);
+            if (src != null) {
+                invoke.src = create_source(src);
+            }
+            String srcexpr = attr.getValue(ATTR_SRCEXPR);
+            if (srcexpr != null) {
+                invoke.src_expr = create_source(srcexpr);
+            }
+
+            // TODO--
+            String id = attr.getValue(ATTR_ID);
+            if (id != null) {
+                invoke.invoke_id = id;
+            }
+
+            invoke.parent_state_name = get_current_state().name;
+
+            String idlocation = attr.getValue(ATTR_IDLOCATION);
+            if (idlocation != null) {
+                invoke.external_id_location = idlocation;
+            }
+
+            String name_list = attr.getValue(ATTR_NAMELIST);
+            if (name_list != null) {
+                parse_location_expressions(name_list, invoke.name_list);
+            }
+            invoke.autoforward = parse_boolean(attr.getValue(ATTR_AUTOFORWARD), false);
+            get_current_state().invoke.push(invoke);
         }
 
         protected void start_finalize(Attributes attr) {
@@ -790,8 +839,24 @@ public class ScxmlReader {
                             TAG_FOR_EACH,
                     }
             );
-            throw new UnsupportedOperationException();
 
+            String sendid = attr.getValue(ATTR_SENDID);
+            String sendidexpr = attr.getValue(ATTR_SENDIDEXPR);
+
+            Cancel cancel = new Cancel();
+
+            if (sendid != null) {
+                if (sendidexpr != null) {
+                    com.bw.fsm.Log.panic(
+                            "%s: attributes %s and %s must not occur both", TAG_CANCEL, ATTR_SENDID, ATTR_SENDIDEXPR);
+                }
+                cancel.send_id = sendid;
+            } else if (sendidexpr != null) {
+                cancel.send_id_expr = create_source(sendidexpr);
+            } else {
+                com.bw.fsm.Log.panic("%s: attribute %s or %s must be given", TAG_CANCEL, ATTR_SENDID, ATTR_SENDIDEXPR);
+            }
+            add_executable_content(cancel);
         }
 
         protected void start_on_entry(Attributes _attr) {
@@ -1138,12 +1203,30 @@ public class ScxmlReader {
             if (expr != null && content != null) {
                 com.bw.fsm.Log.panic("%s shall have only %s or children, but not both.", TAG_CONTENT, ATTR_EXPR);
             }
+            Data contentData;
+            if (content == null)
+                contentData = null;
+            else {
+                try {
+                    double d = Double.parseDouble(content);
+                    if (d == Math.floor(d)) {
+                        contentData = new Data.Integer((int) d);
+                    } else {
+                        contentData = new Data.Double((int) d);
+                    }
+                } catch (NumberFormatException ne) {
+
+                    ScxmlReader r = new ScxmlReader().withIncludePaths(this.include_paths);
+                    Fsm fsm = r.parse_from_xml(content);
+                    contentData = new Data.FsmDefinition(content, fsm);
+                }
+            }
 
             switch (parent_tag) {
                 case TAG_DONEDATA -> {
                     var state = get_current_state();
                     if (state.donedata != null) {
-                        state.donedata.content = new CommonContent(content, expr);
+                        state.donedata.content = new CommonContent(contentData, expr);
                     } else {
                         com.bw.fsm.Log.panic("Internal Error: donedata-Option not initialized");
                     }
@@ -1151,14 +1234,15 @@ public class ScxmlReader {
                 case TAG_INVOKE -> {
                     var state = get_current_state();
                     var invoke = state.invoke.last();
-                    invoke.content = new CommonContent(content, expr);
+
+                    invoke.content = new CommonContent(contentData, expr);
                 }
                 case TAG_SEND -> {
                     var ec = get_last_executable_content_entry_for_region(current_executable_content);
                     if (ec != null) {
                         if (ec instanceof SendParameters send) {
-                            if (expr != null || content != null) {
-                                send.content = new CommonContent(expr, content);
+                            if (expr != null || contentData != null) {
+                                send.content = new CommonContent(contentData, expr);
                             }
                         }
                     }

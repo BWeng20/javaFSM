@@ -189,7 +189,7 @@ public abstract class Datamodel {
      * See [internal_error_execution](Datamodel::internal_error_execution).
      */
     public Data get_expression_alternative_value(Data value, Data value_expression) {
-        if (value_expression.is_empty()) {
+        if (value_expression == null || value_expression.is_empty()) {
             return value;
         } else {
             return this.execute(value_expression);
@@ -327,18 +327,7 @@ public abstract class Datamodel {
         if (content != null) {
             if (content.content_expr != null) {
                 try {
-                    double d = Double.parseDouble(content.content_expr);
-                    if (d == Math.floor(d)) {
-                        return new Data.Integer((int) d);
-                    } else {
-                        return new Data.Double((int) d);
-                    }
-                } catch (NumberFormatException ne) {
-                    return new Data.String(content.content_expr);
-                }
-            } else if (content.content != null) {
-                try {
-                    return this.execute(new Data.Source(content.content));
+                    return this.execute(new Data.Source(content.content_expr));
                 } catch (Exception e) {
                     Log.error("content expr '%s' is invalid (%s)", content.content, e.getMessage());
                     // W3C:<br>
@@ -348,6 +337,7 @@ public abstract class Datamodel {
                     this.internal_error_execution();
                 }
             }
+            return content.content;
         }
         return null;
     }

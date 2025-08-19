@@ -1113,12 +1113,12 @@ public class Fsm {
                             // TODO: EventType::external ?
                             new Event(
                                     "done.state.",
-                                    parent.name,
+                                    parent == null ? null : parent.name,
                                     param_values,
                                     content,
                                     EventType.external)
                     );
-                    State grandparent = parent.parent;
+                    State grandparent = (parent == null) ? null : parent.parent;
                     if (grandparent != null && this.isParallelState(grandparent)
                             && this.getChildStates(grandparent)
                             .every((state) -> this.isInFinalState(datamodel, state))) {
@@ -1151,19 +1151,25 @@ public class Fsm {
     protected void executeContent(@NotNull Datamodel datamodel, @Nullable java.util.List<ExecutableContent> content) {
         if (content != null)
             for (var ct : content)
-                executeContent(datamodel, ct);
+                if (!executeContent(datamodel, ct))
+                    return;
     }
 
 
-    protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContent content) {
+    protected boolean executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContent content) {
         if (content != null) {
             if (StaticOptions.trace_method) {
                 this.tracer.enter_method_with_arguments("executeContent",
                         new Argument("content", content));
             }
-            datamodel.executeContent(this, content);
-            if (StaticOptions.trace_method)
+            boolean r = datamodel.executeContent(this, content);
+            if (StaticOptions.trace_method) {
+                this.tracer.trace_result("result", r);
                 this.tracer.exit_method("executeContent");
+            }
+            return r;
+        } else {
+            return true;
         }
     }
 
@@ -1792,7 +1798,7 @@ public class Fsm {
         }
 
         String invokeId = inv.invoke_id;
-        if (invokeId.isEmpty()) {
+        if (invokeId == null || invokeId.isEmpty()) {
             // W3C:
             // A conformant SCXML document may specify either the 'id' or 'idlocation' attribute, but
             // must not specify both. If the 'idlocation' attribute is present, the SCXML Processor
@@ -1807,7 +1813,7 @@ public class Fsm {
         }
 
         Data src = datamodel.get_expression_alternative_value(inv.src, inv.src_expr);
-        if (src == null || src instanceof Data.Error) {
+        if (src instanceof Data.Error) {
             // Error -> Abort
             if (StaticOptions.trace_method) {
                 this.tracer.exit_method("invoke");
@@ -1835,7 +1841,7 @@ public class Fsm {
             );
 
         // We currently don't check if id and idLocation are exclusive set.
-        if (!inv.external_id_location.isEmpty()) {
+        if (inv.external_id_location != null && !inv.external_id_location.isEmpty()) {
             // If "idlocation" is specified, we have to store the generated id to this location
             datamodel.set(
                     inv.external_id_location,
@@ -1846,7 +1852,7 @@ public class Fsm {
 
         ScxmlSession session;
 
-        if (src.is_empty()) {
+        if (src == null || src.is_empty()) {
             var content = datamodel.evaluate_content(inv.content);
             if (content == null || content instanceof Data.Error) {
                 Log.error("No content to execute");
@@ -1856,17 +1862,29 @@ public class Fsm {
                 return;
             } else {
                 try {
-                    session = global
-                            .executor
-                            .execute_with_data_from_xml(
-                                    content.as_script(),
-                                    global.actions,
-                                    name_values,
-                                    global.session_id,
-                                    invokeId,
-                                    FinishMode.DISPOSE,
-                                    this.tracer.trace_mode()
-                            );
+                    if (content instanceof Data.FsmDefinition fsm) {
+                        fsm.fsm.tracer.enable_trace(this.tracer.trace_mode());
+                        fsm.fsm.caller_invoke_id = invokeId;
+                        fsm.fsm.parent_session_id = global.session_id;
+                        session = fsm.fsm.start_fsm_with_data_and_finish_mode(
+                                global.actions,
+                                global.executor,
+                                name_values,
+                                FinishMode.DISPOSE
+                        );
+                    } else {
+                        session = global
+                                .executor
+                                .execute_with_data_from_xml(
+                                        content.as_script(),
+                                        global.actions,
+                                        name_values,
+                                        global.session_id,
+                                        invokeId,
+                                        FinishMode.DISPOSE,
+                                        this.tracer.trace_mode()
+                                );
+                    }
                 } catch (IOException ioe) {
                     Log.error("Execute of '%s' failed: %s", content.toString(), ioe.getMessage());
                     if (StaticOptions.trace_method) {

@@ -101,13 +101,13 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return new Integer(this.value);
         }
     }
 
     public static class Double extends Data {
-        private double value;
+        private final double value;
 
         public Double(double value) {
             this.value = value;
@@ -152,7 +152,7 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return new Double(this.value);
         }
     }
@@ -167,7 +167,7 @@ public abstract class Data {
 
         @Override
         public @NotNull Number as_number() {
-            return value == null ? NUL : parseNumber(value);
+            return parseNumber(value);
         }
 
         @Override
@@ -244,7 +244,7 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return new Boolean(this.value);
         }
     }
@@ -287,7 +287,7 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             Array a = new Array(new ArrayList<>(this.values.size()));
             for (Data d : values) {
                 a.values.add(d.getCopy());
@@ -338,7 +338,7 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             HashMap<java.lang.String, Data> a = new HashMap<>();
             for (var d : values.entrySet()) {
                 a.put(d.getKey(), d.getValue().getCopy());
@@ -375,7 +375,7 @@ public abstract class Data {
         public static final Data NULL = new Null();
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return NULL;
         }
     }
@@ -416,8 +416,48 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return new Error(message);
+        }
+
+    }
+
+    /**
+     * Special placeholder to indicate a fsm definition indie &lt;content> elements.
+     */
+    public static class FsmDefinition extends Data {
+        public Fsm fsm;
+        public java.lang.String xml;
+
+        public FsmDefinition(java.lang.String xml, Fsm fsm) {
+            this.fsm = fsm;
+            this.xml = xml;
+        }
+
+        @Override
+        public java.lang.String as_script() {
+            return xml;
+        }
+
+        @Override
+        public boolean is_empty() {
+            return fsm == null;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o instanceof FsmDefinition s) {
+                // No feasible way to compare FSM by content.
+                return this.fsm == s.fsm;
+            }
+            return false;
+        }
+
+        @Override
+        public @NotNull Data getCopy() {
+            return new FsmDefinition(xml, fsm);
         }
 
     }
@@ -428,7 +468,6 @@ public abstract class Data {
      */
     public static class Source extends Data {
         SourceCode source;
-
 
         public Source(SourceCode source) {
             this.source = source;
@@ -477,7 +516,7 @@ public abstract class Data {
         }
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return new Source(source);
         }
     }
@@ -509,7 +548,7 @@ public abstract class Data {
         public static final Data NONE = new None();
 
         @Override
-        public Data getCopy() {
+        public @NotNull Data getCopy() {
             return NONE;
         }
     }

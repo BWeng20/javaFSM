@@ -16,10 +16,14 @@ public abstract class EventIOProcessor {
 
     public static final String SYS_IO_PROCESSORS = "_ioprocessors";
 
-    /** Returns the location of this session and processor. */
+    /**
+     * Returns the location of this session and processor.
+     */
     public abstract String get_location(Integer id);
 
-    /**  Returns the type names of this processor.*/
+    /**
+     * Returns the type names of this processor.
+     */
     public abstract List<String> get_types();
 
     public abstract Map<Integer, BlockingQueue<Event>> get_external_queues();
