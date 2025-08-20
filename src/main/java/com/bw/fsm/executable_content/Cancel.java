@@ -22,10 +22,17 @@ public class Cancel implements ExecutableContent {
      */
     @Override
     public boolean execute(Datamodel datamodel, Fsm fsm) {
-        var send_id_data = datamodel.get_expression_alternative_value(
-                this.send_id == null ? null : new Data.Source(this.send_id), send_id_expr);
-        if (send_id_data != null && !send_id_data.is_empty()) {
-            datamodel.global().delayed_send.remove(send_id_data.as_script());
+        Data send_id_data;
+        if (this.send_id != null)
+            send_id_data = new Data.Source(this.send_id);
+        else if (send_id_expr != null) {
+            send_id_data = datamodel.execute(send_id_expr);
+        } else
+            send_id_data = null;
+        if (send_id_data != null) {
+            var timer = datamodel.global().delayed_send.remove(send_id_data.toString());
+            if (timer != null)
+                timer.cancel();
         }
         return true;
     }
