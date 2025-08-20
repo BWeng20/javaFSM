@@ -35,7 +35,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(null, new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         Assertions.assertNotNull(fsm);
         Assertions.assertNotNull(fsm.pseudo_root);
@@ -59,7 +59,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(null, new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         Assertions.assertNotNull(fsm);
         Assertions.assertNotNull(fsm.pseudo_root);
@@ -85,7 +85,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(null, new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
 
         State s0 = getS0(fsm);
@@ -134,7 +134,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(null, new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 
@@ -180,7 +180,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(null, new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 
@@ -222,7 +222,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(null, new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 
@@ -253,7 +253,7 @@ class ScxmlReaderTest {
                 </scxml>""";
 
         ScxmlReader reader = new ScxmlReader();
-        Fsm fsm = reader.parse(new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
+        Fsm fsm = reader.parse(null, new ByteArrayInputStream(scxml.getBytes(StandardCharsets.UTF_8)));
 
         State s0 = getS0(fsm);
 

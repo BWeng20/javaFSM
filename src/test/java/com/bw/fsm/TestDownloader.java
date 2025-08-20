@@ -85,14 +85,14 @@ public class TestDownloader {
             Path transformedFile;
             Path copiedFile;
             if (fileName.endsWith(".txml")) {
-                transformedFile = scxml.resolve(fileName.substring(0, fileName.length()-5) + ".scxml");
+                transformedFile = scxml.resolve(fileName.substring(0, fileName.length() - 5) + ".scxml");
                 copiedFile = null;
             } else {
                 transformedFile = null;
                 copiedFile = scxml.resolve(fileName);
             }
-            if ( StaticOptions.debug_option)
-                 Log.debug("Test file: " + testFile);
+            if (StaticOptions.debug_option)
+                Log.debug("Test file: " + testFile);
             ++testCount;
 
             if (downloadIfMissing(testFile, TEST_SOURCE_URL + testUri)) {
@@ -141,7 +141,7 @@ public class TestDownloader {
     public Path dependencies;
     public Path dependenciesScxml;
 
-    private Path scriptDir;
+    private final Path scriptDir;
 
     public void downloadAndTransform() {
 

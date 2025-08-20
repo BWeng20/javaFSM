@@ -15,7 +15,8 @@ public class GlobalData {
     public String source;
     public FsmExecutor executor;
     public ActionWrapper actions = new ActionWrapper();
-    public @NotNull final Tracer tracer;
+    public @NotNull
+    final Tracer tracer;
     public OrderedSet<State> configuration = new OrderedSet<>();
     public OrderedSet<State> statesToInvoke = new OrderedSet<>();
     public HashTable<State, OrderedSet<State>> historyValue = new HashTable<>();

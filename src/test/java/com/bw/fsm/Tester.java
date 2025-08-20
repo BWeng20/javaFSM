@@ -34,7 +34,8 @@ public class Tester {
                     new Arguments.Option(TRACE_ARGUMENT_OPTION).withValue(),
                     new Arguments.Option(INCLUDE_PATH_ARGUMENT_OPTION).withValue()});
 
-            java.util.List<Path> include_paths = IOTool.splitPaths(arguments.options.get(INCLUDE_PATH_ARGUMENT_OPTION));
+            IncludePaths include_paths = new IncludePaths();
+            include_paths.addPaths(arguments.options.get(INCLUDE_PATH_ARGUMENT_OPTION));
             List<Fsm> fsms = new ArrayList<>();
             TestSpecification config = null;
 
@@ -87,7 +88,7 @@ public class Tester {
 
     }
 
-    public static Fsm load_fsm(Path file_path, java.util.List<Path> include_paths) throws IOException {
+    public static Fsm load_fsm(Path file_path, IncludePaths include_paths) throws IOException {
         String extension = IOTool.getFileExtension(file_path);
         ScxmlReader reader = new ScxmlReader().withIncludePaths(include_paths);
         switch (extension.toLowerCase(Locale.CANADA)) {
@@ -106,7 +107,7 @@ public class Tester {
         this.config = config;
     }
 
-    public boolean runTest(Fsm fsm, List<Path> include_paths, TraceMode traceMode) {
+    public boolean runTest(Fsm fsm, IncludePaths include_paths, TraceMode traceMode) {
         if (config != null) {
             if (!modelsInitialized) {
                 modelsInitialized = true;
@@ -119,7 +120,7 @@ public class Tester {
             test.fsm = fsm;
             test.specification = config;
             test.trace_mode = traceMode;
-            test.include_paths.addAll(include_paths);
+            test.include_paths.add(include_paths);
             return runTestCase(test);
         } else {
             abort_test("No test specification given.");
@@ -142,7 +143,7 @@ public class Tester {
     }
 
     public boolean run_test_manual(
-            String test_name, Map<String, String> options, Fsm fsm, java.util.List<Path> include_paths, TraceMode trace_mode,
+            String test_name, Map<String, String> options, Fsm fsm, IncludePaths include_paths, TraceMode trace_mode,
             int timeout, java.util.List<String> expected_final_configuration) {
         return run_test_manual_with_send(
                 test_name,
@@ -161,7 +162,7 @@ public class Tester {
     public boolean run_test_manual_with_send(
             String test_name,
             Map<String, String> options,
-            Fsm fsm, java.util.List<Path> include_paths,
+            Fsm fsm, IncludePaths include_paths,
             TraceMode trace_mode,
             int timeout, java.util.List<String> expected_final_configuration,
             Consumer<BlockingQueue<Event>> eventCb) {

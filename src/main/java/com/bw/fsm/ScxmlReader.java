@@ -96,7 +96,7 @@ public class ScxmlReader {
     static XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
     static XMLInputFactory factory = XMLInputFactory.newInstance();
 
-    List<Path> includePaths = new ArrayList<>();
+    IncludePaths includePaths = new IncludePaths();
 
     /**
      * Read and parse the FSM from an XML file
@@ -104,7 +104,7 @@ public class ScxmlReader {
     public Fsm parse_from_xml_file(Path path) throws IOException {
         com.bw.fsm.Log.info("Reading " + path);
         try (InputStream input = new BufferedInputStream(Files.newInputStream(path))) {
-            Fsm fsm = parse(input);
+            Fsm fsm = parse(path.getParent(), input);
             if (fsm.name == null)
                 fsm.name = path.toString();
             return fsm;
@@ -115,8 +115,17 @@ public class ScxmlReader {
      * Read and parse the FSM from a URL
      */
     public Fsm parse_from_url(URL url) throws IOException {
+        if ("file".equals(url.getProtocol())) {
+            // We need to apply all include paths
+            try {
+                Path file = includePaths.resolvePath(url.toURI().getSchemeSpecificPart());
+                return parse_from_xml_file(file);
+            } catch (URISyntaxException e) {
+                throw new IOException(e);
+            }
+        }
         try (InputStream input = url.openStream()) {
-            return parse(input);
+            return parse(null, input);
         }
     }
 
@@ -125,14 +134,15 @@ public class ScxmlReader {
      */
     public Fsm parse_from_xml(String xml) throws IOException {
         try (InputStream input = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))) {
-            return parse(input);
+            return parse(null, input);
         }
     }
 
-    public Fsm parse(InputStream input) throws IOException {
+    public Fsm parse(Path workingDir, InputStream input) throws IOException {
         try {
             StatefulReader statefulReader = new StatefulReader();
-            statefulReader.include_paths.addAll(this.includePaths);
+            statefulReader.include_paths.add(workingDir);
+            statefulReader.include_paths.add(this.includePaths);
             XMLStreamReader reader = factory.createXMLStreamReader(input);
 
             while (reader.hasNext()) {
@@ -233,7 +243,7 @@ public class ScxmlReader {
 
         Stack<ExecutableContentStackItem> executable_content_stack;
         ExecutableContentRegion current_executable_content;
-        List<Path> include_paths;
+        IncludePaths include_paths = new IncludePaths();
 
         public StatefulReader() {
             in_scxml = false;
@@ -246,15 +256,6 @@ public class ScxmlReader {
             fsm = new Fsm();
             file = Paths.get("Buffer");
             content = "";
-            include_paths = new ArrayList<>();
-        }
-
-        /**
-         * Process an XML file.<br>
-         * For technical reasons (to handle user content) the file is read in a temporary buffer.
-         */
-        public void process_file(Path file) {
-            throw new UnsupportedOperationException();
         }
 
         protected void push(String tag) {
@@ -503,7 +504,7 @@ public class ScxmlReader {
         }
 
         protected String read_from_relative_path(String path) throws IOException {
-            Path file_src = this.get_resolved_path(path);
+            Path file_src = include_paths.resolvePath(path);
             this.file = file_src;
             return Files.readString(file_src, StandardCharsets.UTF_8);
         }
@@ -1465,29 +1466,6 @@ public class ScxmlReader {
             }
         }
 
-        /// Try to resolve the file name relative to the current file or include paths.
-        protected Path get_resolved_path(String ps) throws FileNotFoundException {
-            while (ps.startsWith("\\") || ps.startsWith("/")) {
-                ps = ps.substring(1);
-            }
-            Path src = Paths.get(ps);
-
-            Path parent = this.file.getParent();
-
-            Path to_current = (parent != null) ? parent.resolve(src) : src;
-
-            if (Files.exists(to_current)) {
-                return to_current;
-            } else {
-                for (Path ip : this.include_paths) {
-                    Path rp = ip.resolve(src);
-                    if (Files.exists(rp)) {
-                        return rp;
-                    }
-                }
-            }
-            throw new FileNotFoundException(ps);
-        }
 
         /**
          * Handle a XInclude include element.
@@ -1527,8 +1505,8 @@ public class ScxmlReader {
     public ScxmlReader() {
     }
 
-    public ScxmlReader withIncludePaths(List<Path> includePaths) {
-        this.includePaths.addAll(includePaths);
+    public ScxmlReader withIncludePaths(IncludePaths includePaths) {
+        this.includePaths.add(includePaths);
         return this;
     }
 }

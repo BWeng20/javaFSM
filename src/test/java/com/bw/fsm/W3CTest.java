@@ -13,7 +13,6 @@ import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
 import java.util.stream.Stream;
 
 /**
@@ -168,7 +167,7 @@ public class W3CTest {
             }
         }
 
-        List<Path> includePaths = new ArrayList<>();
+        IncludePaths includePaths = new IncludePaths();
         includePaths.add(downloader.dependenciesScxml);
 
         final PrintStream log;

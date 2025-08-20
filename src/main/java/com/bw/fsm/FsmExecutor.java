@@ -10,8 +10,6 @@ import com.bw.fsm.tracer.TraceMode;
 
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
@@ -35,7 +33,7 @@ public class FsmExecutor {
         }
     }
 
-    private java.util.List<Path> include_paths = new ArrayList<>();
+    private IncludePaths include_paths = new IncludePaths();
 
 
     public void set_global_options_from_arguments(Map<String, String> named_arguments) {
@@ -50,8 +48,8 @@ public class FsmExecutor {
         }
     }
 
-    public void set_include_paths(java.util.List<Path> include_path) {
-        this.include_paths.addAll(include_path);
+    public void set_include_paths(IncludePaths include_path) {
+        this.include_paths.add(include_path);
     }
 
     /**
