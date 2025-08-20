@@ -85,7 +85,7 @@ public class TestDownloader {
             Path transformedFile;
             Path copiedFile;
             if (fileName.endsWith(".txml")) {
-                transformedFile = scxml.resolve(fileName + ".scxml");
+                transformedFile = scxml.resolve(fileName.substring(0, fileName.length()-5) + ".scxml");
                 copiedFile = null;
             } else {
                 transformedFile = null;
