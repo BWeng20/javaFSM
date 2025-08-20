@@ -46,3 +46,4 @@ tasks.register('w3cTestWithOptionals', JavaExec) {
 }
 
 javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+javadoc.options.addStringOption('stylesheetfile', 'doc/javadoc.css')

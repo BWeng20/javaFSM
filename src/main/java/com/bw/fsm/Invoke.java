@@ -10,6 +10,7 @@ import java.util.ArrayList;
  */
 public class Invoke {
 
+    /// The unique id, counting in document order.
     public Integer doc_id;
 
     /**
