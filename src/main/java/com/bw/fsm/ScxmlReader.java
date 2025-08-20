@@ -528,7 +528,8 @@ public class ScxmlReader {
 
         /// A new "donedata" element started
         protected void start_donedata() {
-            throw new UnsupportedOperationException();
+            verify_parent_tag(TAG_DONEDATA, new String[]{TAG_FINAL});
+            get_current_state().donedata = new DoneData();
         }
 
         /// A new "history" element started
@@ -624,6 +625,7 @@ public class ScxmlReader {
                     );
 
             var invoke = new Invoke();
+            invoke.doc_id = DOC_ID_COUNTER.incrementAndGet();
 
             String type_opt = attr.getValue(ATTR_TYPE);
             if (type_opt != null) {
@@ -666,15 +668,19 @@ public class ScxmlReader {
         }
 
         protected void start_finalize(Attributes attr) {
-            throw new UnsupportedOperationException();
+            String parent_tag = this
+                    .verify_parent_tag(
+                            TAG_FINALIZE,
+                            new String[]{TAG_INVOKE}
+                    );
+            start_executable_content_region(false, TAG_FINALIZE);
         }
 
         protected void end_finalize() {
-            throw new UnsupportedOperationException();
+            get_current_state().invoke.last().finalize = end_executable_content_region(TAG_FINALIZE);
         }
 
         protected void start_transition(Attributes attr) {
-
             String parent_tag = this
                     .verify_parent_tag(
                             TAG_TRANSITION,
@@ -1193,8 +1199,7 @@ public class ScxmlReader {
         }
 
         protected void start_content(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
-            this.verify_parent_tag(TAG_CONTENT, new String[]{TAG_SEND, TAG_INVOKE, TAG_DONEDATA});
-            var parent_tag = get_parent_tag();
+            var parent_tag = this.verify_parent_tag(TAG_CONTENT, new String[]{TAG_SEND, TAG_INVOKE, TAG_DONEDATA});
             var expr = attr.getValue(ATTR_EXPR);
 
             var content = has_content ? read_content(TAG_CONTENT, reader) : null;
@@ -1217,9 +1222,20 @@ public class ScxmlReader {
                     }
                 } catch (NumberFormatException ne) {
 
-                    ScxmlReader r = new ScxmlReader().withIncludePaths(this.include_paths);
-                    Fsm fsm = r.parse_from_xml(content);
-                    contentData = new Data.FsmDefinition(content, fsm);
+                    switch (parent_tag) {
+                        case TAG_DONEDATA -> {
+                            contentData = new Data.String(content);
+                        }
+                        case TAG_SEND, TAG_INVOKE -> {
+                            ScxmlReader r = new ScxmlReader().withIncludePaths(this.include_paths);
+                            Fsm fsm = r.parse_from_xml(content);
+                            contentData = new Data.FsmDefinition(content, fsm);
+                        }
+                        default -> {
+                            // Can't happen
+                            contentData = Data.None.NONE;
+                        }
+                    }
                 }
             }
 
