@@ -10,8 +10,10 @@ import java.util.ArrayList;
  */
 public class Invoke {
 
-    /// The unique id, counting in document order.
-    public Integer doc_id;
+    /**
+     * The unique id, counting in document order.
+     */
+    public int doc_id;
 
     /**
      * <b>W3C says</b>:<br>

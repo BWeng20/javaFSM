@@ -1,6 +1,7 @@
 package com.bw.fsm.datamodel.expression_engine;
 
 import com.bw.fsm.Fsm;
+import com.bw.fsm.ScriptProducer;
 import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
@@ -38,6 +39,11 @@ public class RFsmExpressionDatamodel extends Datamodel {
     public void add_functions(Fsm fsm) {
         // TODO
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ScriptProducer createScriptProducer() {
+        return null;
     }
 
 }

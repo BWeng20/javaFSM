@@ -26,14 +26,18 @@ public abstract class Data {
         return NUL;
     }
 
-    public abstract java.lang.String as_script();
+    /**
+     * Get a simple representation.
+     *
+     * @return
+     */
+    public abstract void as_script(@NotNull ScriptProducer sp);
 
     public boolean is_numeric() {
         return false;
     }
 
     public abstract boolean is_empty();
-
 
     private static final java.lang.Integer NUL = 0;
     private static final java.lang.Integer ONE = 1;
@@ -67,10 +71,9 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return nf.format(value);
+        public void as_script(@NotNull ScriptProducer sp) {
+            sp.addValue(value);
         }
-
 
         @Override
         public boolean is_numeric() {
@@ -119,8 +122,8 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return nf.format(value);
+        public void as_script(ScriptProducer sb) {
+            sb.addValue(value);
         }
 
         @Override
@@ -170,14 +173,13 @@ public abstract class Data {
             return parseNumber(value);
         }
 
+
         @Override
-        public @NotNull java.lang.String as_script() {
+        public void as_script(@NotNull ScriptProducer sp) {
             if (script_value == null) {
-                script_value =
-                        value.replace("\\", "\\\\")
-                                .replace("'", "\\'");
+                script_value = sp.asStringValue(value);
             }
-            return "'" + script_value + "'";
+            sp.addToken(script_value);
         }
 
         @Override
@@ -219,8 +221,9 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return value ? "true" : "false";
+        public void as_script(ScriptProducer sp) {
+            // TODO: Move this constants to the ScriptProducer
+            sp.addToken(value ? "true" : "false");
         }
 
         @Override
@@ -267,8 +270,14 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return values.toString();
+        public void as_script(ScriptProducer scripter) {
+            scripter.startArray();
+            for (Data d : values) {
+                scripter.startArrayMember();
+                d.as_script(scripter);
+                scripter.endArrayMember();
+            }
+            scripter.endArray();
         }
 
         @Override
@@ -318,9 +327,21 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return values.toString();
+        public void as_script(ScriptProducer scripter) {
+            scripter.startMap();
+            int idx = 0;
+            for (var entry : values.entrySet()) {
+                scripter.startMember(entry.getKey());
+                Data d = entry.getValue();
+                if (d == null)
+                    scripter.addNull();
+                else
+                    d.as_script(scripter);
+                scripter.endMember();
+            }
+            scripter.endMap();
         }
+
 
         @Override
         public java.lang.String toString() {
@@ -363,8 +384,8 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return "null";
+        public void as_script(ScriptProducer scripter) {
+            scripter.addNull();
         }
 
         @Override
@@ -396,8 +417,8 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return "";
+        public void as_script(ScriptProducer scripter) {
+            scripter.addToken(scripter.asStringValue(message));
         }
 
         @Override
@@ -435,8 +456,8 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return xml;
+        public void as_script(ScriptProducer scripter) {
+            scripter.addToken(xml);
         }
 
         @Override
@@ -479,8 +500,11 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return source == null ? null : source.source;
+        public void as_script(ScriptProducer scripter) {
+            if (source == null)
+                scripter.addNull();
+            else
+                scripter.addToken(source.source);
         }
 
         /**
@@ -541,8 +565,8 @@ public abstract class Data {
         }
 
         @Override
-        public java.lang.String as_script() {
-            return "";
+        public void as_script(ScriptProducer scripter) {
+            scripter.addNull();
         }
 
         public static final Data NONE = new None();

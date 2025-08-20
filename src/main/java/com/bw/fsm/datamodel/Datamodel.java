@@ -378,4 +378,15 @@ public abstract class Datamodel {
             }
         }
     }
+
+    public abstract ScriptProducer createScriptProducer();
+
+    public String as_script(Data content) {
+        ScriptProducer scripter = createScriptProducer();
+        if (content == null)
+            scripter.addNull();
+        else
+            content.as_script(scripter);
+        return scripter.finish();
+    }
 }

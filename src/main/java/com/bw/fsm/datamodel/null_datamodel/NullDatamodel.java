@@ -1,6 +1,7 @@
 package com.bw.fsm.datamodel.null_datamodel;
 
 import com.bw.fsm.Fsm;
+import com.bw.fsm.ScriptProducer;
 import com.bw.fsm.State;
 import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.Datamodel;
@@ -67,6 +68,11 @@ public class NullDatamodel extends Datamodel {
     @Override
     public void add_functions(Fsm fsm) {
 
+    }
+
+    @Override
+    public ScriptProducer createScriptProducer() {
+        return null;
     }
 
 }

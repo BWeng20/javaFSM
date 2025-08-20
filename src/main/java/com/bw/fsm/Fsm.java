@@ -1104,7 +1104,9 @@ public class Fsm {
                     Data content = null;
                     if (s.donedata != null) {
                         datamodel.evaluate_params(s.donedata.params, name_values);
-                        content = datamodel.evaluate_content(s.donedata.content).getCopy();
+                        content = datamodel.evaluate_content(s.donedata.content);
+                        if (content != null)
+                            content = content.getCopy();
                     }
                     var param_values = name_values.isEmpty() ? null : name_values;
 
@@ -1876,7 +1878,7 @@ public class Fsm {
                         session = global
                                 .executor
                                 .execute_with_data_from_xml(
-                                        content.as_script(),
+                                        datamodel.as_script(content),
                                         global.actions,
                                         name_values,
                                         global.session_id,
@@ -1942,9 +1944,10 @@ public class Fsm {
         if (t.cond == null || t.cond.is_empty()) {
             return true;
         } else {
-            if (datamodel.execute_condition(t.cond)) {
-                return true;
-            } else {
+            try {
+                return datamodel.execute_condition(t.cond);
+            } catch (IllegalStateException ie) {
+                Log.exception("Failed to execute ondition: " + ie.getMessage(), ie);
                 datamodel.internal_error_execution();
                 return false;
             }

@@ -36,7 +36,6 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     protected Value bindings;
     protected Context context;
-    protected Value valueUndefined;
 
     public ECMAScriptDatamodel(GlobalData global_data) {
         this.global_data = global_data;
@@ -49,7 +48,11 @@ public class ECMAScriptDatamodel extends Datamodel {
                 .err(Log.getPrintStream())
                 .build();
         bindings = context.getBindings("js");
-        valueUndefined = context.eval("js", "undefined;");
+    }
+
+    @Override
+    public ECMAScriptProducer createScriptProducer() {
+        return new ECMAScriptProducer();
     }
 
     @Override
@@ -116,6 +119,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     }
 
+
     protected Data evalSourceNoThrow(String sourceText) {
         try {
             return evalSource(sourceText);
@@ -132,32 +136,38 @@ public class ECMAScriptDatamodel extends Datamodel {
         int session_id = gd.session_id;
 
         // Create I/O-Processor Objects.
-        Map<String, Object> processors = new HashMap<>();
+        ECMAScriptProducer script = createScriptProducer();
+        script.startMap();
         for (var entry : gd.io_processors.entrySet()) {
-            Map<String, String> processor = new HashMap<>();
-            processor.put("location", entry.getValue().get_location(session_id));
-            processors.put(entry.getKey(), processor);
+            script.startMember(entry.getKey());
+            script.startMap();
+            script.addStringMember("location", entry.getValue().get_location(session_id));
+            script.endMap();
+            script.endMember();
         }
-        setReadOnly(EventIOProcessor.SYS_IO_PROCESSORS, processors);
+        script.endMap();
+        setReadOnly(EventIOProcessor.SYS_IO_PROCESSORS, script);
     }
 
     @Override
     public void set_from_state_data(Map<String, Data> data, boolean set_data) {
+        ECMAScriptProducer script = createScriptProducer();
         for (var entry : data.entrySet()) {
             try {
                 if (set_data) {
-                    Data value = entry.getValue();
-                    if (value instanceof Data.Source src) {
-                        if (!src.is_empty())
-                            // The data from state-data needs to be evaluated
-                            evalSource("var " + entry.getKey() + "=" + value.as_script() + ";");
-                    } else {
-                        evalSource("var " + entry.getKey() + "=" + value.as_script() + ";");
-                    }
+                    script.addToken("var ");
+                    script.addToken(entry.getKey());
+                    script.addToken(" = ");
+                    entry.getValue().as_script(script);
+                    script.addToken(";\n");
+                    evalSource(script.finish());
+
                 } else {
                     evalSource("var " + entry.getKey() + "= undefined;");
                 }
             } catch (Exception se) {
+                script.finish();
+
                 Log.error("Error on Initialize '%s': %s", entry.getKey(), se.getMessage());
                 Log.exception("Trace", se);
                 // W3C says:
@@ -166,7 +176,7 @@ public class ECMAScriptDatamodel extends Datamodel {
                 // raise place error.execution in the internal event queue and MUST
                 // create an empty data element in the data model with the specified id.
                 try {
-                    evalSource(entry.getKey() + "= undefined;");
+                    evalSource("var " + entry.getKey() + "= undefined;");
                 } catch (Exception seInner) {
                     Log.error("Error on error handling for setting '%s': %s", entry.getKey(), seInner.getMessage());
                 }
@@ -178,7 +188,13 @@ public class ECMAScriptDatamodel extends Datamodel {
     @Override
     public void initialize_read_only(String name, Data value) {
         try {
-            evalSource("const " + name + "= " + value.as_script() + ";");
+            ECMAScriptProducer script = new ECMAScriptProducer(true);
+            script.addToken("const ");
+            script.addToken(name);
+            script.addToken("=");
+            value.as_script(script);
+            script.addToken(";");
+            evalSource(script.finish());
         } catch (Exception se) {
             Log.exception("failed to set read only member '" + name + "'", se);
         }
@@ -187,50 +203,59 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public void set(String name, Data data, boolean allow_undefined) {
-        evalSourceNoThrow(String.format("%s%s=%s;", allow_undefined ? "var " : "", name, data.as_script()));
+        ECMAScriptProducer script = new ECMAScriptProducer();
+        if (allow_undefined) script.addToken("var ");
+        script.addToken(name);
+        script.addToken("=");
+        data.as_script(script);
+        script.addToken(";");
+        evalSourceNoThrow(script.finish());
     }
 
     @Override
     public void set_event(Event event) {
-        Map<String, Object> eventMember = new HashMap<>();
-        Value data_value;
+
+        ECMAScriptProducer eventScript = new ECMAScriptProducer(true);
+
+        eventScript.startMap();
+        eventScript.addStringMember(EVENT_VARIABLE_FIELD_NAME, event.name);
+        eventScript.addStringMember(EVENT_VARIABLE_FIELD_TYPE, event.etype.name());
+        eventScript.addStringMember(EVENT_VARIABLE_FIELD_ORIGIN, event.origin);
+        eventScript.addStringMember(EVENT_VARIABLE_FIELD_ORIGIN_TYPE, event.origin_type);
+        eventScript.addStringMember(EVENT_VARIABLE_FIELD_INVOKE_ID, event.invoke_id);
+        eventScript.addStringMember(EVENT_VARIABLE_FIELD_SEND_ID, event.sendid);
+
         if (event.param_values == null) {
-            if (event.content == null)
-                data_value = null;
-            else
-                data_value = data_value_to_js(event.content);
+            eventScript.addDataMember(EVENT_VARIABLE_FIELD_DATA, event.content);
         } else {
-            java.util.Map<String, Object> data = new HashMap<>(event.param_values.size());
-
+            eventScript.startMember(EVENT_VARIABLE_FIELD_DATA);
+            eventScript.startMap();
             for (var pair : event.param_values) {
-                data.put(pair.name, data_value_to_js(pair.value));
+                eventScript.addDataMember(pair.name, pair.value);
             }
-            data_value = Value.asValue(data);
+            eventScript.endMap();
+            eventScript.endMember();
         }
-
-        eventMember.put(EVENT_VARIABLE_FIELD_NAME, event.name);
-        eventMember.put(EVENT_VARIABLE_FIELD_TYPE, event.etype.name());
-        if (event.sendid != null)
-            eventMember.put(EVENT_VARIABLE_FIELD_SEND_ID, event.sendid);
-        eventMember.put(EVENT_VARIABLE_FIELD_ORIGIN, event.origin);
-        eventMember.put(EVENT_VARIABLE_FIELD_ORIGIN_TYPE, event.origin_type);
-        eventMember.put(EVENT_VARIABLE_FIELD_INVOKE_ID, event.invoke_id);
-        eventMember.put(EVENT_VARIABLE_FIELD_DATA, data_value);
-
-        setReadOnly(EVENT_VARIABLE_NAME, eventMember);
+        eventScript.endMap();
+        setReadOnly(EVENT_VARIABLE_NAME, eventScript);
     }
 
-    private Value defineGlobalReadOnly;
+    protected void setReadOnly(String name, ECMAScriptProducer script) {
 
-    protected void setReadOnly(String name, Map<String, Object> object) {
+        StringBuilder sb = new StringBuilder(200);
+        sb
+                .append("Object.defineProperty(globalThis,")
+                .append(script.asStringValue(name))
+                .append(",{value:")
+                .append(script.finish())
+                .append(",writable:false,configurable:true,enumerable:true});");
 
         try {
             if (bindings.hasMember(name)) {
                 bindings.removeMember(name);
             }
-            if (defineGlobalReadOnly == null)
-                defineGlobalReadOnly = context.eval("js", "(name,data) => { Object.defineProperty(globalThis, name, {value: data, writable: false, configurable:true, enumerable: true});}");
-            defineGlobalReadOnly.executeVoid(name, context.asValue(object));
+            Source source = Source.newBuilder("js", sb.toString(), null).build();
+            context.eval(source);
         } catch (Exception e) {
             Log.exception("Failed to set " + name, e);
         }
@@ -239,9 +264,16 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public boolean assign(Data left_expr, Data right_expr) {
+        ECMAScriptProducer script = new ECMAScriptProducer();
+
+        left_expr.as_script(script);
+        String left = script.finish();
+        right_expr.as_script(script);
+        String right = script.finish();
+
         return this.assign_internal(
-                left_expr.as_script(),
-                right_expr.as_script(),
+                left,
+                right,
                 false
         );
     }
@@ -262,7 +294,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public Data execute(Data script) {
-        Data res = eval(script);
+        Data res = evalData(script);
         if (StaticOptions.debug_option)
             Log.debug("Execute: %s => %s", script, res);
         return res;
@@ -272,7 +304,7 @@ public class ECMAScriptDatamodel extends Datamodel {
     public boolean execute_for_each(Data array_expression, String item_name, String index, Supplier<Boolean> execute_body) {
         if (StaticOptions.debug_option)
             Log.debug("ForEach: array: %s", array_expression);
-        Data r = evalSourceNoThrow(array_expression.as_script());
+        Data r = evalDataNoThrow(array_expression);
         if (r != null) {
             if (r instanceof Data.Map obj) {
                 // Iterate through all members
@@ -331,48 +363,33 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     @Override
-    public boolean execute_condition(Data script) {
+    public boolean execute_condition(Data condition) throws IllegalStateException {
         try {
-            Data r = evalSource(script.as_script());
-            if (r instanceof Data.Boolean b)
+            ECMAScriptProducer script = new ECMAScriptProducer();
+            condition.as_script(script);
+            Data r = evalSource(script.finish());
+            if (r instanceof Data.Boolean b) {
                 return b.value;
-            else if (r instanceof Data.String s) {
-                return !s.value.isEmpty();
-            } else if (r.is_numeric())
+            } else if (r.is_numeric()) {
                 return r.as_number().doubleValue() != 0;
-            return false;
+            } else if (r instanceof Data.Map || r instanceof Data.FsmDefinition || r instanceof Data.Array) {
+                // All object are true
+                return true;
+            } else if (r instanceof Data.Error) {
+                return false;
+            } else
+                return !r.is_empty();
         } catch (Exception se) {
             // TODO
-            Log.exception("Failed to execute condition " + script.as_script(), se);
+            Log.exception("Failed to execute condition " + condition, se);
+            throw new IllegalStateException(se);
         }
-        return false;
     }
 
     @Override
     public boolean executeContent(Fsm fsm, ExecutableContent content) {
         return content.execute(this, fsm);
     }
-
-    protected Value data_value_to_js(Data o) {
-        if (o == null || o == Data.Null.NULL)
-            return Value.asValue(null);
-        if (o instanceof Data.Boolean b) {
-            return Value.asValue(b.value);
-        } else if (o instanceof Data.String s) {
-            return Value.asValue(s.value);
-        } else if (o instanceof Data.None s) {
-            return valueUndefined;
-        } else if (o instanceof Data.Map m)
-            return Value.asValue(m.values);
-        else if (o instanceof Data.Array a)
-            return Value.asValue(a.values.toArray());
-        else if (o.is_numeric())
-            return Value.asValue(o.as_number());
-        else
-            throw new IllegalArgumentException("Unsupported type " + o.getClass());
-
-    }
-
 
     protected Data js_to_data_value(Value o) {
         if (o == null) {
@@ -432,7 +449,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         if (allow_undefined && this.strict_mode) {
             // this.context.strict(false);
         }
-        Object d = this.eval(new Data.Source(exp));
+        Object d = this.evalData(new Data.Source(exp));
         if (d instanceof Data.Error err) {
             // W3C says:\
             // If the location expression does not denote a valid location in the data model or
@@ -451,11 +468,23 @@ public class ECMAScriptDatamodel extends Datamodel {
         return true;
     }
 
-    protected Data eval(Data source) {
+    protected Data evalData(Data source) {
         try {
-            return evalSource(source.as_script());
+            ECMAScriptProducer script = new ECMAScriptProducer();
+            source.as_script(script);
+            return evalSource(script.finish());
         } catch (Exception se) {
             return new Data.Error(se.getMessage());
+        }
+    }
+
+    protected Data evalDataNoThrow(Data source) {
+        try {
+            return evalData(source);
+        } catch (Exception e) {
+            Data d = new Data.Error(String.format("Eval of '%s' failed: %s", source, e.getMessage()));
+            Log.error("%s", d.toString());
+            return d;
         }
     }
 }
