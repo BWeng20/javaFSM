@@ -1895,7 +1895,9 @@ public class Fsm {
             }
         } else {
             session = global.executor.execute_with_data(
-                    src.as_script(),
+                    // Don't use "to_source" here as we need the raw content, not the scriptable value.
+                    // e.g. A uri-string would get "'file:myfsm.scxml'"
+                    src.toString(),
                     global.actions,
                     name_values,
                     global.session_id, invokeId, this.tracer.trace_mode()
