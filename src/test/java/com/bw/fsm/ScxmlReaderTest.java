@@ -141,7 +141,7 @@ class ScxmlReaderTest {
         Assertions.assertEquals(2, s0.onentry.size(), "'if' and last 'log' must be placed in two entries");
         var ecIf = s0.onentry.get(0);
         Assertions.assertInstanceOf(If.class, ecIf);
-        var ifEc = (If) ecIf;
+        var ifEc = (If) ecIf.content.get(0);
         Assertions.assertEquals(1, ifEc.content.content.size());
         Assertions.assertInstanceOf(Log.class, ifEc.content.content.get(0));
         Assertions.assertEquals(new Data.Source("'Yes'"), ((Log) ifEc.content.content.get(0)).expression);
@@ -156,7 +156,7 @@ class ScxmlReaderTest {
 
         var ecLog = s0.onentry.get(1);
         Assertions.assertInstanceOf(Log.class, ecLog);
-        Assertions.assertEquals(new Data.Source("'End'"), ((Log) ecLog).expression);
+        Assertions.assertEquals(new Data.Source("'End'"), ((Log) ecLog.content.get(0)).expression);
 
     }
 
@@ -187,7 +187,7 @@ class ScxmlReaderTest {
         Assertions.assertEquals(2, s0.onentry.size(), "'if' and last 'log' must be placed in two entries");
         var ecIf = s0.onentry.get(0);
         Assertions.assertInstanceOf(If.class, ecIf);
-        var ifEc = (If) ecIf;
+        var ifEc = (If) ecIf.content.get(0);
         Assertions.assertEquals(1, ifEc.content.content.size());
         Assertions.assertInstanceOf(Log.class, ifEc.content.content.get(0));
         Assertions.assertEquals(new Data.Source("'Yes'"), ((Log) ifEc.content.content.get(0)).expression);
@@ -203,7 +203,7 @@ class ScxmlReaderTest {
 
         var ecLog = s0.onentry.get(1);
         Assertions.assertInstanceOf(Log.class, ecLog);
-        Assertions.assertEquals(new Data.Source("'End'"), ((Log) ecLog).expression);
+        Assertions.assertEquals(new Data.Source("'End'"), ((Log) ecLog.content.get(0)).expression);
     }
 
     @Test
@@ -229,7 +229,7 @@ class ScxmlReaderTest {
         Assertions.assertEquals(2, s0.onentry.size(), "'foreach' and last 'log' must be placed in two entries");
         var ecforEach = s0.onentry.get(0);
         Assertions.assertInstanceOf(ForEach.class, ecforEach);
-        var forEachEc = (ForEach) ecforEach;
+        var forEachEc = (ForEach) ecforEach.content.get(0);
 
         Assertions.assertNull(forEachEc.index);
         Assertions.assertEquals("Var2", forEachEc.item);
@@ -260,7 +260,7 @@ class ScxmlReaderTest {
         Assertions.assertEquals(2, s0.onentry.size(), "'foreach' and last 'log' must be placed in two entries");
         var ecforEach = s0.onentry.get(0);
         Assertions.assertInstanceOf(ForEach.class, ecforEach);
-        var forEachEc = (ForEach) ecforEach;
+        var forEachEc = (ForEach) ecforEach.content.get(0);
 
         Assertions.assertEquals("index", forEachEc.index);
         Assertions.assertEquals("Var2", forEachEc.item);

@@ -100,14 +100,16 @@ public class State {
     public HistoryType history_type = HistoryType.None;
 
     /**
-     * The script that is executed if the state is entered. See W3c comments for &lt;onentry> above.
+     * The script that is executed if the state is entered. See W3c comments for &lt;onentry> above.<br>
+     * The list consists of a separate list for each &lt;onentry> block, because each block needs local error handling.
      */
-    public final java.util.List<ExecutableContent> onentry = new ArrayList<>();
+    public final java.util.List<ExecutableContentRegion> onentry = new ArrayList<>();
 
     /**
-     * The script that is executed if the state is left. See W3c comments for &lt;onexit> above.
+     * The script that is executed if the state is left. See W3c comments for &lt;onexit> above.<br>
+     * The list consists of a separate list for each &lt;onexit> block, because each block needs local error handling.
      */
-    public final java.util.List<ExecutableContent> onexit = new ArrayList<>();
+    public final java.util.List<ExecutableContentRegion> onexit = new ArrayList<>();
 
     /**
      * All transitions between sub-states.

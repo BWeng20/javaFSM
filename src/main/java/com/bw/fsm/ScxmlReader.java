@@ -509,7 +509,9 @@ public class ScxmlReader {
             return Files.readString(file_src, StandardCharsets.UTF_8);
         }
 
-        /// A new "parallel" element started
+        /**
+         * A new "parallel" element started
+         */
         protected State start_parallel(Attributes attr) {
             this.verify_parent_tag(TAG_PARALLEL, new String[]{TAG_SCXML, TAG_STATE, TAG_PARALLEL});
             State state = this.get_or_create_state_with_attributes(attr, true, this.current.current_state);
@@ -517,7 +519,9 @@ public class ScxmlReader {
             return state;
         }
 
-        /// A new "final" element started
+        /**
+         * A new "final" element started
+         */
         protected State start_final(Attributes attr) {
             this.verify_parent_tag(TAG_FINAL, new String[]{TAG_SCXML, TAG_STATE});
             State state = this.get_or_create_state_with_attributes(attr, false, this.current.current_state);
@@ -526,18 +530,41 @@ public class ScxmlReader {
             return state;
         }
 
-        /// A new "donedata" element started
+        /**
+         * A new "donedata" element started
+         */
         protected void start_donedata() {
             verify_parent_tag(TAG_DONEDATA, new String[]{TAG_FINAL});
             get_current_state().donedata = new DoneData();
         }
 
-        /// A new "history" element started
+        /**
+         * A new "history" element started
+         */
         protected State start_history(Attributes attr) {
-            throw new UnsupportedOperationException();
+            this.verify_parent_tag(TAG_HISTORY, new String[]{TAG_STATE, TAG_PARALLEL});
+            // Don't add history-states to "states" (parent = null)
+            var hstate = get_or_create_state_with_attributes(attr, false, null);
+            if (current.current_state != null) {
+                var parent_state = get_current_state();
+                parent_state.history.push(hstate);
+            }
+            // Assign parent manually, as we didn't provide get_or_create_state_with_attributes the parent.
+            hstate.parent = current.current_state;
+
+            String type_name = attr.getValue(TAG_TYPE);
+            if (type_name != null) {
+                hstate.history_type = HistoryType.fromString(type_name);
+            } else {
+                hstate.history_type = HistoryType.Shallow;
+            }
+            current.current_state = hstate;
+            return hstate;
         }
 
-        // A new "state" element started
+        /**
+         * A new "state" element started
+         */
         protected State start_state(Attributes attr) {
             this.verify_parent_tag(TAG_STATE, new String[]{TAG_SCXML, TAG_STATE, TAG_PARALLEL});
             State state = this.get_or_create_state_with_attributes(attr, false, this.current.current_state);
@@ -872,10 +899,9 @@ public class ScxmlReader {
         }
 
         protected void end_on_entry() {
-            ExecutableContentRegion ec_id = this.end_executable_content_region(TAG_ON_ENTRY);
+            ExecutableContentRegion ec_region = this.end_executable_content_region(TAG_ON_ENTRY);
             State state = this.get_current_state();
-            // Add the collected content to on-entry.
-            state.onentry.addAll(ec_id.content);
+            state.onentry.add(ec_region);
         }
 
         protected void start_on_exit(Attributes _attr) {
@@ -884,10 +910,9 @@ public class ScxmlReader {
         }
 
         protected void end_on_exit() {
-            ExecutableContentRegion ec = this.end_executable_content_region(TAG_ON_EXIT);
-            State state = this.get_current_state();
+            ExecutableContentRegion ec_region = this.end_executable_content_region(TAG_ON_EXIT);
             // Add the collected content to the on-exit.
-            state.onexit.addAll(ec.content);
+            this.get_current_state().onexit.add(ec_region);
         }
 
         protected void start_if(Attributes attr) {
@@ -1223,18 +1248,14 @@ public class ScxmlReader {
                 } catch (NumberFormatException ne) {
 
                     switch (parent_tag) {
-                        case TAG_DONEDATA -> {
-                            contentData = new Data.String(content);
-                        }
+                        case TAG_DONEDATA -> contentData = new Data.String(content);
                         case TAG_SEND, TAG_INVOKE -> {
                             ScxmlReader r = new ScxmlReader().withIncludePaths(this.include_paths);
                             Fsm fsm = r.parse_from_xml(content);
                             contentData = new Data.FsmDefinition(content, fsm);
                         }
-                        default -> {
-                            // Can't happen
-                            contentData = Data.None.NONE;
-                        }
+                        default -> // Can't happen
+                                contentData = Data.None.NONE;
                     }
                 }
             }

@@ -351,7 +351,7 @@ public abstract class Datamodel {
             for (Parameter param : params) {
                 if (param.hasLocation()) {
                     Data data = get_by_location(param.location);
-                    if (data == null) {
+                    if (data == null || data instanceof Data.Error) {
                         // W3C:<br>
                         // If the 'location' attribute does not refer to a valid location in
                         // the data model, ..., the SCXML Processor must place the error

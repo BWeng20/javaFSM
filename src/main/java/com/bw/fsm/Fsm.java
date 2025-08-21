@@ -607,7 +607,7 @@ public class Fsm {
 
         for (Iterator<State> it = statesToExit.iterator(); it.hasNext(); ) {
             State s = it.next();
-            this.executeContent(datamodel, s.onexit);
+            this.executeContentRegions(datamodel, s.onexit);
             global.configuration.delete(s);
             if (this.isFinalState(s) && this.isSCXMLElement(s.parent)) {
                 this.returnDoneEvent(s.donedata, datamodel);
@@ -991,7 +991,7 @@ public class Fsm {
         for (State s : statesToExit.data) {
             // Use the document-id of Invoke to identify sessions to cancel.
             HashSet<Integer> invoke_doc_ids = new HashSet<>();
-            List<ExecutableContent> exitList = new List<>();
+            List<ExecutableContentRegion> exitList = new List<>();
             if (StaticOptions.trace_state)
                 this.tracer.trace_exit_state(s);
             for (var inv : s.invoke.data) {
@@ -1007,7 +1007,7 @@ public class Fsm {
                     }
                 }
             }
-            this.executeContent(datamodel, exitList.data);
+            this.executeContentRegions(datamodel, exitList.data);
             gd.configuration.delete(s);
         }
         if (StaticOptions.trace_method)
@@ -1085,15 +1085,15 @@ public class Fsm {
             if (to_init != null) {
                 datamodel.initializeDataModel(this, to_init, true);
             }
-            java.util.List<ExecutableContent> exe = new ArrayList<>(s.onentry);
+            java.util.List<ExecutableContentRegion> exe = new ArrayList<>(s.onentry);
             if (statesForDefaultEntry.isMember(s) && s.initial != null && s.initial.content != null) {
-                exe.addAll(s.initial.content.content);
+                exe.add(s.initial.content);
             }
             if (defaultHistoryContent.has(s)) {
-                exe.addAll(defaultHistoryContent.get(s).content);
+                exe.add(defaultHistoryContent.get(s));
             }
 
-            this.executeContent(datamodel, exe);
+            this.executeContentRegions(datamodel, exe);
 
             if (this.isFinalState(s)) {
                 State parent = s.parent;
@@ -1144,6 +1144,13 @@ public class Fsm {
     public void enqueue_internal(Datamodel datamodel, Event event) {
         datamodel.global().enqueue_internal(event);
     }
+
+    protected void executeContentRegions(@NotNull Datamodel datamodel, @Nullable java.util.List<ExecutableContentRegion> regions) {
+        if (regions != null)
+            for (var region : regions)
+                executeContent(datamodel, region);
+    }
+
 
     protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContentRegion content) {
         if (content != null)
