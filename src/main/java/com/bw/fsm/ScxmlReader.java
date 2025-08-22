@@ -225,24 +225,25 @@ public class ScxmlReader {
              * the element for which the item was pushed (that replaced current)
              */
             String for_tag;
-            /**
-             * the pushed region
-             */
-            ExecutableContentRegion region;
 
-            ExecutableContentStackItem(String tag, ExecutableContentRegion region) {
+            /**
+             * the pushed block
+             */
+            ExecutableContentBlock block;
+
+            ExecutableContentStackItem(String tag, ExecutableContentBlock block) {
                 this.for_tag = tag;
-                this.region = region;
+                this.block = block;
             }
 
             @Override
             public String toString() {
-                return "#" + for_tag + " " + region;
+                return "#" + for_tag + " " + block;
             }
         }
 
         Stack<ExecutableContentStackItem> executable_content_stack;
-        ExecutableContentRegion current_executable_content;
+        ExecutableContentBlock current_executable_content;
         IncludePaths include_paths = new IncludePaths();
 
         public StatefulReader() {
@@ -309,60 +310,60 @@ public class ScxmlReader {
         }
 
         /**
-         * Starts a new region of executable content.<br>
+         * Starts a new block of executable content.<br>
          * A stack is used to handle nested executable content.
          * This stack works independent of the main element stack, but should be
          * considered as synchronized with it.<br>
          * <b>Arguments</b>
          * <table><caption>Arguments</caption>
-         * <tr><td>stack</td><td>If true, the current region is put on stack,
-         *     continued after the matching {@link #end_executable_content_region(String)}.
+         * <tr><td>stack</td><td>If true, the current block is put on stack,
+         *     continued after the matching {@link #end_executable_content_block(String)}.
          *     If false, the current stack is discarded.</td></tr>
-         * <tr><td>tag</td><td>Tag for which this region was started. Used to mark the region for later clean-up.
+         * <tr><td>tag</td><td>Tag for which this block was started. Used to mark the block for later clean-up.
          * </td></tr></table>
          */
-        protected ExecutableContentRegion start_executable_content_region(boolean stack, String tag) {
+        protected ExecutableContentBlock start_executable_content_block(boolean stack, String tag) {
             if (stack) {
                 if (debug_option)
-                    com.bw.fsm.Log.debug(" push executable content region [%s]", this.current_executable_content);
+                    com.bw.fsm.Log.debug(" push executable content block [%s]", this.current_executable_content);
                 this.executable_content_stack.push(new ExecutableContentStackItem(tag, this.current_executable_content));
             } else {
                 this.executable_content_stack.clear();
             }
-            this.current_executable_content = new ExecutableContentRegion(null, tag);
+            this.current_executable_content = new ExecutableContentBlock(null, tag);
             if (debug_option)
-                com.bw.fsm.Log.debug(" start executable content region [%s]", this.current_executable_content);
+                com.bw.fsm.Log.debug(" start executable content block [%s]", this.current_executable_content);
             return this.current_executable_content;
         }
 
-        /// Get the last entry for the current content region.
-        protected ExecutableContent get_last_executable_content_entry_for_region(ExecutableContentRegion ec_id) {
+        /// Get the last entry for the current content block.
+        protected ExecutableContent get_last_executable_content_entry_for_block(ExecutableContentBlock ec_id) {
             if (ec_id == null || ec_id.content.isEmpty())
                 return null;
             return ec_id.content.get(ec_id.content.size() - 1);
         }
 
         /**
-         * Ends the current executable content region and returns the old region.
+         * Ends the current executable content block and returns the old block.
          * The current id is reset to 0 or popped from stack if the stack is not empty.
-         * See {@link #start_executable_content_region(boolean, String)}.
+         * See {@link #start_executable_content_block(boolean, String)}.
          */
-        protected ExecutableContentRegion end_executable_content_region(String tag) {
+        protected ExecutableContentBlock end_executable_content_block(String tag) {
             if (this.current_executable_content == null) {
                 com.bw.fsm.Log.panic("Try to get executable content in unsupported document part.");
                 return null;
             } else {
                 if (debug_option)
-                    com.bw.fsm.Log.debug(" end executable content region [%s]", this.current_executable_content);
-                ExecutableContentRegion ec = this.current_executable_content;
+                    com.bw.fsm.Log.debug(" end executable content block [%s]", this.current_executable_content);
+                ExecutableContentBlock ec = this.current_executable_content;
                 ExecutableContentStackItem item = this.executable_content_stack.isEmpty() ? null : this.executable_content_stack.pop();
                 if (item != null) {
-                    this.current_executable_content = item.region;
+                    this.current_executable_content = item.block;
                     if (debug_option)
-                        com.bw.fsm.Log.debug(" pop executable content region [%s]", item);
+                        com.bw.fsm.Log.debug(" pop executable content block [%s]", item);
                     if (this.current_executable_content != null) {
                         if (tag != null && !tag.equals(item.for_tag)) {
-                            this.end_executable_content_region(tag);
+                            this.end_executable_content_block(tag);
                         }
                     }
                 } else {
@@ -373,7 +374,7 @@ public class ScxmlReader {
         }
 
         /**
-         * Adds content to the current executable content region.
+         * Adds content to the current executable content block.
          */
         protected void add_executable_content(ExecutableContent ec) {
             if (this.current_executable_content == null) {
@@ -700,11 +701,11 @@ public class ScxmlReader {
                             TAG_FINALIZE,
                             new String[]{TAG_INVOKE}
                     );
-            start_executable_content_region(false, TAG_FINALIZE);
+            start_executable_content_block(false, TAG_FINALIZE);
         }
 
         protected void end_finalize() {
-            get_current_state().invoke.last().finalize = end_executable_content_region(TAG_FINALIZE);
+            get_current_state().invoke.last().finalize = end_executable_content_block(TAG_FINALIZE);
         }
 
         protected void start_transition(Attributes attr) {
@@ -718,7 +719,7 @@ public class ScxmlReader {
             t.doc_id = DOC_ID_COUNTER.incrementAndGet();
 
             // Start script.
-            this.start_executable_content_region(false, TAG_TRANSITION);
+            this.start_executable_content_block(false, TAG_TRANSITION);
 
             String event = attr.getValue(TAG_EVENT);
             if (event != null) {
@@ -780,7 +781,7 @@ public class ScxmlReader {
         }
 
         protected void end_transition() {
-            var ec = this.end_executable_content_region(TAG_TRANSITION);
+            var ec = this.end_executable_content_block(TAG_TRANSITION);
             Transition trans = this.get_current_transition();
             // Assign the collected content to the transition.
             trans.content = ec;
@@ -802,7 +803,7 @@ public class ScxmlReader {
                 );
             }
             if (at_root) {
-                this.start_executable_content_region(false, TAG_SCRIPT);
+                this.start_executable_content_block(false, TAG_SCRIPT);
             }
 
             Expression s = new Expression();
@@ -834,7 +835,7 @@ public class ScxmlReader {
 
             this.add_executable_content(s);
             if (at_root) {
-                this.fsm.script = this.end_executable_content_region(TAG_SCRIPT);
+                this.fsm.script = this.end_executable_content_block(TAG_SCRIPT);
             }
         }
 
@@ -855,11 +856,11 @@ public class ScxmlReader {
             fe.item = get_required_attr(TAG_FOR_EACH, ATTR_ITEM, attr);
             fe.index = attr.getValue(ATTR_INDEX);
             this.add_executable_content(fe);
-            fe.content = this.start_executable_content_region(true, TAG_FOR_EACH);
+            fe.content = this.start_executable_content_block(true, TAG_FOR_EACH);
         }
 
         protected void end_for_each() {
-            this.end_executable_content_region(TAG_FOR_EACH);
+            this.end_executable_content_block(TAG_FOR_EACH);
         }
 
         protected void start_cancel(Attributes attr) {
@@ -895,24 +896,24 @@ public class ScxmlReader {
 
         protected void start_on_entry(Attributes _attr) {
             this.verify_parent_tag(TAG_ON_ENTRY, new String[]{TAG_STATE, TAG_PARALLEL, TAG_FINAL});
-            this.start_executable_content_region(false, TAG_ON_ENTRY);
+            this.start_executable_content_block(false, TAG_ON_ENTRY);
         }
 
         protected void end_on_entry() {
-            ExecutableContentRegion ec_region = this.end_executable_content_region(TAG_ON_ENTRY);
+            ExecutableContentBlock ec_block = this.end_executable_content_block(TAG_ON_ENTRY);
             State state = this.get_current_state();
-            state.onentry.add(ec_region);
+            state.onentry.add(ec_block);
         }
 
         protected void start_on_exit(Attributes _attr) {
             this.verify_parent_tag(TAG_ON_EXIT, new String[]{TAG_STATE, TAG_PARALLEL, TAG_FINAL});
-            this.start_executable_content_region(false, TAG_ON_EXIT);
+            this.start_executable_content_block(false, TAG_ON_EXIT);
         }
 
         protected void end_on_exit() {
-            ExecutableContentRegion ec_region = this.end_executable_content_region(TAG_ON_EXIT);
+            ExecutableContentBlock ec_block = this.end_executable_content_block(TAG_ON_EXIT);
             // Add the collected content to the on-exit.
-            this.get_current_state().onexit.add(ec_region);
+            this.get_current_state().onexit.add(ec_block);
         }
 
         protected void start_if(Attributes attr) {
@@ -930,64 +931,64 @@ public class ScxmlReader {
 
             If ec_if = new If(this.create_source(this.get_required_attr(TAG_IF, ATTR_COND, attr)));
             this.add_executable_content(ec_if);
-            ExecutableContentRegion parent_content_id = this.current_executable_content;
+            ExecutableContentBlock parent_content_id = this.current_executable_content;
 
-            this.start_executable_content_region(true, TAG_IF);
-            ExecutableContentRegion if_cid = this.current_executable_content;
+            this.start_executable_content_block(true, TAG_IF);
+            ExecutableContentBlock if_cid = this.current_executable_content;
 
-            ExecutableContent if_ec = this.get_last_executable_content_entry_for_region(parent_content_id);
+            ExecutableContent if_ec = this.get_last_executable_content_entry_for_block(parent_content_id);
             if (if_ec instanceof If evc_if) {
                 evc_if.content = if_cid;
             } else {
                 com.bw.fsm.Log.panic(
-                        "Internal Error: Executable Content missing in start_if in region #%s",
+                        "Internal Error: Executable Content missing in start_if in block #%s",
                         parent_content_id
                 );
             }
         }
 
         protected void end_if() {
-            this.end_executable_content_region(TAG_IF);
+            this.end_executable_content_block(TAG_IF);
         }
 
         protected void start_else_if(Attributes attr) {
             this.verify_parent_tag(TAG_ELSEIF, new String[]{TAG_IF});
 
-            // Close parent <if> content region
-            this.end_executable_content_region(TAG_IF);
+            // Close parent <if> content block
+            this.end_executable_content_block(TAG_IF);
 
-            ExecutableContentRegion if_id = this.current_executable_content;
+            ExecutableContentBlock if_id = this.current_executable_content;
 
-            // Start new "else" region - will contain only one "if", replacing current "if" stack element.
-            this.start_executable_content_region(true, TAG_IF);
-            ExecutableContentRegion else_id = this.current_executable_content;
+            // Start new "else" block - will contain only one "if", replacing current "if" stack element.
+            this.start_executable_content_block(true, TAG_IF);
+            ExecutableContentBlock else_id = this.current_executable_content;
 
             // Add new "if"
             If else_if = new If(this.create_source(get_required_attr(TAG_IF, ATTR_COND, attr)));
             this.add_executable_content(else_if);
 
-            ExecutableContentRegion else_if_content_id = this.start_executable_content_region(true, TAG_ELSEIF);
+            ExecutableContentBlock else_if_content_id = this.start_executable_content_block(true, TAG_ELSEIF);
 
             // Put together
-            ExecutableContent else_if_ec = this.get_last_executable_content_entry_for_region(else_id);
+            ExecutableContent else_if_ec = this.get_last_executable_content_entry_for_block(else_id);
             if (else_if_ec instanceof If evc_if) {
                 evc_if.content = else_if_content_id;
             } else {
                 com.bw.fsm.Log.panic(
-                        "Internal Error: Executable Content missing in start_else_if in region #%s",
+                        "Internal Error: Executable Content missing in start_else_if in block #%s",
                         else_id
                 );
             }
 
             while (if_id != null) {
                 // Find matching "if" level for the new "else if"
-                ExecutableContent if_ec = this.get_last_executable_content_entry_for_region(if_id);
+                ExecutableContent if_ec = this.get_last_executable_content_entry_for_block(if_id);
                 if (if_ec instanceof If evc_if) {
                     if (evc_if.else_content != null) {
-                        // Some higher "if". Go inside else-region.
+                        // Some higher "if". Go inside else-block.
                         if_id = evc_if.else_content;
                     } else {
-                        // Match, set "else-region".
+                        // Match, set "else-block".
                         if_id = null;
                         evc_if.else_content = else_id;
                     }
@@ -1001,17 +1002,17 @@ public class ScxmlReader {
         protected void start_else(Attributes _attr) {
             this.verify_parent_tag(TAG_ELSE, new String[]{TAG_IF});
 
-            // Close parent <if> content region
-            this.end_executable_content_region(TAG_IF);
+            // Close parent <if> content block
+            this.end_executable_content_block(TAG_IF);
 
-            ExecutableContentRegion if_id = this.current_executable_content;
+            ExecutableContentBlock if_id = this.current_executable_content;
 
-            // Start new "else" region, replacing "If" region.
-            ExecutableContentRegion else_id = this.start_executable_content_region(true, TAG_IF);
+            // Start new "else" block, replacing "If" block.
+            ExecutableContentBlock else_id = this.start_executable_content_block(true, TAG_IF);
 
             // Put together. Set deepest else
             while (if_id != null) {
-                ExecutableContent if_ec = this.get_last_executable_content_entry_for_region(if_id);
+                ExecutableContent if_ec = this.get_last_executable_content_entry_for_block(if_id);
                 if (if_ec instanceof If evc_if) {
 
                     if (evc_if.else_content != null) {
@@ -1276,7 +1277,7 @@ public class ScxmlReader {
                     invoke.content = new CommonContent(contentData, expr);
                 }
                 case TAG_SEND -> {
-                    var ec = get_last_executable_content_entry_for_region(current_executable_content);
+                    var ec = get_last_executable_content_entry_for_block(current_executable_content);
                     if (ec != null) {
                         if (ec instanceof SendParameters send) {
                             if (expr != null || contentData != null) {
@@ -1305,7 +1306,7 @@ public class ScxmlReader {
 
             switch (parent_tag) {
                 case TAG_SEND -> {
-                    var ec = get_last_executable_content_entry_for_region(current_executable_content);
+                    var ec = get_last_executable_content_entry_for_block(current_executable_content);
                     if (ec instanceof SendParameters send) {
                         send.push_param(param);
                     } else {

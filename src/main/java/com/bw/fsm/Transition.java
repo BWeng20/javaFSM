@@ -14,7 +14,7 @@ public class Transition {
     public State source;
     public final java.util.List<State> target = new ArrayList<>(1);
     public TransitionType transition_type;
-    public ExecutableContentRegion content;
+    public ExecutableContentBlock content;
 
     @Override
     public String toString() {

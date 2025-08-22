@@ -273,7 +273,7 @@ public abstract class Datamodel {
     /**
      * Executes content.
      */
-    public boolean executeContent(Fsm fsm, ExecutableContentRegion content) {
+    public boolean executeContent(Fsm fsm, ExecutableContentBlock content) {
         if (content != null) {
             for (var ct : content.content) {
                 if (!executeContent(fsm, ct)) {

@@ -2,7 +2,7 @@ package com.bw.fsm.executable_content;
 
 import com.bw.fsm.Data;
 import com.bw.fsm.ExecutableContent;
-import com.bw.fsm.ExecutableContentRegion;
+import com.bw.fsm.ExecutableContentBlock;
 import com.bw.fsm.Fsm;
 import com.bw.fsm.datamodel.Datamodel;
 
@@ -13,7 +13,7 @@ public class ForEach implements ExecutableContent {
     public Data array;
     public String item;
     public String index;
-    public ExecutableContentRegion content;
+    public ExecutableContentBlock content;
 
     public static final String INDEX_TEMP = "__$index";
 

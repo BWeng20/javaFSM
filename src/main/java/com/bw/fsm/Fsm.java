@@ -63,7 +63,7 @@ public class Fsm {
      */
     public State pseudo_root;
 
-    public ExecutableContentRegion script;
+    public ExecutableContentBlock script;
 
     /**
      * Set if this FSM was created as result of some invoke.
@@ -607,7 +607,7 @@ public class Fsm {
 
         for (Iterator<State> it = statesToExit.iterator(); it.hasNext(); ) {
             State s = it.next();
-            this.executeContentRegions(datamodel, s.onexit);
+            this.executeContentBlocks(datamodel, s.onexit);
             global.configuration.delete(s);
             if (this.isFinalState(s) && this.isSCXMLElement(s.parent)) {
                 this.returnDoneEvent(s.donedata, datamodel);
@@ -991,7 +991,7 @@ public class Fsm {
         for (State s : statesToExit.data) {
             // Use the document-id of Invoke to identify sessions to cancel.
             HashSet<Integer> invoke_doc_ids = new HashSet<>();
-            List<ExecutableContentRegion> exitList = new List<>();
+            List<ExecutableContentBlock> exitList = new List<>();
             if (StaticOptions.trace_state)
                 this.tracer.trace_exit_state(s);
             for (var inv : s.invoke.data) {
@@ -1007,7 +1007,7 @@ public class Fsm {
                     }
                 }
             }
-            this.executeContentRegions(datamodel, exitList.data);
+            this.executeContentBlocks(datamodel, exitList.data);
             gd.configuration.delete(s);
         }
         if (StaticOptions.trace_method)
@@ -1068,7 +1068,7 @@ public class Fsm {
         OrderedSet<State> statesForDefaultEntry = new OrderedSet<>();
 
         // initialize the temporary table for default content in history states
-        HashTable<State, ExecutableContentRegion> defaultHistoryContent = new HashTable<>();
+        HashTable<State, ExecutableContentBlock> defaultHistoryContent = new HashTable<>();
         this.computeEntrySet(datamodel, enabledTransitions, statesToEnter, statesForDefaultEntry, defaultHistoryContent);
         for (State s : statesToEnter.toList().sort(Fsm.state_entry_order).data) {
             if (StaticOptions.trace_state)
@@ -1085,7 +1085,7 @@ public class Fsm {
             if (to_init != null) {
                 datamodel.initializeDataModel(this, to_init, true);
             }
-            java.util.List<ExecutableContentRegion> exe = new ArrayList<>(s.onentry);
+            java.util.List<ExecutableContentBlock> exe = new ArrayList<>(s.onentry);
             if (statesForDefaultEntry.isMember(s) && s.initial != null && s.initial.content != null) {
                 exe.add(s.initial.content);
             }
@@ -1093,7 +1093,7 @@ public class Fsm {
                 exe.add(defaultHistoryContent.get(s));
             }
 
-            this.executeContentRegions(datamodel, exe);
+            this.executeContentBlocks(datamodel, exe);
 
             if (this.isFinalState(s)) {
                 State parent = s.parent;
@@ -1145,14 +1145,14 @@ public class Fsm {
         datamodel.global().enqueue_internal(event);
     }
 
-    protected void executeContentRegions(@NotNull Datamodel datamodel, @Nullable java.util.List<ExecutableContentRegion> regions) {
-        if (regions != null)
-            for (var region : regions)
-                executeContent(datamodel, region);
+    protected void executeContentBlocks(@NotNull Datamodel datamodel, @Nullable java.util.List<ExecutableContentBlock> blocks) {
+        if (blocks != null)
+            for (var block : blocks)
+                executeContent(datamodel, block);
     }
 
 
-    protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContentRegion content) {
+    protected void executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContentBlock content) {
         if (content != null)
             executeContent(datamodel, content.content);
     }
@@ -1290,7 +1290,7 @@ public class Fsm {
             List<Transition> transitions,
             OrderedSet<State> statesToEnter,
             OrderedSet<State> statesForDefaultEntry,
-            HashTable<State, ExecutableContentRegion> defaultHistoryContent
+            HashTable<State, ExecutableContentBlock> defaultHistoryContent
     ) {
         if (StaticOptions.trace_method) {
             this.tracer.enter_method_with_arguments("computeEntrySet",
@@ -1374,7 +1374,7 @@ public class Fsm {
             State state,
             OrderedSet<State> statesToEnter,
             OrderedSet<State> statesForDefaultEntry,
-            HashTable<State, ExecutableContentRegion> defaultHistoryContent
+            HashTable<State, ExecutableContentBlock> defaultHistoryContent
     ) {
         if (StaticOptions.trace_method) {
             this.tracer.enter_method_with_arguments("addDescendantStatesToEnter",
@@ -1492,7 +1492,7 @@ public class Fsm {
             State state, State ancestor,
             OrderedSet<State> statesToEnter,
             OrderedSet<State> statesForDefaultEntry,
-            HashTable<State, ExecutableContentRegion> defaultHistoryContent
+            HashTable<State, ExecutableContentBlock> defaultHistoryContent
     ) {
         if (StaticOptions.trace_method) {
             this.tracer.enter_method_with_arguments("addAncestorStatesToEnter",

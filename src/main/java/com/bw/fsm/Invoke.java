@@ -73,7 +73,7 @@ public class Invoke {
      * Executable content to handle the data returned from the invoked component.<br>
      * Occurs 0 or 1 times. See 6.5 &lt;finalize> for details.
      */
-    public ExecutableContentRegion finalize;
+    public ExecutableContentBlock finalize;
 
     /**
      * Generated invokeId (identical to "id" if specified).

@@ -103,13 +103,13 @@ public class State {
      * The script that is executed if the state is entered. See W3c comments for &lt;onentry> above.<br>
      * The list consists of a separate list for each &lt;onentry> block, because each block needs local error handling.
      */
-    public final java.util.List<ExecutableContentRegion> onentry = new ArrayList<>();
+    public final java.util.List<ExecutableContentBlock> onentry = new ArrayList<>();
 
     /**
      * The script that is executed if the state is left. See W3c comments for &lt;onexit> above.<br>
      * The list consists of a separate list for each &lt;onexit> block, because each block needs local error handling.
      */
-    public final java.util.List<ExecutableContentRegion> onexit = new ArrayList<>();
+    public final java.util.List<ExecutableContentBlock> onexit = new ArrayList<>();
 
     /**
      * All transitions between sub-states.

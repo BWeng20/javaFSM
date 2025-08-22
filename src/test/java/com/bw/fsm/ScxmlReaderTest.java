@@ -140,7 +140,7 @@ class ScxmlReaderTest {
 
         Assertions.assertEquals(1, s0.onentry.size());
 
-        ExecutableContentRegion block = s0.onentry.get(0);
+        ExecutableContentBlock block = s0.onentry.get(0);
         Assertions.assertEquals(2, block.content.size(), "'if' and last 'log' must be placed in two entries");
         var ecIf = block.content.get(0);
         Assertions.assertInstanceOf(If.class, ecIf);
@@ -188,7 +188,7 @@ class ScxmlReaderTest {
         State s0 = getS0(fsm);
 
         Assertions.assertEquals(1, s0.onentry.size());
-        ExecutableContentRegion block = s0.onentry.get(0);
+        ExecutableContentBlock block = s0.onentry.get(0);
         Assertions.assertEquals(2, block.content.size(), "'if' and last 'log' must be placed in two entries");
         var ecIf = block.content.get(0);
         Assertions.assertInstanceOf(If.class, ecIf);
@@ -232,7 +232,7 @@ class ScxmlReaderTest {
         State s0 = getS0(fsm);
 
         Assertions.assertEquals(1, s0.onentry.size());
-        ExecutableContentRegion region = s0.onentry.get(0);
+        ExecutableContentBlock region = s0.onentry.get(0);
         Assertions.assertEquals(2, region.content.size(), "'foreach' and last 'log' must be placed in two entries");
         var ecforEach = region.content.get(0);
         Assertions.assertInstanceOf(ForEach.class, ecforEach);
@@ -265,7 +265,7 @@ class ScxmlReaderTest {
         State s0 = getS0(fsm);
 
         Assertions.assertEquals(1, s0.onentry.size());
-        ExecutableContentRegion block = s0.onentry.get(0);
+        ExecutableContentBlock block = s0.onentry.get(0);
         Assertions.assertEquals(2, block.content.size(), "'foreach' and last 'log' must be placed in two entries");
         var ecforEach = block.content.get(0);
         Assertions.assertInstanceOf(ForEach.class, ecforEach);
