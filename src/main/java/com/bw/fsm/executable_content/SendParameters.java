@@ -56,7 +56,7 @@ public class SendParameters implements ExecutableContent {
         }
 
         Data event_name = datamodel.get_expression_alternative_value(this.event, this.event_expr);
-        if (target instanceof Data.Error) {
+        if (event_name instanceof Data.Error) {
             // Error -> abort
             return false;
         }
@@ -91,6 +91,10 @@ public class SendParameters implements ExecutableContent {
             datamodel.evaluate_params(this.params, data_vec);
             for (String name : this.name_list) {
                 Data value = datamodel.get_by_location(name);
+                if ( value instanceof Data.Error) {
+                    // Error -> abort
+                    return false;
+                }
                 data_vec.add(new ParamPair(name, value));
             }
         }
