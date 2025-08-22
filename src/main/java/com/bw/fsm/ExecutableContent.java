@@ -5,6 +5,9 @@ import com.bw.fsm.expression_engine.ExpressionLexer;
 
 import java.util.Map;
 
+/**
+ * Describes one executable content element. E.g. "if", "log" etc.
+ */
 public interface ExecutableContent {
     boolean execute(Datamodel datamodel, Fsm fsm);
 
@@ -19,7 +22,10 @@ public interface ExecutableContent {
 
     int TYPE_IF = 0;
     int TYPE_EXPRESSION = 1;
-    int TYPE_SCRIPT = 2;
+
+    /// Unused:
+    /// int TYPE_SCRIPT = 2;
+
     int TYPE_LOG = 3;
     int TYPE_FOREACH = 4;
     int TYPE_SEND = 5;
@@ -30,7 +36,7 @@ public interface ExecutableContent {
     String[] TYPE_NAMES = {
             "if",
             "expression",
-            "script",
+            "unused",
             "log",
             "foreach",
             "send",
