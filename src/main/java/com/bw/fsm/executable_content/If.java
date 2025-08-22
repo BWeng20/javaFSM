@@ -15,6 +15,7 @@ public class If implements ExecutableContent {
 
     @Override
     public boolean execute(Datamodel datamodel, Fsm fsm) {
+
         if (datamodel.execute_condition(this.condition)) {
             if (this.content != null) {
                 for (ExecutableContent e : this.content.content) {

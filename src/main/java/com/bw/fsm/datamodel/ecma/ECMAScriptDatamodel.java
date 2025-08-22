@@ -4,11 +4,13 @@ import com.bw.fsm.*;
 import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
+import com.bw.fsm.datamodel.ScriptException;
 import com.bw.fsm.event_io_processor.EventIOProcessor;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.Value;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.List;
@@ -113,16 +115,20 @@ public class ECMAScriptDatamodel extends Datamodel {
         }
     }
 
-    protected Data evalSource(String sourceText) throws Exception {
-        if (StaticOptions.trace)
-            global().tracer.trace(String.format("JS: %s", sourceText));
-        Source source = Source.newBuilder("js", sourceText, null).build();
-        return js_to_data_value(context.eval(source));
+    protected @NotNull Data evalSource(String sourceText) throws ScriptException {
+        try {
+            if (StaticOptions.trace_script)
+                global().tracer.trace(String.format("JS: %s", sourceText));
+            Source source = Source.newBuilder("js", sourceText, null).build();
+            return js_to_data_value(context.eval(source));
+        } catch (Exception e) {
+            throw new ScriptException(sourceText, e);
+        }
 
     }
 
 
-    protected Data evalSourceNoThrow(String sourceText) {
+    protected @NotNull Data evalSourceNoThrow(String sourceText) {
         try {
             return evalSource(sourceText);
         } catch (Exception e) {
@@ -228,7 +234,8 @@ public class ECMAScriptDatamodel extends Datamodel {
         eventScript.addStringMember(EVENT_VARIABLE_FIELD_SEND_ID, event.sendid);
 
         if (event.param_values == null) {
-            eventScript.addDataMember(EVENT_VARIABLE_FIELD_DATA, event.content);
+            Data r = (event.content == null || event.content instanceof Data.Error) ? Data.None.NONE : event.content;
+            eventScript.addDataMember(EVENT_VARIABLE_FIELD_DATA, r);
         } else {
             eventScript.startMember(EVENT_VARIABLE_FIELD_DATA);
             eventScript.startMap();
@@ -256,7 +263,10 @@ public class ECMAScriptDatamodel extends Datamodel {
             if (bindings.hasMember(name)) {
                 bindings.removeMember(name);
             }
-            Source source = Source.newBuilder("js", sb.toString(), null).build();
+            String src = sb.toString();
+            if (StaticOptions.trace_script)
+                global().tracer.trace("JS: " + src);
+            Source source = Source.newBuilder("js", src, null).build();
             context.eval(source);
         } catch (Exception e) {
             Log.exception("Failed to set " + name, e);
@@ -281,9 +291,9 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     @Override
-    public Data get_by_location(String location) {
+    public @NotNull Data get_by_location(String location) {
         Data r = evalSourceNoThrow(location);
-        if (r instanceof Data.Error err) {
+        if (r instanceof Data.Error) {
             internal_error_execution();
         }
         return r;
@@ -295,7 +305,7 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     @Override
-    public Data execute(Data script) {
+    public @NotNull Data execute(Data script) {
         Data res = evalData(script);
         if (StaticOptions.debug_option)
             Log.debug("Execute: %s => %s", script, res);
@@ -306,66 +316,63 @@ public class ECMAScriptDatamodel extends Datamodel {
     public boolean execute_for_each(Data array_expression, String item_name, String index, Supplier<Boolean> execute_body) {
         if (StaticOptions.debug_option)
             Log.debug("ForEach: array: %s", array_expression);
-        Data r = evalDataNoThrow(array_expression);
-        if (r != null) {
-            if (r instanceof Data.Map obj) {
-                // Iterate through all members
-                int idx = 0;
-
-                if (assign_internal(item_name, "null", true)) {
-                    for (var item_prop : obj.values.keySet()) {
-                        Data item = obj.values.get(item_prop);
-                        if (StaticOptions.debug_option)
-                            Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
-                        var str = item.toString();
-                        if (assign(new Data.Source(item_name), new Data.Source(str))) {
-                            if (!index.isEmpty()) {
-                                evalSourceNoThrow("var " + index + "=" + idx + ";");
-                            }
-                            if (!execute_body.get()) {
-                                return false;
-                            }
-                        } else {
-                            return false;
-                        }
-                        idx += 1;
-                    }
-                }
-            } else if (r instanceof Data.Array array) {
-                // Iterate through all elements
-                int idx = 0;
-
-                if (assign_internal(item_name, "null", true)) {
-                    for (var item : array.values) {
-                        if (StaticOptions.debug_option)
-                            Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
-                        var str = item.toString();
-                        if (assign(new Data.Source(item_name), new Data.Source(str))) {
-                            if (!index.isEmpty()) {
-                                evalSourceNoThrow("var " + index + "=" + idx + ";");
-                            }
-                            if (!execute_body.get()) {
-                                return false;
-                            }
-                        } else {
-                            return false;
-                        }
-                        idx += 1;
-                    }
-                }
-            } else {
-                Log.error("Resulting value is not a supported collection.");
-                internal_error_execution();
-            }
-            return true;
-        } else {
-            Log.error("Failed to eval");
+        Data r = evalData(array_expression);
+        if (r instanceof Data.Error) {
             return false;
+        } else if (r instanceof Data.Map obj) {
+            // Iterate through all members
+            int idx = 0;
+
+            if (assign_internal(item_name, "null", true)) {
+                for (var item_prop : obj.values.keySet()) {
+                    Data item = obj.values.get(item_prop);
+                    if (StaticOptions.debug_option)
+                        Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
+                    var str = item.toString();
+                    if (assign(new Data.Source(item_name), new Data.Source(str))) {
+                        if (!index.isEmpty()) {
+                            evalSourceNoThrow("var " + index + "=" + idx + ";");
+                        }
+                        if (!execute_body.get()) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                    idx += 1;
+                }
+            }
+        } else if (r instanceof Data.Array array) {
+            // Iterate through all elements
+            int idx = 0;
+
+            if (assign_internal(item_name, "null", true)) {
+                for (var item : array.values) {
+                    if (StaticOptions.debug_option)
+                        Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
+                    var str = item.toString();
+                    if (assign(new Data.Source(item_name), new Data.Source(str))) {
+                        if (!index.isEmpty()) {
+                            evalSourceNoThrow("var " + index + "=" + idx + ";");
+                        }
+                        if (!execute_body.get()) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                    idx += 1;
+                }
+            }
+        } else {
+            Log.error("Resulting value is not a supported collection.");
+            internal_error_execution();
         }
+        return true;
     }
 
     @Override
-    public boolean execute_condition(Data condition) throws IllegalStateException {
+    public boolean execute_condition(Data condition) {
         try {
             ECMAScriptProducer script = new ECMAScriptProducer();
             condition.as_script(script);
@@ -378,13 +385,14 @@ public class ECMAScriptDatamodel extends Datamodel {
                 // All object are true
                 return true;
             } else if (r instanceof Data.Error) {
+                this.internal_error_execution();
                 return false;
             } else
                 return !r.is_empty();
-        } catch (Exception se) {
-            // TODO
-            Log.exception("Failed to execute condition " + condition, se);
-            throw new IllegalStateException(se);
+        } catch (ScriptException e) {
+            Log.exception(e.getMessage(), e);
+            this.internal_error_execution();
+            return false;
         }
     }
 
@@ -393,7 +401,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         return content.execute(this, fsm);
     }
 
-    protected Data js_to_data_value(Value o) {
+    protected @NotNull Data js_to_data_value(Value o) {
         if (o == null) {
             return Data.Null.NULL;
         } else if (o.isNull()) {
@@ -464,23 +472,14 @@ public class ECMAScriptDatamodel extends Datamodel {
         return true;
     }
 
-    protected Data evalData(Data source) {
+    protected @NotNull Data evalData(Data source) {
         try {
             ECMAScriptProducer script = new ECMAScriptProducer();
             source.as_script(script);
             return evalSource(script.finish());
         } catch (Exception se) {
-            return new Data.Error(se.getMessage());
-        }
-    }
-
-    protected Data evalDataNoThrow(Data source) {
-        try {
-            return evalData(source);
-        } catch (Exception e) {
-            Data d = new Data.Error(String.format("Eval of '%s' failed: %s", source, e.getMessage()));
-            Log.error("%s", d.toString());
-            return d;
+            Log.error("%s", se.getMessage());
+            return new Data.Error(String.format("Eval of '%s' failed: %s", source, se.getMessage()));
         }
     }
 }

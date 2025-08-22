@@ -3,6 +3,7 @@ package com.bw.fsm.datamodel;
 import com.bw.fsm.*;
 import com.bw.fsm.event_io_processor.EventIOProcessor;
 import com.bw.fsm.executable_content.Parameter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -178,7 +179,7 @@ public abstract class Datamodel {
      * "error.execute" shall be put inside the internal event queue.<br>
      * See {@link Datamodel#internal_error_execution}.
      */
-    public Data get_by_location(String location) {
+    public @NotNull Data get_by_location(String location) {
         throw new UnsupportedOperationException();
     }
 
@@ -237,7 +238,7 @@ public abstract class Datamodel {
      * inside the internal event queue.
      * See {@link Datamodel#internal_error_execution()}.
      */
-    public Data execute(Data script) {
+    public @NotNull Data execute(Data script) {
         throw new UnsupportedOperationException();
     }
 
@@ -255,10 +256,13 @@ public abstract class Datamodel {
 
     /**
      * <b>W3C says</b>:<br>
-     * The set of operators in conditional expressions varies depending on the data model,
-     * but all data models must support the 'In()' predicate, which takes a state ID as its
-     * argument and returns true if the state machine is in that state.<br>
-     * Conditional expressions in conformant SCXML documents should not have side effects.
+     * <b>5.9.1 Conditional Expressions</b><br>
+     * Conditional expressions are used inside the 'cond' attribute of &lt;transition>, &lt;if> and &lt;elseif>.<br>
+     * If a conditional expression cannot be evaluated as a boolean value ('true' or 'false') or if its evaluation
+     * causes an error, the SCXML Processor MUST treat the expression as if it evaluated to 'false' and MUST place
+     * the error 'error.execution' in the internal event queue.<br>
+     * ...<br>
+     * Conditional expressions in conformant SCXML documents SHOULD NOT have side effects.
      */
     public boolean execute_condition(Data script) {
         throw new UnsupportedOperationException();
@@ -324,23 +328,22 @@ public abstract class Datamodel {
      * Evaluates a content element.<br>
      * Returns the static content or executes the expression.
      */
-    public Data evaluate_content(CommonContent content) {
+    public @NotNull Data evaluate_content(CommonContent content) {
         if (content != null) {
             if (content.content_expr != null) {
-                try {
-                    return this.execute(new Data.Source(content.content_expr));
-                } catch (Exception e) {
-                    Log.error("content expr '%s' is invalid (%s)", content.content, e.getMessage());
+                Data r = this.execute(new Data.Source(content.content_expr));
+                if (r instanceof Data.Error) {
                     // W3C:<br>
                     // If the evaluation of 'expr' produces an error, the Processor must place
                     // error.execution in the internal event queue and use the empty string as
                     // the value of the <content> element.
                     this.internal_error_execution();
                 }
+                return r;
             }
-            return content.content;
+            return content.content == null ? Data.None.NONE : content.content;
         }
-        return null;
+        return Data.None.NONE;
     }
 
     /**
@@ -352,7 +355,7 @@ public abstract class Datamodel {
             for (Parameter param : params) {
                 if (param.hasLocation()) {
                     Data data = get_by_location(param.location);
-                    if (data == null || data instanceof Data.Error) {
+                    if (data instanceof Data.Error) {
                         // W3C:<br>
                         // If the 'location' attribute does not refer to a valid location in
                         // the data model, ..., the SCXML Processor must place the error
@@ -365,7 +368,7 @@ public abstract class Datamodel {
                     }
                 } else if (param.hasExpression()) {
                     Data data = execute(new Data.Source(param.expr));
-                    if (data == null) {
+                    if (data instanceof Data.Error err) {
                         //  W3C:<br>
                         // ...if the evaluation of the 'expr' produces an error, the SCXML
                         // Processor must place the error 'error.execution' on the internal event

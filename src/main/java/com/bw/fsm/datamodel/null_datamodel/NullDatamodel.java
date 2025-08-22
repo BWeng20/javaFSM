@@ -48,7 +48,6 @@ public class NullDatamodel extends Datamodel {
     }
 
     public GlobalData global;
-    public Map<String, State> state_id_to_state;
     public ActionWrapper actions;
 
     public NullDatamodel(GlobalData global) {
@@ -69,12 +68,6 @@ public class NullDatamodel extends Datamodel {
     public void add_functions(Fsm fsm) {
     }
 
-    /**
-     * <b>W3C says</b>:<br>
-     * The boolean expression language consists of the In predicate only.<br>
-     * It has the form 'In(id)', where id is the id of a state in the enclosing state machine.<br>
-     * The predicate must return 'true' if and only if that state is in the current state configuration.
-     */
     @Override
     public boolean execute_condition(Data script) {
         var lexer = new ExpressionLexer(script.toString());
@@ -82,7 +75,7 @@ public class NullDatamodel extends Datamodel {
                 identifier.value.equals("In") &&
                 lexer.next_token() instanceof Token.Bracket bracket1
                 && bracket1.value == '(') {
-            Token name_token = lexer.next_token();
+            Token<?> name_token = lexer.next_token();
             if (name_token instanceof Token.TString tstring) {
                 if (lexer.next_token() instanceof Token.Bracket bracket2 && bracket2.value == ')') {
                     for (State s : global().configuration.data) {
@@ -92,11 +85,13 @@ public class NullDatamodel extends Datamodel {
                     return false;
                 } else {
                     Log.error("Matching ')' is missing");
+                    this.internal_error_execution();
                     return false;
                 }
             }
         }
         Log.error("Syntax error in %s", script);
+        this.internal_error_execution();
         return false;
     }
 

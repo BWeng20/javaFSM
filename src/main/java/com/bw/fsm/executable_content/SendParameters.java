@@ -86,26 +86,18 @@ public class SendParameters implements ExecutableContent {
 
         // A conformant document MUST NOT specify "namelist" or <param> with <content>.
         if (this.content != null) {
-            Data content_data = datamodel.evaluate_content(this.content);
-            if (content_data != null) {
-                content = content_data;
-            }
+            content = datamodel.evaluate_content(this.content);
         } else {
             datamodel.evaluate_params(this.params, data_vec);
             for (String name : this.name_list) {
                 Data value = datamodel.get_by_location(name);
-                if (value == null) {
-                    // Error -> Abort
-                    return false;
-                } else {
-                    data_vec.add(new ParamPair(name, value));
-                }
+                data_vec.add(new ParamPair(name, value));
             }
         }
         int delay_ms;
         if (!this.delay_expr.is_empty()) {
             Data delay = datamodel.execute(this.delay_expr);
-            if (delay == null || delay instanceof Data.Error) {
+            if (delay instanceof Data.Error) {
                 // Error -> Abort
                 return false;
             } else {

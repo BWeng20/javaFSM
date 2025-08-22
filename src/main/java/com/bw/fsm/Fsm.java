@@ -10,7 +10,6 @@ import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -502,7 +501,7 @@ public class Fsm {
                 }
                 if (StaticOptions.trace_method)
                     this.tracer.exit_method("externalQueue.dequeue");
-                if (StaticOptions.trace_event)
+                if (StaticOptions.trace_event && externalEvent != null)
                     this.tracer.event_external_received(externalEvent);
                 if (this.isCancelEvent(externalEvent)) {
                     datamodel.global().running = false;
@@ -1111,9 +1110,7 @@ public class Fsm {
                     Data content = null;
                     if (s.donedata != null) {
                         datamodel.evaluate_params(s.donedata.params, name_values);
-                        content = datamodel.evaluate_content(s.donedata.content);
-                        if (content != null)
-                            content = content.getCopy();
+                        content = datamodel.evaluate_content(s.donedata.content).getCopy();
                     }
                     var param_values = name_values.isEmpty() ? null : name_values;
 
@@ -1839,7 +1836,7 @@ public class Fsm {
         java.util.List<ParamPair> name_values = new ArrayList<>();
         for (String name : inv.name_list) {
             Data value = datamodel.get_by_location(name);
-            if (value == null || value instanceof Data.Error) {
+            if (value instanceof Data.Error) {
                 // Error -> Abort
                 if (StaticOptions.trace_method) {
                     this.tracer.exit_method("invoke");
@@ -1870,44 +1867,22 @@ public class Fsm {
 
         if (src == null || src.is_empty()) {
             var content = datamodel.evaluate_content(inv.content);
-            if (content == null || content instanceof Data.Error) {
+            if (content instanceof Data.FsmDefinition fsm) {
+                fsm.fsm.tracer.enable_trace(this.tracer.trace_mode());
+                fsm.fsm.caller_invoke_id = invokeId;
+                fsm.fsm.parent_session_id = global.session_id;
+                session = fsm.fsm.start_fsm_with_data_and_finish_mode(
+                        global.actions,
+                        global.executor,
+                        name_values,
+                        FinishMode.DISPOSE
+                );
+            } else {
                 Log.error("No content to execute");
                 if (StaticOptions.trace_method) {
                     this.tracer.exit_method("invoke");
                 }
                 return;
-            } else {
-                try {
-                    if (content instanceof Data.FsmDefinition fsm) {
-                        fsm.fsm.tracer.enable_trace(this.tracer.trace_mode());
-                        fsm.fsm.caller_invoke_id = invokeId;
-                        fsm.fsm.parent_session_id = global.session_id;
-                        session = fsm.fsm.start_fsm_with_data_and_finish_mode(
-                                global.actions,
-                                global.executor,
-                                name_values,
-                                FinishMode.DISPOSE
-                        );
-                    } else {
-                        session = global
-                                .executor
-                                .execute_with_data_from_xml(
-                                        datamodel.as_script(content),
-                                        global.actions,
-                                        name_values,
-                                        global.session_id,
-                                        invokeId,
-                                        FinishMode.DISPOSE,
-                                        this.tracer.trace_mode()
-                                );
-                    }
-                } catch (IOException ioe) {
-                    Log.error("Execute of '%s' failed: %s", content.toString(), ioe.getMessage());
-                    if (StaticOptions.trace_method) {
-                        this.tracer.exit_method("invoke");
-                    }
-                    return;
-                }
             }
         } else {
             session = global.executor.execute_with_data(
@@ -1958,17 +1933,11 @@ public class Fsm {
         if (t.cond == null || t.cond.is_empty()) {
             return true;
         } else {
-            try {
-                var r = datamodel.execute_condition(t.cond);
-                if (StaticOptions.trace) {
-                    tracer.trace(String.format("Checking %s: %s -> %s", t, t.cond, r));
-                }
-                return r;
-            } catch (IllegalStateException ie) {
-                Log.exception("Failed to execute ondition: " + ie.getMessage(), ie);
-                datamodel.internal_error_execution();
-                return false;
+            var r = datamodel.execute_condition(t.cond);
+            if (StaticOptions.trace) {
+                tracer.trace(String.format("Checking %s: %s -> %s", t, t.cond, r));
             }
+            return r;
         }
     }
 

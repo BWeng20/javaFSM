@@ -3,6 +3,7 @@ package com.bw.fsm;
 import com.bw.fsm.datamodel.SourceCode;
 import com.bw.fsm.executable_content.*;
 import com.bw.fsm.executable_content.Log;
+import org.jetbrains.annotations.NotNull;
 
 import javax.xml.stream.*;
 import java.io.*;
@@ -151,7 +152,7 @@ public class ScxmlReader {
                 switch (event) {
                     case XMLStreamConstants.START_ELEMENT:
                         statefulReader.start_element(reader.getName().getLocalPart(),
-                                new Attributes(reader), reader, true);
+                                new Attributes(reader), reader);
                         break;
 
                     case XMLStreamConstants.CHARACTERS:
@@ -578,15 +579,14 @@ public class ScxmlReader {
             this.verify_parent_tag(TAG_DATAMODEL, new String[]{TAG_SCXML, TAG_STATE, TAG_PARALLEL});
         }
 
-        protected void start_data(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
+        protected void start_data(Attributes attr, XMLStreamReader reader) throws IOException {
             this.verify_parent_tag(TAG_DATA, new String[]{TAG_DATAMODEL});
 
             String id = get_required_attr(TAG_DATA, ATTR_ID, attr);
             String src = attr.getValue(ATTR_SRC);
 
             String expr = attr.getValue(ATTR_EXPR);
-
-            String content = (has_content) ? this.read_content(TAG_DATA, reader) : "";
+            String content = this.read_content(TAG_DATA, reader);
 
             // W3C:
             // In a conformant SCXML document, a \<data}> element may have either a 'src' or an 'expr' attribute,
@@ -787,7 +787,7 @@ public class ScxmlReader {
             trans.content = ec;
         }
 
-        protected void start_script(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
+        protected void start_script(Attributes attr, XMLStreamReader reader) throws IOException {
             boolean at_root = TAG_SCXML.equals(this.get_parent_tag());
             if (!at_root) {
                 this.verify_parent_tag(
@@ -823,8 +823,7 @@ public class ScxmlReader {
                 }
             }
 
-            String script_text = (has_content) ?
-                    this.read_content(TAG_SCRIPT, reader).trim() : "";
+            String script_text = this.read_content(TAG_SCRIPT, reader);
 
             if (!script_text.isEmpty()) {
                 if (!s.content.is_empty()) {
@@ -1147,9 +1146,11 @@ public class ScxmlReader {
             }
         }
 
-        /// Reads the content of the current element.
-        /// Calles "pop" to remove the element from stack.
-        protected String read_content(String tag, XMLStreamReader reader) throws IOException {
+        /**
+         * Reads the content of the current element.
+         * Calls "pop" to remove the element from stack.
+         */
+        protected @NotNull String read_content(String tag, XMLStreamReader reader) throws IOException {
 
             StringWriter writer = getWriter();
             try {
@@ -1215,7 +1216,7 @@ public class ScxmlReader {
                 xmlWriter.close();
                 reader.close();
 
-                return writer.toString();
+                return writer.toString().trim();
             } catch (XMLStreamException e) {
                 throw new IOException(e);
             } finally {
@@ -1224,19 +1225,18 @@ public class ScxmlReader {
 
         }
 
-        protected void start_content(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
+        protected void start_content(Attributes attr, XMLStreamReader reader) throws IOException {
             var parent_tag = this.verify_parent_tag(TAG_CONTENT, new String[]{TAG_SEND, TAG_INVOKE, TAG_DONEDATA});
             var expr = attr.getValue(ATTR_EXPR);
-
-            var content = has_content ? read_content(TAG_CONTENT, reader) : null;
+            var content = read_content(TAG_CONTENT, reader);
 
             // W3C:
             // A conformant SCXML document must not specify both the 'expr' attribute and child content.
-            if (expr != null && content != null) {
-                com.bw.fsm.Log.panic("%s shall have only %s or children, but not both.", TAG_CONTENT, ATTR_EXPR);
+            if (expr != null && !content.isEmpty()) {
+                com.bw.fsm.Log.panic("<%s> shall have only %s or children, but not both.", TAG_CONTENT, ATTR_EXPR);
             }
             Data contentData;
-            if (content == null)
+            if (content.isEmpty())
                 contentData = null;
             else {
                 try {
@@ -1346,7 +1346,7 @@ public class ScxmlReader {
             }
         }
 
-        protected void start_assign(Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
+        protected void start_assign(Attributes attr, XMLStreamReader reader) throws IOException {
             this.verify_parent_tag(
                     TAG_ASSIGN,
                     new String[]{
@@ -1367,14 +1367,9 @@ public class ScxmlReader {
                 assign.expr = this.create_source(expr);
             }
 
-            String assign_text;
-            if (has_content) {
-                assign_text = this.read_content(TAG_ASSIGN, reader);
-                if (!assign_text.isEmpty())
-                    assign_text = String.format("\"%s\"", assign_text);
-            } else {
-                assign_text = "";
-            }
+            String assign_text = this.read_content(TAG_ASSIGN, reader);
+            if (!assign_text.isEmpty())
+                assign_text = String.format("\"%s\"", assign_text);
 
             String assign_src = assign_text.trim();
 
@@ -1466,14 +1461,14 @@ public class ScxmlReader {
         }
 
 
-        public void start_element(String name, Attributes attr, XMLStreamReader reader, boolean has_content) throws IOException {
+        public void start_element(String name, Attributes attr, XMLStreamReader reader) throws IOException {
             this.push(name);
 
             switch (name) {
                 case TAG_INCLUDE -> this.include(attr);
                 case TAG_SCXML -> this.start_scxml(attr);
                 case TAG_DATAMODEL -> this.start_datamodel();
-                case TAG_DATA -> this.start_data(attr, reader, has_content);
+                case TAG_DATA -> this.start_data(attr, reader);
                 case TAG_STATE -> this.start_state(attr);
                 case TAG_PARALLEL -> this.start_parallel(attr);
                 case TAG_FINAL -> this.start_final(attr);
@@ -1485,13 +1480,13 @@ public class ScxmlReader {
                 case TAG_FINALIZE -> this.start_finalize(attr);
                 case TAG_ON_ENTRY -> this.start_on_entry(attr);
                 case TAG_ON_EXIT -> this.start_on_exit(attr);
-                case TAG_SCRIPT -> this.start_script(attr, reader, has_content);
+                case TAG_SCRIPT -> this.start_script(attr, reader);
                 case TAG_RAISE -> this.start_raise(attr);
                 case TAG_SEND -> this.start_send(attr);
                 case TAG_PARAM -> this.start_param(attr);
-                case TAG_CONTENT -> this.start_content(attr, reader, has_content);
+                case TAG_CONTENT -> this.start_content(attr, reader);
                 case TAG_LOG -> this.start_log(attr);
-                case TAG_ASSIGN -> this.start_assign(attr, reader, has_content);
+                case TAG_ASSIGN -> this.start_assign(attr, reader);
                 case TAG_FOR_EACH -> this.start_for_each(attr);
                 case TAG_CANCEL -> this.start_cancel(attr);
                 case TAG_IF -> this.start_if(attr);
