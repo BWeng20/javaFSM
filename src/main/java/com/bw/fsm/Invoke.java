@@ -94,4 +94,15 @@ public class Invoke {
     }
 
     public CommonContent content;
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder(50);
+        stringBuilder.append("Invoke: ");
+        if (invoke_id != null)
+            stringBuilder.append("invoke-id: ").append(invoke_id);
+        if (content != null)
+            stringBuilder.append("content: ").append(content.toString());
+        return stringBuilder.toString();
+    }
 }

@@ -114,6 +114,8 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     protected Data evalSource(String sourceText) throws Exception {
+        if (StaticOptions.trace)
+            global().tracer.trace(String.format("JS: %s", sourceText));
         Source source = Source.newBuilder("js", sourceText, null).build();
         return js_to_data_value(context.eval(source));
 
@@ -446,9 +448,6 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     protected boolean assign_internal(String left_expr, String right_expr, boolean allow_undefined) {
         String exp = String.format("%s%s=%s;", allow_undefined ? "var " : "", left_expr, right_expr);
-        if (allow_undefined && this.strict_mode) {
-            // this.context.strict(false);
-        }
         Object d = this.evalData(new Data.Source(exp));
         if (d instanceof Data.Error err) {
             // W3C says:\
@@ -461,9 +460,6 @@ public class ECMAScriptDatamodel extends Datamodel {
                     left_expr, right_expr, err.toString());
             this.internal_error_execution();
             return false;
-        }
-        if (allow_undefined && this.strict_mode) {
-            // this.context.strict(true);
         }
         return true;
     }

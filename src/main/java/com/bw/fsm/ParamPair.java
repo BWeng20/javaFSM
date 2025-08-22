@@ -8,4 +8,9 @@ public class ParamPair {
         this.name = name;
         this.value = data;
     }
+
+    @Override
+    public String toString() {
+        return name + "=" + String.valueOf(value);
+    }
 }

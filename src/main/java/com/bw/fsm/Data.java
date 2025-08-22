@@ -481,6 +481,11 @@ public abstract class Data {
             return new FsmDefinition(xml, fsm);
         }
 
+        @Override
+        public java.lang.String toString() {
+            return "FSM {" + xml + "}";
+        }
+
     }
 
     /**

@@ -138,6 +138,8 @@ public class ECMAScriptProducer implements ScriptProducer {
         return value == null
                 ? (mapNull2Undefined ? valueUndefined : valueNull)
                 : "'" + value.replace("\\", "\\\\")
+                .replace("\n", "\\n'")
+                .replace("\r", "\\r'")
                 .replace("'", "\\'") + "'";
     }
 

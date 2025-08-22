@@ -2,6 +2,7 @@ package com.bw.fsm;
 
 /**
  * Possible event types.
+ *
  * @see Event#etype
  */
 public enum EventType {

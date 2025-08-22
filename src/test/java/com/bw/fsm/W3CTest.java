@@ -55,18 +55,18 @@ public class W3CTest {
                         
                             -report         Creates a report file (not yet).
                         
-                            testDirectory   Folder to put all tests files.
+                            testDirectory   Folder to store all tests files.
                                             Must contain at least the test-config "test_config.json".
                                             Created sub-folders:
-                                              logs:  main and test logs. One for each test file
-                                              txml:  downloaded manifest, transformation and test files
-                                              scxml: transformed scxml test files
-                                              dependencies: downloaded includes
-                                              dependencies/scxml: transformed includes
-                                              manual_txml: downloaded manual tests
-                                              manual_scxml: transformed manual tests (not used)
-                                              optional_txml: downloaded optional tests
-                                              optional_scxml: transformed optional tests (not used)
+                                              logs:  The main- and test-logs. One test-log for each test file
+                                              txml:  Contains the downloaded manifest, transformation and test files
+                                              scxml: The transformed scxml test files
+                                              dependencies: The downloaded include files
+                                              dependencies/scxml: The transformed include files
+                                              manual_txml: The downloaded manual tests
+                                              manual_scxml: The transformed manual tests (not used)
+                                              optional_txml: The downloaded optional tests
+                                              optional_scxml: The transformed optional scxml test files (not used)
                         
                         Examples:
                         

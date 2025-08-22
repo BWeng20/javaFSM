@@ -17,4 +17,16 @@ public class CommonContent {
         this.content_expr = content_expr;
 
     }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder(50);
+        stringBuilder.append("{");
+        if (content != null)
+            stringBuilder.append("content: ").append(content);
+        if (content_expr != null)
+            stringBuilder.append("expr: ").append(content_expr);
+        stringBuilder.append("}");
+        return stringBuilder.toString();
+    }
 }

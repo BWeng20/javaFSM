@@ -184,13 +184,14 @@ public abstract class Datamodel {
 
     /**
      * Convenient function to retrieve a value that has an alternative expression-value.<br>
-     * If value_expression is empty, Ok(value) is returned (if empty or not). If the expression
-     * results in error Err(message) and "error.execute" is put in internal queue.
-     * See [internal_error_execution](Datamodel::internal_error_execution).
+     * If "value_expression" is empty, "value" is returned (if empty or not, Data.None if null).<br>
+     * If the expression results in error, Data.Error is returned and "error.execute" is put in internal queue.
+     *
+     * @see Datamodel#internal_error_execution().
      */
     public Data get_expression_alternative_value(Data value, Data value_expression) {
         if (value_expression == null || value_expression.is_empty()) {
-            return value;
+            return value == null ? Data.None.NONE : value;
         } else {
             return this.execute(value_expression);
         }

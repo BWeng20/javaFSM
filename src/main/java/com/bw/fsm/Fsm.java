@@ -461,7 +461,7 @@ public class Fsm {
                     this.tracer.enter_method("externalQueue.dequeue");
                 while (true) {
                     var externalEventTmp = datamodel.global().externalQueue.dequeue();
-                    if ( externalEventTmp == null ) {
+                    if (externalEventTmp == null) {
                         if (!datamodel.global().running) {
                             externalEvent = null;
                             break;
@@ -1791,7 +1791,7 @@ public class Fsm {
         // terminate the processing of the element without further action.
 
         Data type_name_data = datamodel.get_expression_alternative_value(inv.type_name, inv.type_expr);
-        if (type_name_data == null || type_name_data instanceof Data.Error) {
+        if (type_name_data instanceof Data.Error) {
             // Error -> abort
             if (StaticOptions.trace_method) {
                 this.tracer.exit_method("invoke");
@@ -1959,7 +1959,11 @@ public class Fsm {
             return true;
         } else {
             try {
-                return datamodel.execute_condition(t.cond);
+                var r = datamodel.execute_condition(t.cond);
+                if (StaticOptions.trace) {
+                    tracer.trace(String.format("Checking %s: %s -> %s", t, t.cond, r));
+                }
+                return r;
             } catch (IllegalStateException ie) {
                 Log.exception("Failed to execute ondition: " + ie.getMessage(), ie);
                 datamodel.internal_error_execution();
