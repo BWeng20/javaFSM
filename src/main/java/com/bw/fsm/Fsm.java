@@ -461,36 +461,43 @@ public class Fsm {
                     this.tracer.enter_method("externalQueue.dequeue");
                 while (true) {
                     var externalEventTmp = datamodel.global().externalQueue.dequeue();
-                    if (externalEventTmp.name.startsWith(EVENT_DONE_INVOKE_PREFIX)) {
-                        externalEvent = externalEventTmp;
-                        break;
-                    }
-                    if (externalEventTmp.invoke_id != null) {
-                        if (!caller_invoke_id.equals((externalEventTmp.invoke_id))) {
-                            // W3C says:
-                            //    Once it cancels the invoked session, the Processor MUST ignore any events
-                            //    it receives from that session. In particular it MUST NOT not insert them
-                            //    into the external event queue of the invoking session.
-                            // Check if the session is active.
-                            if (datamodel.global().child_sessions
-                                    .containsKey(externalEventTmp.invoke_id)) {
+                    if ( externalEventTmp == null ) {
+                        if (!datamodel.global().running) {
+                            externalEvent = null;
+                            break;
+                        }
+                    } else {
+                        if (externalEventTmp.name.startsWith(EVENT_DONE_INVOKE_PREFIX)) {
+                            externalEvent = externalEventTmp;
+                            break;
+                        }
+                        if (externalEventTmp.invoke_id != null) {
+                            if (!caller_invoke_id.equals((externalEventTmp.invoke_id))) {
+                                // W3C says:
+                                //    Once it cancels the invoked session, the Processor MUST ignore any events
+                                //    it receives from that session. In particular it MUST NOT not insert them
+                                //    into the external event queue of the invoking session.
+                                // Check if the session is active.
+                                if (datamodel.global().child_sessions
+                                        .containsKey(externalEventTmp.invoke_id)) {
+                                    externalEvent = externalEventTmp;
+                                    break;
+                                } else {
+                                    if (StaticOptions.debug_option)
+
+                                        Log.debug(
+                                                "Ignore event %s from invoke %s",
+                                                externalEventTmp.name, externalEventTmp.invoke_id
+                                        );
+                                }
+                            } else {
                                 externalEvent = externalEventTmp;
                                 break;
-                            } else {
-                                if (StaticOptions.debug_option)
-
-                                    Log.debug(
-                                            "Ignore event %s from invoke %s",
-                                            externalEventTmp.name, externalEventTmp.invoke_id
-                                    );
                             }
                         } else {
                             externalEvent = externalEventTmp;
                             break;
                         }
-                    } else {
-                        externalEvent = externalEventTmp;
-                        break;
                     }
                 }
                 if (StaticOptions.trace_method)

@@ -55,18 +55,10 @@ public interface ExecutableContent {
 
             var v = value_result.as_double();
             switch (unit) {
-                case "D", "d" -> {
-                    v *= 24.0 * 60.0 * 60.0 * 1000.0;
-                }
-                case "H", "h" -> {
-                    v *= 60.0 * 60.0 * 1000.0;
-                }
-                case "M", "m" -> {
-                    v *= 60000.0;
-                }
-                case "S", "s" -> {
-                    v *= 1000.0;
-                }
+                case "D", "d" -> v *= 24.0 * 60.0 * 60.0 * 1000.0;
+                case "H", "h" -> v *= 60.0 * 60.0 * 1000.0;
+                case "M", "m" -> v *= 60000.0;
+                case "S", "s" -> v *= 1000.0;
                 case "MS", "ms" -> {
                 }
                 default -> {

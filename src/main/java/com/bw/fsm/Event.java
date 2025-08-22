@@ -74,10 +74,6 @@ public class Event {
         this.origin_type = null;
     }
 
-    public static Event new_external() {
-        return new Event();
-    }
-
     public static Event new_simple(String name) {
         Event event = new Event();
         event.name = name;

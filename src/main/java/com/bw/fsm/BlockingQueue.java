@@ -1,5 +1,7 @@
 package com.bw.fsm;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -21,7 +23,7 @@ public final class BlockingQueue<T> {
      * <b>W3C says</b>:<br>
      * Removes and returns first element in queue, blocks if queue is empty
      */
-    public T dequeue() {
+    public @Nullable T dequeue() {
         try {
             return data.takeFirst();
         } catch (InterruptedException ie) {
