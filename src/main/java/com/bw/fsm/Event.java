@@ -1,42 +1,45 @@
 package com.bw.fsm;
 
-/// *W3C says*:
-/// ## The Internal Structure of Events.
-/// Events have an internal structure which is reflected in the _event variable. This variable can be
-/// accessed to condition transitions (via boolean expressions in the 'cond' attribute) or to update
-/// the data model (via \<assign\>), etc.
-///
-/// The SCXML Processor must ensure that the following fields are present in all events, whether
-/// internal or external.
-///
-/// - name. This is a character string giving the name of the event. The SCXML Processor must set
-///   the name field to the name of this event. It is what is matched against the 'event' attribute
-///   of \<transition\>. Note that transitions can do additional tests by using the value of this
-///   field inside boolean expressions in the 'cond' attribute.
-/// - type. This field describes the event type. The SCXML Processor must set it to: "platform"
-///   (for events raised by the platform itself, such as error events), "internal" (for events
-///   raised by \<raise\> and \<send\> with target '_internal') or "external" (for all other events).
-/// - sendid. If the sending entity has specified a value for this, the Processor must set this
-///   field to that value (see C Event I/O Processors for details). Otherwise, in the case of error
-///   events triggered by a failed attempt to send an event, the Processor must set this field to
-///   the send id of the triggering \<send\> element. Otherwise it must leave it blank.
-/// - origin. This is a URI, equivalent to the 'target' attribute on the \<send\> element. For
-///   external events, the SCXML Processor should set this field to a value which, when used as the
-///   value of 'target', will allow the receiver of the event to \<send\> a response back to the
-///   originating entity via the Event I/O Processor specified in 'origintype'. For internal and
-///   platform events, the Processor must leave this field blank.
-/// - origintype. This is equivalent to the 'type' field on the \<send\> element. For external events,
-///   the SCXML Processor should set this field to a value which, when used as the value of 'type',
-///   will allow the receiver of the event to \<send\> a response back to the originating entity at
-///   the URI specified by 'origin'. For internal and platform events, the Processor must leave this
-///   field blank.
-/// - invokeid. If this event is generated from an invoked child process, the SCXML Processor must
-///   set this field to the invoke id of the invocation that triggered the child process. Otherwise
-///   it must leave it blank.
-/// - data. This field contains whatever data the sending entity chose to include in this event.
-///   The receiving SCXML Processor should reformat this data to match its data model, but must not
-///   otherwise modify it. If the conversion is not possible, the Processor must leave the field
-///   blank and must place an error 'error.execution' in the internal event queue.
+/**
+ * <b>W3C says</b>:<p>
+ * <b>The Internal Structure of Events.</b><p>
+ * Events have an internal structure which is reflected in the _event variable. This variable can be
+ * accessed to condition transitions (via boolean expressions in the 'cond' attribute) or to update
+ * the data model (via &lt;assign>), etc.<p>
+ *
+ * The SCXML Processor must ensure that the following fields are present in all events, whether
+ * internal or external.<p>
+ * <ul>
+ * <li><b>name</b>. This is a character string giving the name of the event. The SCXML Processor must set
+ *   the name field to the name of this event. It is what is matched against the 'event' attribute
+ *   of &lt;transition>. Note that transitions can do additional tests by using the value of this
+ *   field inside boolean expressions in the 'cond' attribute.</li>
+ * <li><b>type</b>. This field describes the event type. The SCXML Processor must set it to: "platform"
+ *   (for events raised by the platform itself, such as error events), "internal" (for events
+ *   raised by &lt;raise> and &lt;send> with target '_internal') or "external" (for all other events).</li>
+ * <li><b>sendid</b>. If the sending entity has specified a value for this, the Processor must set this
+ *   field to that value (see C Event I/O Processors for details). Otherwise, in the case of error
+ *   events triggered by a failed attempt to send an event, the Processor must set this field to
+ *   the send id of the triggering &lt;send> element. Otherwise it must leave it blank.</li>
+ * <li><b>origin</b>. This is a URI, equivalent to the 'target' attribute on the &lt;send> element. For
+ *   external events, the SCXML Processor should set this field to a value which, when used as the
+ *   value of 'target', will allow the receiver of the event to &lt;send> a response back to the
+ *   originating entity via the Event I/O Processor specified in 'origintype'. For internal and
+ *   platform events, the Processor must leave this field blank.</li>
+ * <li><b>origintype</b>. This is equivalent to the 'type' field on the &lt;send> element. For external events,
+ *   the SCXML Processor should set this field to a value which, when used as the value of 'type',
+ *   will allow the receiver of the event to &lt;send> a response back to the originating entity at
+ *   the URI specified by 'origin'. For internal and platform events, the Processor must leave this
+ *   field blank.</li>
+ * <li><b>invokeid</b>. If this event is generated from an invoked child process, the SCXML Processor must
+ *   set this field to the invoke id of the invocation that triggered the child process. Otherwise
+ *   it must leave it blank.</li>
+ * <li><b>data</b>. This field contains whatever data the sending entity chose to include in this event.
+ *   The receiving SCXML Processor should reformat this data to match its data model, but must not
+ *   otherwise modify it. If the conversion is not possible, the Processor must leave the field
+ *   blank and must place an error 'error.execution' in the internal event queue.</li>
+ * </ul>
+ */
 public class Event {
     public String name;
     public EventType etype;
@@ -45,10 +48,10 @@ public class Event {
     public String origin_type;
     public String invoke_id;
 
-    /// Name-Value pairs from \<param\> elements.
+    /** Name-Value pairs from &lt;param> elements. */
     public java.util.List<ParamPair> param_values;
 
-    /// Content from \<content\> element.
+    /** Content from &lt;content> element.*/
     public Data content;
 
     public Event() {
