@@ -1,15 +1,24 @@
 package com.bw.fsm;
 
+/**
+ * Possible event types.
+ * @see Event#etype
+ */
 public enum EventType {
 
-    /// for events raised by the platform itself, such as error events
+    /**
+     * for events raised by the platform itself, such as error events
+     */
     platform,
 
-    /// for events raised by \<raise\> and \<send\> with target '_internal'
+    /**
+     * for events raised by &lt;raise> and &lt;send> with target '_internal'
+     */
     internal,
 
-    // default
-    /// for all other events
+    /**
+     * <b>default</b> - for all other events
+     */
     external,
 }
 

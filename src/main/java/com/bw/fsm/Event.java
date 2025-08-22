@@ -6,7 +6,7 @@ package com.bw.fsm;
  * Events have an internal structure which is reflected in the _event variable. This variable can be
  * accessed to condition transitions (via boolean expressions in the 'cond' attribute) or to update
  * the data model (via &lt;assign>), etc.<p>
- *
+ * <p>
  * The SCXML Processor must ensure that the following fields are present in all events, whether
  * internal or external.<p>
  * <ul>
@@ -48,10 +48,14 @@ public class Event {
     public String origin_type;
     public String invoke_id;
 
-    /** Name-Value pairs from &lt;param> elements. */
+    /**
+     * Name-Value pairs from &lt;param> elements.
+     */
     public java.util.List<ParamPair> param_values;
 
-    /** Content from &lt;content> element.*/
+    /**
+     * Content from &lt;content> element.
+     */
     public Data content;
 
     public Event() {

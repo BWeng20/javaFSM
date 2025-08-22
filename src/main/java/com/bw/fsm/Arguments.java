@@ -30,7 +30,9 @@ public class Arguments {
     public final java.util.Map<String, String> options;
     public final java.util.List<String> final_args;
 
-    /// Parse program arguments.
+    /**
+     * Parse program arguments.
+     */
     public Arguments(String[] appArgs, Option[] arguments) throws IllegalArgumentException {
 
         final_args = new ArrayList<>();
