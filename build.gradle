@@ -21,6 +21,10 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.17.2'
 }
 
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
 tasks.register('w3cTest', JavaExec) {
     group = 'verification'
     description = 'Starts the w3c test'
