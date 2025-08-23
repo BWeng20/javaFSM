@@ -103,7 +103,7 @@ public class FsmExecutor {
 
         // Use reader to parse the scxml file:
         if ("scxml".equalsIgnoreCase(extension) || "xml".equalsIgnoreCase(extension)) {
-            if (StaticOptions.debug_option)
+            if (StaticOptions.debug)
                 Log.debug("Loading FSM from XML %s", url);
             ScxmlReader sr = new ScxmlReader().withIncludePaths(this.include_paths);
             try {
@@ -113,7 +113,7 @@ public class FsmExecutor {
                 throw new RuntimeException(e);
             }
         } else if ("rfsm".equalsIgnoreCase(extension)) {
-            if (StaticOptions.debug_option)
+            if (StaticOptions.debug)
                 Log.debug("Loading FSM from binary %s", url);
             FsmReader<DefaultProtocolReader<?>> reader = new FsmReader<>();
             // @TODO
@@ -143,7 +143,7 @@ public class FsmExecutor {
             FinishMode finish_mode,
             TraceMode trace
     ) throws IOException {
-        if (StaticOptions.debug_option)
+        if (StaticOptions.debug)
             Log.debug("Loading FSM from XML");
 
         // Use reader to parse the XML:

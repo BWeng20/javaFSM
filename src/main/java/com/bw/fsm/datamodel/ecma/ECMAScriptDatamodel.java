@@ -43,7 +43,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         this.global_data = global_data;
 
         context = Context.newBuilder("js")
-                .option("engine.WarnInterpreterOnly", StaticOptions.debug_option ? "true" : "false")
+                .option("engine.WarnInterpreterOnly", StaticOptions.debug ? "true" : "false")
                 .option("js.strict", "true")
                 .allowHostAccess(HostAccess.ALL)
                 .out(Log.getPrintStream())
@@ -307,14 +307,14 @@ public class ECMAScriptDatamodel extends Datamodel {
     @Override
     public @NotNull Data execute(Data script) {
         Data res = evalData(script);
-        if (StaticOptions.debug_option)
+        if (StaticOptions.debug)
             Log.debug("Execute: %s => %s", script, res);
         return res;
     }
 
     @Override
     public boolean execute_for_each(Data array_expression, String item_name, String index, Supplier<Boolean> execute_body) {
-        if (StaticOptions.debug_option)
+        if (StaticOptions.debug)
             Log.debug("ForEach: array: %s", array_expression);
         Data r = evalData(array_expression);
         if (r instanceof Data.Error) {
@@ -326,7 +326,7 @@ public class ECMAScriptDatamodel extends Datamodel {
             if (assign_internal(item_name, "null", true)) {
                 for (var item_prop : obj.values.keySet()) {
                     Data item = obj.values.get(item_prop);
-                    if (StaticOptions.debug_option)
+                    if (StaticOptions.debug)
                         Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
                     var str = item.toString();
                     if (assign(new Data.Source(item_name), new Data.Source(str))) {
@@ -348,7 +348,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
             if (assign_internal(item_name, "null", true)) {
                 for (var item : array.values) {
-                    if (StaticOptions.debug_option)
+                    if (StaticOptions.debug)
                         Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
                     var str = item.toString();
                     if (assign(new Data.Source(item_name), new Data.Source(str))) {

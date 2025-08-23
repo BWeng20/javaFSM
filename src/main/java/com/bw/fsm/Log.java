@@ -130,13 +130,13 @@ public class Log {
     }
 
     /**
-     * Prints if {@link StaticOptions#debug_option} is true.
+     * Prints if {@link StaticOptions#debug} is true.
      *
      * @param message   The message-format-string to print
      * @param arguments Format arguments.
      */
     public static void debug(String message, Object... arguments) {
-        if (StaticOptions.debug_option) {
+        if (StaticOptions.debug) {
             logInternal(System.out, "debug", message, arguments);
         }
     }

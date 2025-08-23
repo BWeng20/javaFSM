@@ -325,14 +325,14 @@ public class ScxmlReader {
          */
         protected ExecutableContentBlock start_executable_content_block(boolean stack, String tag) {
             if (stack) {
-                if (debug_option)
+                if (debug)
                     com.bw.fsm.Log.debug(" push executable content block [%s]", this.current_executable_content);
                 this.executable_content_stack.push(new ExecutableContentStackItem(tag, this.current_executable_content));
             } else {
                 this.executable_content_stack.clear();
             }
             this.current_executable_content = new ExecutableContentBlock(null, tag);
-            if (debug_option)
+            if (debug)
                 com.bw.fsm.Log.debug(" start executable content block [%s]", this.current_executable_content);
             return this.current_executable_content;
         }
@@ -354,13 +354,13 @@ public class ScxmlReader {
                 com.bw.fsm.Log.panic("Try to get executable content in unsupported document part.");
                 return null;
             } else {
-                if (debug_option)
+                if (debug)
                     com.bw.fsm.Log.debug(" end executable content block [%s]", this.current_executable_content);
                 ExecutableContentBlock ec = this.current_executable_content;
                 ExecutableContentStackItem item = this.executable_content_stack.isEmpty() ? null : this.executable_content_stack.pop();
                 if (item != null) {
                     this.current_executable_content = item.block;
-                    if (debug_option)
+                    if (debug)
                         com.bw.fsm.Log.debug(" pop executable content block [%s]", item);
                     if (this.current_executable_content != null) {
                         if (tag != null && !tag.equals(item.for_tag)) {
@@ -381,7 +381,7 @@ public class ScxmlReader {
             if (this.current_executable_content == null) {
                 com.bw.fsm.Log.panic("Try to add executable content to unsupported document part.");
             } else {
-                if (StaticOptions.debug_option)
+                if (StaticOptions.debug_reader)
                     com.bw.fsm.Log.debug(
                             "Adding Executable Content [%s] to [%s]",
                             ec,
@@ -440,7 +440,7 @@ public class ScxmlReader {
                 initial.transition_type = TransitionType.Internal;
                 initial.source = state;
                 this.parse_state_specification(initialName, initial.target);
-                if (StaticOptions.debug_option)
+                if (StaticOptions.debug_reader)
                     com.bw.fsm.Log.debug(
                             " %s.initial = %s -> %s",
                             sname, initialName,
@@ -452,7 +452,7 @@ public class ScxmlReader {
 
             if (parent != null) {
                 state.parent = parent;
-                if (debug_option)
+                if (debug)
                     com.bw.fsm.Log.debug(
                             " state #%s %s%s parent %s",
                             state, (parallel ? "(parallel) " : ""), sname, parent.name
@@ -461,7 +461,7 @@ public class ScxmlReader {
                     parent.states.add(state);
                 }
             } else {
-                if (debug_option)
+                if (debug)
                     com.bw.fsm.Log.debug(
                             " state #%s %s%s no parent",
                             state, (parallel ? "(parallel) " : ""), sname);
@@ -484,7 +484,7 @@ public class ScxmlReader {
                 if ("file".equals(url_result.getScheme())) {
                     return this.read_from_relative_path(url_result.getSchemeSpecificPart());
                 }
-                if (debug_option)
+                if (debug)
                     com.bw.fsm.Log.debug("read from URL %s", url_result);
                 ByteArrayOutputStream sb = new ByteArrayOutputStream(1024);
                 try (InputStream is = url_result.toURL().openStream()) {
@@ -496,7 +496,7 @@ public class ScxmlReader {
                 }
                 return sb.toString(StandardCharsets.UTF_8);
             } catch (URISyntaxException syntaxException) {
-                if (debug_option)
+                if (debug)
                     com.bw.fsm.Log.debug(
                             "%s is not a URI (%s). Try loading as relative path...",
                             uri, syntaxException.getMessage()
@@ -608,7 +608,7 @@ public class ScxmlReader {
                 // the value of the data element
                 data_value = this.read_from_uri(src);
                 if (data_value != null) {
-                    if (StaticOptions.debug_option)
+                    if (StaticOptions.debug_reader)
                         com.bw.fsm.Log.debug("src='%s':\n%s", src, data_value);
                 } else {
                     com.bw.fsm.Log.panic("Can't read data source '%s'", src);
@@ -770,7 +770,7 @@ public class ScxmlReader {
                 if (state.initial != null) {
                     com.bw.fsm.Log.panic("<initial> must not be specified if initial-attribute was given");
                 }
-                if (StaticOptions.debug_option)
+                if (StaticOptions.debug_reader)
                     com.bw.fsm.Log.debug(" %s#%s.initial = %s", state.name, state.id, t);
                 state.initial = t;
             } else {
@@ -815,7 +815,7 @@ public class ScxmlReader {
                 // the document is considered non-conformant, and the platform must reject it.
                 String source = this.read_from_uri(file_src);
                 if (source != null) {
-                    if (StaticOptions.debug_option)
+                    if (StaticOptions.debug_reader)
                         com.bw.fsm.Log.debug("src='%s':\n%s", file_src, source);
                     s.content = this.create_source(source);
                 } else {
@@ -1409,7 +1409,7 @@ public class ScxmlReader {
             }
             String datamodel = attr.getValue(ATTR_DATAMODEL);
             if (datamodel != null) {
-                if (StaticOptions.debug_option)
+                if (StaticOptions.debug_reader)
                     com.bw.fsm.Log.debug(" scxml.datamodel = %s", datamodel);
                 this.fsm.datamodel = datamodel;
             }
@@ -1424,7 +1424,7 @@ public class ScxmlReader {
             String version = attr.getValue(TAG_VERSION);
             if (version != null) {
                 this.fsm.version = version;
-                if (StaticOptions.debug_option)
+                if (StaticOptions.debug_reader)
                     com.bw.fsm.Log.debug(" scxml.version = %s", version);
 
             }
@@ -1486,7 +1486,7 @@ public class ScxmlReader {
                 case TAG_ELSE -> this.start_else(attr);
                 case TAG_ELSEIF -> this.start_else_if(attr);
                 default -> {
-                    if (debug_option)
+                    if (debug)
                         com.bw.fsm.Log.debug("Ignored tag %s", name);
                 }
             }
@@ -1510,7 +1510,7 @@ public class ScxmlReader {
                 com.bw.fsm.Log.panic(
                         "Illegal end-tag %s, expected %s", name, this.current.current_tag);
             }
-            if (StaticOptions.debug_option)
+            if (StaticOptions.debug_reader)
                 com.bw.fsm.Log.debug("End Element %s", name);
             switch (name) {
                 case TAG_SCXML -> this.end_scxml();

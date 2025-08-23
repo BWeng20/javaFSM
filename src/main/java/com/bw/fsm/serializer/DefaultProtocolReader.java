@@ -258,7 +258,7 @@ public class DefaultProtocolReader<R extends InputStream> implements ProtocolRea
     @Override
     public String read_string() throws IOException {
         this.read_type_and_size();
-        if (StaticOptions.debug_option)
+        if (StaticOptions.debug)
             Log.debug("Read String %s", this.type_and_value.string);
         if (this.verify_string_type()) {
             return this.type_and_value.string;

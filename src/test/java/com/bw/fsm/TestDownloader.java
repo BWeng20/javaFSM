@@ -91,7 +91,7 @@ public class TestDownloader {
                 transformedFile = null;
                 copiedFile = scxml.resolve(fileName);
             }
-            if (StaticOptions.debug_option)
+            if (StaticOptions.debug)
                 Log.debug("Test file: " + testFile);
             ++testCount;
 

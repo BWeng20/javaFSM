@@ -129,7 +129,7 @@ public class Fsm {
                 () -> {
                     try {
                         Log.setLogStream(os);
-                        if (StaticOptions.debug_option)
+                        if (StaticOptions.debug)
                             Log.debug("SM Session %s starting...", session_id);
                         Datamodel datamodel = DatamodelFactory.create_datamodel(this.datamodel, session.global_data, options);
                         var global = datamodel.global();
@@ -154,7 +154,7 @@ public class Fsm {
                             }
                         }
                         this.interpret(datamodel);
-                        if (StaticOptions.debug_option)
+                        if (StaticOptions.debug)
                             Log.debug("SM finished");
                     } catch (Exception e) {
                         Log.exception("FSM terminated with exception.", e);
@@ -483,7 +483,7 @@ public class Fsm {
                                     externalEvent = externalEventTmp;
                                     break;
                                 } else {
-                                    if (StaticOptions.debug_option)
+                                    if (StaticOptions.debug)
 
                                         Log.debug(
                                                 "Ignore event %s from invoke %s",
@@ -904,7 +904,7 @@ public class Fsm {
     protected void microstep(Datamodel datamodel, List<Transition> enabledTransitions) {
         if (StaticOptions.trace_method)
             this.tracer.enter_method("microstep");
-        if (StaticOptions.debug_option) {
+        if (StaticOptions.debug) {
             if (enabledTransitions.size() > 0) {
                 if (enabledTransitions.size() > 1) {
                     Log.debug("Enabled Transitions:");
@@ -1846,7 +1846,7 @@ public class Fsm {
         }
         datamodel.evaluate_params(inv.params, name_values);
 
-        if (StaticOptions.debug_option)
+        if (StaticOptions.debug)
             Log.debug(
                     "Invoke: type '%s' invokeId '%s' src '%s' namelist '%s'",
                     type_name, invokeId, src, name_values

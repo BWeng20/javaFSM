@@ -41,7 +41,7 @@ public abstract class EventIOProcessor {
     protected void shutdownQueues(Map<Integer, BlockingQueue<Event>> queues) {
         Event cancel_event = Event.new_simple(Fsm.EVENT_CANCEL_SESSION);
         for (var queue : queues.entrySet()) {
-            if (StaticOptions.debug_option)
+            if (StaticOptions.debug)
                 Log.debug("Send cancel to fsm #%s", queue.getKey());
             queue.getValue().enqueue(cancel_event.get_copy());
         }

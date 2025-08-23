@@ -37,7 +37,7 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
     public Map<Integer, BlockingQueue<Event>> sessions = new HashMap<>();
 
     public ScxmlEventIOProcessor() {
-        if (StaticOptions.debug_option)
+        if (StaticOptions.debug)
             Log.debug("Scxml Event Processor starting");
     }
 
@@ -47,7 +47,7 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
             return false;
         } else {
 
-            if (StaticOptions.debug_option)
+            if (StaticOptions.debug)
                 Log.debug("Send '%s' to Session #%s", event, session_id);
             global_data.executor.send_to_session(session_id, event);
             return true;
@@ -151,7 +151,7 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
     /// The implementation does nothing.
     @Override
     public void shutdown() {
-        if (StaticOptions.debug_option)
+        if (StaticOptions.debug)
             Log.debug("Scxml Event IO Processor shutdown...");
         shutdownQueues(this.sessions);
     }

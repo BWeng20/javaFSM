@@ -151,7 +151,7 @@ public class SendParameters implements ExecutableContent {
         if (delay_ms > 0) {
             EventIOProcessor iop = datamodel.get_io_processor(type_val_string);
             if (iop != null) {
-                if (StaticOptions.debug_option)
+                if (StaticOptions.debug)
                     Log.debug("schedule '%s' for %d", event, delay_ms);
                 GlobalData global = datamodel.global();
                 var tg = fsm.schedule(delay_ms, () -> {
@@ -177,7 +177,7 @@ public class SendParameters implements ExecutableContent {
             }
 
         } else {
-            if (StaticOptions.debug_option)
+            if (StaticOptions.debug)
                 Log.debug("send '%s' to '%s'", event, target);
             // "send" triggers error events already, no need to check the result here
             result = datamodel.send(type_val_string, target, event);
