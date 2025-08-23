@@ -8,8 +8,6 @@ import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.expression_engine.ExpressionLexer;
 import com.bw.fsm.expression_engine.Token;
 
-import java.util.Map;
-
 /// The "Null" Datamodel as specified by W3C. A minimal model without any data.
 /// ## W3C says:
 /// ### B.1 The Null Data Model

@@ -10,6 +10,7 @@ import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -508,7 +509,7 @@ public class Fsm {
                     continue;
                 }
 
-                if (externalEvent.name.startsWith(EVENT_DONE_INVOKE_PREFIX)) {
+                if (externalEvent != null && externalEvent.name.startsWith(EVENT_DONE_INVOKE_PREFIX)) {
                     if (externalEvent.invoke_id != null) {
                         datamodel.global().child_sessions.remove(externalEvent.invoke_id);
                     }
@@ -634,9 +635,7 @@ public class Fsm {
         var caller_invoke_id = global.caller_invoke_id;
         var parent_session_id = global.parent_session_id;
 
-        if (parent_session_id == null) {
-            // No parent
-        } else {
+        if (parent_session_id != null) {
             if (caller_invoke_id == null) {
                 Log.panic("Internal Error: Caller-Invoke-Id not available but Parent-Session-Id is set.");
             } else {
@@ -1867,16 +1866,31 @@ public class Fsm {
 
         if (src == null || src.is_empty()) {
             var content = datamodel.evaluate_content(inv.content);
-            if (content instanceof Data.FsmDefinition fsm) {
-                fsm.fsm.tracer.enable_trace(this.tracer.trace_mode());
-                fsm.fsm.caller_invoke_id = invokeId;
-                fsm.fsm.parent_session_id = global.session_id;
-                session = fsm.fsm.start_fsm_with_data_and_finish_mode(
+            if (!content.is_empty()) {
+                Fsm fsm;
+                if (content instanceof Data.FsmDefinition fsmDef) {
+                    fsm = fsmDef.fsm;
+                } else {
+                    try {
+                        fsm = new ScxmlReader().parse_from_xml(content.toString());
+                    } catch (IOException i) {
+                        Log.exception("Failed to parse scxml source", i);
+                        if (StaticOptions.trace_method) {
+                            this.tracer.exit_method("invoke");
+                        }
+                        return;
+                    }
+                }
+                fsm.tracer.enable_trace(this.tracer.trace_mode());
+                fsm.caller_invoke_id = invokeId;
+                fsm.parent_session_id = global.session_id;
+                session = fsm.start_fsm_with_data_and_finish_mode(
                         global.actions,
                         global.executor,
                         name_values,
                         FinishMode.DISPOSE
                 );
+
             } else {
                 Log.error("No content to execute");
                 if (StaticOptions.trace_method) {

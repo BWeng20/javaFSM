@@ -91,7 +91,7 @@ public class SendParameters implements ExecutableContent {
             datamodel.evaluate_params(this.params, data_vec);
             for (String name : this.name_list) {
                 Data value = datamodel.get_by_location(name);
-                if ( value instanceof Data.Error) {
+                if (value instanceof Data.Error) {
                     // Error -> abort
                     return false;
                 }

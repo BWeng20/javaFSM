@@ -1367,17 +1367,12 @@ public class ScxmlReader {
                 assign.expr = this.create_source(expr);
             }
 
-            String assign_text = this.read_content(TAG_ASSIGN, reader);
-            if (!assign_text.isEmpty())
-                assign_text = String.format("\"%s\"", assign_text);
-
-            String assign_src = assign_text.trim();
-
-            if (!assign_src.isEmpty()) {
+            String assign_text = this.read_content(TAG_ASSIGN, reader).trim();
+            if (!assign_text.isEmpty()) {
                 if (!assign.expr.is_empty()) {
                     com.bw.fsm.Log.panic("<assign> with 'expr' attribute shall not have content.");
                 }
-                assign.expr = create_source(assign_src);
+                assign.expr = new Data.String(assign_text);
             }
 
             this.add_executable_content(assign);
@@ -1444,9 +1439,7 @@ public class ScxmlReader {
         protected void set_default_initial(State state) {
             if (state.initial == null) {
                 //  W3C: If not specified, the default initial state is the first child state in document order.
-                if (state.states.isEmpty()) {
-                    // No states at all
-                } else {
+                if (!state.states.isEmpty()) {
                     Transition t = new Transition();
                     state.initial = t;
                     t.source = state;
