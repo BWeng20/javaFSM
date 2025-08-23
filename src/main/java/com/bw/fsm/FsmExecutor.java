@@ -140,7 +140,6 @@ public class FsmExecutor {
             java.util.List<ParamPair> data,
             Integer parent,
             String invoke_id,
-            FinishMode finish_mode,
             TraceMode trace
     ) throws IOException {
         if (StaticOptions.debug)
@@ -152,11 +151,10 @@ public class FsmExecutor {
         fsm.tracer.enable_trace(trace);
         fsm.caller_invoke_id = invoke_id;
         fsm.parent_session_id = parent;
-        var session = fsm.start_fsm_with_data_and_finish_mode(
+        var session = fsm.start_fsm_with_data(
                 actions,
                 this,
-                data,
-                finish_mode
+                data
         );
         return session;
     }

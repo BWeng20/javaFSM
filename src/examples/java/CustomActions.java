@@ -84,7 +84,7 @@ public class CustomActions {
 
             // Here you could check the results via the session.
             // E.g. check the final reached states (the set of active states is called the "configuration", normally this is on of the "final" states and their parents).
-            System.out.println( "Final Configuration: "+session.global_data.configuration );
+            System.out.println( "Final Configuration: "+session.global_data.final_configuration );
 
         } catch (Exception e) {
             System.err.println("Failed to execute: " + e.getMessage());

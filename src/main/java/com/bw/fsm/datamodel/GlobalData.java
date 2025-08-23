@@ -6,6 +6,7 @@ import com.bw.fsm.event_io_processor.EventIOProcessor;
 import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -36,8 +37,8 @@ public class GlobalData {
     /// Unique Id of the owning session.
     public Integer session_id = 0;
 
-    /// Will contain after execution the final configuration, if set before.
-    public java.util.List<String> final_configuration;
+    /// Will contain after execution the final configuration.
+    public final java.util.List<String> final_configuration = new ArrayList<>();
     public Map<String, Data> environment = new HashMap<>();
 
     /// Stores any delayed send (with a "sendid"), Key: sendid

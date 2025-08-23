@@ -174,10 +174,9 @@ public class Tester {
             executor.set_global_options_from_arguments(options);
             executor.set_include_paths(include_paths);
 
-            session = fsm.start_fsm_with_data_and_finish_mode(
+            session = fsm.start_fsm_with_data(
                     new ActionWrapper(),
-                    executor, Collections.emptyList(),
-                    FinishMode.KEEP_CONFIGURATION
+                    executor, Collections.emptyList()
             );
 
             BlockingQueue<Event> watchdog_sender = null;
@@ -214,23 +213,18 @@ public class Tester {
                     Log.error("FSM Session lost");
                     return false;
                 } else {
-                    if (session.global_data.final_configuration == null) {
-                        Log.error("Final Configuration not available");
-                        return false;
+                    if (verify_final_configuration(expected_final_configuration, session.global_data.final_configuration)) {
+                        Log.info(
+                                "[%s] ==> Final configuration '%s' reached",
+                                test_name, String.join(",", session.global_data.final_configuration));
+                        return true;
                     } else {
-                        if (verify_final_configuration(expected_final_configuration, session.global_data.final_configuration)) {
-                            Log.info(
-                                    "[%s] ==> Final configuration '%s' reached",
-                                    test_name, String.join(",", session.global_data.final_configuration));
-                            return true;
-                        } else {
-                            Log.error(
-                                    "[%s] ==> Expected final configuration %s not reached. Final configuration: %s",
-                                    test_name,
-                                    expected_final_configuration,
-                                    String.join(",", session.global_data.final_configuration));
-                            return false;
-                        }
+                        Log.error(
+                                "[%s] ==> Expected final configuration %s not reached. Final configuration: %s",
+                                test_name,
+                                expected_final_configuration,
+                                String.join(",", session.global_data.final_configuration));
+                        return false;
                     }
                 }
             }

@@ -87,30 +87,11 @@ public class Fsm {
             ActionWrapper actions,
             FsmExecutor executor,
             java.util.List<ParamPair> data) {
-        return start_fsm_with_data_and_finish_mode(actions, executor, data, FinishMode.DISPOSE);
-    }
-
-    @NotNull
-    public ScxmlSession start_fsm_with_data_and_finish_mode(
-            @NotNull ActionWrapper actions,
-            @NotNull FsmExecutor executor,
-            @NotNull java.util.List<ParamPair> data,
-            @NotNull FinishMode finish_mode) {
         BlockingQueue<Event> externalQueue = new BlockingQueue<>();
 
         Integer session_id = SESSION_ID_COUNTER.incrementAndGet();
         final var session = new ScxmlSession(session_id, externalQueue, tracer);
         session.global_data.source = this.name;
-
-        switch (finish_mode) {
-            case DISPOSE -> {
-            }
-            case KEEP_CONFIGURATION ->
-                // FSM shall keep the final configuration after exit.
-                    session.global_data.final_configuration = new ArrayList<>();
-            case NOTHING -> {
-            }
-        }
 
         executor.state.sessions.put(session_id, session);
         final var options = executor.state.datamodel_options;
@@ -1884,11 +1865,10 @@ public class Fsm {
                 fsm.tracer.enable_trace(this.tracer.trace_mode());
                 fsm.caller_invoke_id = invokeId;
                 fsm.parent_session_id = global.session_id;
-                session = fsm.start_fsm_with_data_and_finish_mode(
+                session = fsm.start_fsm_with_data(
                         global.actions,
                         global.executor,
-                        name_values,
-                        FinishMode.DISPOSE
+                        name_values
                 );
 
             } else {
