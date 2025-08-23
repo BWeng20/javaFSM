@@ -80,7 +80,18 @@ public class ECMAScriptDatamodel extends Datamodel {
 
         @HostAccess.Export
         public Object action(String name, Object[] arguments) {
-            return null;
+            GlobalData gd = global();
+
+            int len = arguments.length;
+            List<Data> arg_list = new ArrayList<>(len);
+            for (Object v : arguments) {
+                if (v instanceof Value value) {
+                    arg_list.add(js_to_data_value(value));
+                } else {
+                    arg_list.add(Data.fromObject(v));
+                }
+            }
+            return gd.actions.execute(name, arg_list, gd);
         }
 
         @HostAccess.Export
@@ -422,7 +433,7 @@ public class ECMAScriptDatamodel extends Datamodel {
                 return new Data.Double(o.asDouble());
             }
         } else if (o.isBoolean()) {
-            return new Data.Boolean(o.asBoolean());
+            return Data.Boolean.fromBoolean(o.asBoolean());
         } else if (o.hasArrayElements()) {
             final int N = (int) o.getArraySize();
             List<Data> l = new ArrayList<>(N);

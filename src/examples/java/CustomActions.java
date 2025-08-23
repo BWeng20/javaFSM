@@ -1,6 +1,5 @@
 import com.bw.fsm.Data;
 import com.bw.fsm.FsmExecutor;
-import com.bw.fsm.Log;
 import com.bw.fsm.ScxmlSession;
 import com.bw.fsm.actions.Action;
 import com.bw.fsm.actions.ActionWrapper;
@@ -24,15 +23,18 @@ public class CustomActions {
                 i += 1;
                 System.out.printf("\t%d: %s\n", i, data);
             }
-            return new Data.Boolean(true);
+            return Data.Boolean.TRUE;
         }
     }
 
     public static void main(String[] args) {
-        System.out.println("\nAction Example\n" +
-                "-----------------------------------------\n" +
-                "The FSM will call two custom actions from different places.\n" +
-                "These actions can be called at any element that containt expressions or executable content.\n");
+        System.out.println("""
+                
+                Action Example
+                -----------------------------------------
+                The FSM will call two custom actions from different places.
+                These actions can be called at any element that containt expressions or executable content.
+                """);
 
         // Register Data Models
         ECMAScriptDatamodel.register();

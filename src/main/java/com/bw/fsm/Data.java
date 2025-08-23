@@ -6,10 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Data Variant used to handle data in a type-safe but Datamodel-agnostic way.
@@ -28,8 +25,6 @@ public abstract class Data {
 
     /**
      * Get a simple representation.
-     *
-     * @return
      */
     public abstract void as_script(@NotNull ScriptProducer sp);
 
@@ -42,6 +37,46 @@ public abstract class Data {
     private static final java.lang.Integer NUL = 0;
     private static final java.lang.Integer ONE = 1;
     private static NumberFormat nf = NumberFormat.getInstance(Locale.UK);
+
+    /**
+     * Tries to convert some object to a Data instance.
+     *
+     * @param value The value,
+     * @return The data wrapper. If the type could not be handled explixitly,
+     * a Data.String is returned with the result of <code>value.toString()</code>.
+     */
+    public static @NotNull Data fromObject(@Nullable Object value) {
+        if (value == null)
+            return Null.NULL;
+        if (value instanceof java.lang.String)
+            return new Data.String((java.lang.String) value);
+        if (value instanceof Number nb) {
+            double v = nb.doubleValue();
+            if (((int) v) == v)
+                return new Data.Integer((int) v);
+            else
+                return new Data.Double(v);
+        }
+        if (value instanceof java.lang.Boolean b) {
+            return Boolean.fromBoolean(b);
+        }
+        if (value instanceof Collection<?> c) {
+            java.util.List<Data> l = new ArrayList<>(c.size());
+            for (Object o : c) {
+                l.add(fromObject(o));
+            }
+            return new Data.Array(l);
+        }
+        if (value instanceof java.util.Map<?, ?> m) {
+            java.util.Map<java.lang.String, Data> md = new HashMap<>(m.size());
+            for (var entry : m.entrySet()) {
+                md.put(entry.getKey().toString(), fromObject(entry.getValue()));
+            }
+            return new Data.Map(md);
+        }
+        Log.warn("Conversion from '%s' to Data with unknown %s", value, value.getClass());
+        return new Data.String(value.toString());
+    }
 
     private static @NotNull Number parseNumber(java.lang.String s) {
         try {
@@ -58,7 +93,7 @@ public abstract class Data {
      */
     public abstract @NotNull Data getCopy();
 
-    public static class Integer extends Data {
+    public static final class Integer extends Data {
         int value;
 
         public Integer(int value) {
@@ -109,7 +144,7 @@ public abstract class Data {
         }
     }
 
-    public static class Double extends Data {
+    public static final class Double extends Data {
         private final double value;
 
         public Double(double value) {
@@ -122,7 +157,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer sb) {
+        public void as_script(@NotNull ScriptProducer sb) {
             sb.addValue(value);
         }
 
@@ -160,7 +195,7 @@ public abstract class Data {
         }
     }
 
-    public static class String extends Data {
+    public static final class String extends Data {
         final public @NotNull java.lang.String value;
         private @Nullable java.lang.String script_value;
 
@@ -208,11 +243,18 @@ public abstract class Data {
         }
     }
 
-    public static class Boolean extends Data {
-        public boolean value;
+    public static final class Boolean extends Data {
+        public final boolean value;
 
-        public Boolean(boolean value) {
+        public final static Boolean TRUE = new Boolean(true);
+        public final static Boolean FALSE = new Boolean(false);
+
+        private Boolean(boolean value) {
             this.value = value;
+        }
+
+        public static Boolean fromBoolean(boolean v) {
+            return v ? TRUE : FALSE;
         }
 
         @Override
@@ -221,7 +263,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer sp) {
+        public void as_script(@NotNull ScriptProducer sp) {
             // TODO: Move this constants to the ScriptProducer
             sp.addToken(value ? "true" : "false");
         }
@@ -248,11 +290,12 @@ public abstract class Data {
 
         @Override
         public @NotNull Data getCopy() {
-            return new Boolean(this.value);
+            // Immutable, no need to copy.
+            return this;
         }
     }
 
-    public static class Array extends Data {
+    public static final class Array extends Data {
 
         public java.util.List<Data> values;
 
@@ -270,7 +313,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer scripter) {
+        public void as_script(@NotNull ScriptProducer scripter) {
             scripter.startArray();
             for (Data d : values) {
                 scripter.startArrayMember();
@@ -308,7 +351,7 @@ public abstract class Data {
     /**
      * A map, can also be used to store "object"-like data-structures.
      */
-    public static class Map extends Data {
+    public static final class Map extends Data {
 
         public java.util.Map<java.lang.String, Data> values;
 
@@ -327,7 +370,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer scripter) {
+        public void as_script(@NotNull ScriptProducer scripter) {
             scripter.startMap();
             int idx = 0;
             for (var entry : values.entrySet()) {
@@ -368,7 +411,7 @@ public abstract class Data {
         }
     }
 
-    public static class Null extends Data {
+    public static final class Null extends Data {
 
         private Null() {
         }
@@ -384,7 +427,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer scripter) {
+        public void as_script(@NotNull ScriptProducer scripter) {
             scripter.addNull();
         }
 
@@ -417,7 +460,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer scripter) {
+        public void as_script(@NotNull ScriptProducer scripter) {
             scripter.addToken(scripter.asStringValue(message));
         }
 
@@ -446,7 +489,7 @@ public abstract class Data {
     /**
      * Special placeholder to indicate a fsm definition indie &lt;content> elements.
      */
-    public static class FsmDefinition extends Data {
+    public static final class FsmDefinition extends Data {
         public Fsm fsm;
         public java.lang.String xml;
 
@@ -456,7 +499,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer scripter) {
+        public void as_script(@NotNull ScriptProducer scripter) {
             scripter.addToken(xml);
         }
 
@@ -492,7 +535,7 @@ public abstract class Data {
      * Special placeholder to indicate script source (from FSM definition)
      * that needs to be evaluated by the datamodel.
      */
-    public static class Source extends Data {
+    public static final class Source extends Data {
         SourceCode source;
 
         public Source(SourceCode source) {
@@ -505,7 +548,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer scripter) {
+        public void as_script(@NotNull ScriptProducer scripter) {
             if (source == null)
                 scripter.addNull();
             else
@@ -554,7 +597,7 @@ public abstract class Data {
      * Special placeholder to indicate empty content.
      * There is only one instance.
      */
-    public static class None extends Data {
+    public static final class None extends Data {
 
         private None() {
         }
@@ -570,7 +613,7 @@ public abstract class Data {
         }
 
         @Override
-        public void as_script(ScriptProducer scripter) {
+        public void as_script(@NotNull ScriptProducer scripter) {
             scripter.addNull();
         }
 

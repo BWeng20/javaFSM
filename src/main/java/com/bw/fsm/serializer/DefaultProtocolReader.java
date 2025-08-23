@@ -99,7 +99,7 @@ public class DefaultProtocolReader<R extends InputStream> implements ProtocolRea
                 }
             }
             case 3 -> new Data.String(this.read_string());
-            case 4 -> new Data.Boolean(this.read_boolean());
+            case 4 -> Data.Boolean.fromBoolean(this.read_boolean());
             case 5 -> {
                 int len = (int) this.read_long();
                 List<Data> val = new ArrayList<>(len);
