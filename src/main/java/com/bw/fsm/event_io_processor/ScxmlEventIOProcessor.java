@@ -8,29 +8,46 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Implementation of the SCXML I/O Event Processor.<br>
+ * I/O Processor implementation for type "<http://www.w3.org/TR/scxml/#SCXMLEventProcessor>" (or short-cut "scxml").
+ * See <a  href="https://www.w3.org/TR/scxml/#SCXMLEventProcessor">W3C:SCXML - SCXML Event I/O Processor</a>,
+ */
 public class ScxmlEventIOProcessor extends EventIOProcessor {
 
-    /// SCXML Processors specific target:\
-    /// If the target is the special term '#_internal', the Processor must add the event to the internal event queue of the sending session.
+    /**
+     * SCXML Processors specific target:<br>
+     * If the target is the special term '#_internal', the Processor must add the
+     * event to the internal event queue of the sending session.
+     */
     public static final String SCXML_TARGET_INTERNAL = "#_internal";
 
-    /// SCXML Processors specific target:\
-    /// If the target is the special term '#_scxml_sessionid', where sessionid is the id of an SCXML session that is accessible to the Processor,
-    /// the Processor must add the event to the external queue of that session. The set of SCXML sessions that are accessible to a given SCXML Processor is platform-dependent.
+    /**
+     * SCXML Processors specific target:<br>
+     * If the target is the special term '#_scxml_sessionid', where sessionid is the id of an SCXML session that
+     * is accessible to the Processor, the Processor must add the event to the external queue of that session.
+     * The set of SCXML sessions that are accessible to a given SCXML Processor is platform-dependent.
+     */
     public static final String SCXML_TARGET_SESSION_ID_PREFIX = "#_scxml_";
 
-    /// SCXML Processors specific target:\
-    /// If the target is the special term '#_parent', the Processor must add the event to the external event queue of the SCXML session that
-    /// invoked the sending session, if there is one.
+    /**
+     * SCXML Processors specific target:<br>
+     * If the target is the special term '#_parent', the Processor must add the event to the external
+     * event queue of the SCXML session that invoked the sending session, if there is one.
+     */
     public static final String SCXML_TARGET_PARENT = "#_parent";
 
-    /// SCXML Processors specific target:\
-    /// If the target is the special term '#_invokeid', where invokeid is the invokeid of an SCXML session that the sending session has created by &lt;invoke\>,
-    /// the Processor must add the event to the external queue of that session.\
-    /// This value is prefix of the other SCXML targets and need special care.
+    /**
+     * SCXML Processors specific target:<br>
+     * If the target is the special term '#_invokeid', where invokeid is the invokeid of an SCXML session that the sending session has created by &lt;invoke>,
+     * the Processor must add the event to the external queue of that session.<br>
+     * This value is prefix of the other SCXML targets and need special care.
+     */
     public static final String SCXML_TARGET_INVOKE_ID_PREFIX = "#_";
 
-    /// Shortcut for SCXML I/O Processors type
+    /**
+     * Shortcut for SCXML I/O Processors type
+     */
     public static final String SCXML_EVENT_PROCESSOR_SHORT_TYPE = "scxml";
 
     public String location = SCXML_TARGET_SESSION_ID_PREFIX;
@@ -141,14 +158,16 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
         } else {
             // W3C says:
             // If the value ... is not supported or invalid, the Processor MUST place the
-            // error error.execution on the internal event queue.
+            // event error.execution on the internal event queue.
             global.enqueue_internal(Event.error_execution(event.sendid, event.invoke_id));
             return false;
         }
     }
 
-    /// This processor doesn't really need a shutdown.
-    /// The implementation does nothing.
+    /**
+     * This processor doesn't really need a shutdown.
+     * The implementation does nothing.
+     */
     @Override
     public void shutdown() {
         if (StaticOptions.debug)
