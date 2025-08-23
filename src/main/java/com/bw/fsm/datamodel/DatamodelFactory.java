@@ -28,7 +28,7 @@ public abstract class DatamodelFactory {
             String name, GlobalData global_data,
             Map<String, String> options
     ) {
-        DatamodelFactory factory = datamodel_factories.get(name.toLowerCase(Locale.CANADA));
+        DatamodelFactory factory = datamodel_factories.get((name == null || name.isEmpty()) ? "null" : name.toLowerCase(Locale.CANADA));
         if (factory != null) {
             return factory.create(global_data, options);
         } else {
