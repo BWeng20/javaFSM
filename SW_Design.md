@@ -59,16 +59,14 @@ See the abstract base class [Datamodel](src/main/java/com/bw/fsm/datamodel/Datam
 
 The projekt contains these Datamodel implementations:
 + [ECMAScript-Datamodel](src/main/java/com/bw/fsm/datamodel/ecma/ECMAScriptDatamodel.java)</br>
-  _TODO_<br>
-  It uses TODO. You check the requirements for ECMA in SCXML [here](https://www.w3.org/TR/scxml/#ecma-profile)
-+ [Expression-Engine-Datamodel](src/main/java/com/bw/fsm/datamodel/expression_engine/RFsmExpressionDatamodel.java)
+  Uses EMCA as script language<br>It is implemented via GraalVM.js.
++ [Expression-Engine-Datamodel](src/main/java/com/bw/fsm/datamodel/expression_engine/RFsmExpressionDatamodel.java)<br>
   A datamodel based on a fast expression like language. As this language is a java based re-implementation of our RUST version,
-  it is __not__ using JE (Java Expression Language).
-  _TODO_<br>
+  it is __not__ using JE (Java Expression Language).<br>
 + The _"Nulldatamodel"_</br>
   The mandatory Null-Datamodel is a dummy implementation with no real functionality.
-  It's only here because W3C requires it.
-  _TODO_<br>
+  It's only here because W3C requires it and as fallback in case no datamodel is needed by the FSM.
+  <br>
 
 ### Logging
 
@@ -98,4 +96,4 @@ For a practical application of automated testing see how the W3C tests are appli
 This project is using jetbrains annotations to model restrictions of arguments and return values.<br>
 It is only used for static checks during development and shall not support any runtime checks.<br> 
 There is no technical reason to use this specific library. It was chosen because IntelliJ was also used as primary IDE.<br>
-The library is not needed during runtime. 
+The anotation library is not needed during runtime. 
