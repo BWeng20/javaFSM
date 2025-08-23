@@ -46,7 +46,7 @@ See [StaticOptions](src/main/java/com/bw/fsm/StaticOptions.java).
 
 ## About SCXML files
 
-SCXML is an XML format, so you need some parser. FSMs will not get easily huge, but XML paring is expensive.
+SCXML is an XML format, so you need some parser. FSMs will not get easily huge, but XML parsing is expensive.
 As alternative this project has a binary (but platform independent) file format. 
 It has no XML parser dependency and it is much faster.</br>
 But you need to convert your SCXML files with the `scxml_to_fsm` application.
