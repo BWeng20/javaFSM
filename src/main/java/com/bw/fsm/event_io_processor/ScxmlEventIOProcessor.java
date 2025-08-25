@@ -10,8 +10,8 @@ import java.util.Map;
 
 /**
  * Implementation of the SCXML I/O Event Processor.<br>
- * I/O Processor implementation for type "<http://www.w3.org/TR/scxml/#SCXMLEventProcessor>" (or short-cut "scxml").
- * See <a  href="https://www.w3.org/TR/scxml/#SCXMLEventProcessor">W3C:SCXML - SCXML Event I/O Processor</a>,
+ * I/O Processor implementation for "http://www.w3.org/TR/scxml/#SCXMLEventProcessor" (or short-cut "scxml").
+ * See <a href="https://www.w3.org/TR/scxml/#SCXMLEventProcessor">W3C:SCXML - SCXML Event I/O Processor</a>,
  */
 public class ScxmlEventIOProcessor extends EventIOProcessor {
 
@@ -58,15 +58,14 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
             Log.debug("Scxml Event Processor starting");
     }
 
-    public boolean send_to_session(GlobalData global_data, int session_id, Event event) {
-        if (global_data.executor == null) {
+    public boolean send_to_session(GlobalData gd, int toSessionId, Event event) {
+        if (gd.executor == null) {
             Log.panic("Executor not available");
             return false;
         } else {
-
-            if (StaticOptions.debug)
-                Log.debug("Send '%s' to Session #%s", event, session_id);
-            global_data.executor.send_to_session(session_id, event);
+            if (StaticOptions.trace_event)
+                gd.tracer.event_external_sent(gd.session_id, toSessionId, event);
+            gd.executor.send_to_session(toSessionId, event);
             return true;
         }
     }

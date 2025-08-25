@@ -32,17 +32,26 @@ public class DefaultTracer extends Tracer {
     }
 
     @Override
-    public void enter() {
-        if (StaticOptions.trace) {
+    public void enter_method(int sessionId, String what) {
+        if (this.is_trace(TraceMode.METHODS)) {
+            this.trace(String.format(">>> %s", what));
             DefaultTracer.increase_indent();
         }
     }
 
     @Override
-    public void enter_method_with_arguments(String what, Argument... arguments) {
+    public void exit_method(int sessionId, String what) {
+        if (this.is_trace(TraceMode.METHODS)) {
+            this.leave();
+            this.trace(String.format("<<< %s", what));
+        }
+    }
+
+    @Override
+    public void enter_method_with_arguments(int sessionId, String what, Argument... arguments) {
         if (this.is_trace(TraceMode.METHODS)) {
             this.trace(String.format(">>> %s", what));
-            this.enter();
+            DefaultTracer.increase_indent();
             if (arguments.length > 0) {
                 this.trace("Arguments: {");
                 DefaultTracer.increase_indent();
@@ -55,8 +64,7 @@ public class DefaultTracer extends Tracer {
         }
     }
 
-    @Override
-    public void leave() {
+    protected void leave() {
         if (StaticOptions.trace) {
             int prefix = DefaultTracer.get_indent();
             if (prefix > 2) {

@@ -195,8 +195,11 @@ public class Fsm {
      * </pre>
      */
     public void interpret(Datamodel datamodel) {
+        final var gd = datamodel.global();
+        final var session_id = gd.session_id;
+
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("interpret");
+            this.tracer.enter_method(session_id, "interpret");
         }
         if (!this.valid()) {
             this.failWithError();
@@ -204,10 +207,8 @@ public class Fsm {
         }
         this.expandScxmlSource();
 
-        var gd = datamodel.global();
         datamodel.clear();
         // Initialize session variables "_name" and "_sessionid"
-        var session_id = datamodel.global().session_id;
         datamodel.initialize_read_only(Datamodel.SESSION_ID_VARIABLE_NAME, new Data.Integer(session_id));
         // TODO :Escape name
         datamodel.initialize_read_only(Datamodel.SESSION_NAME_VARIABLE_NAME, this.name == null ? Data.Null.NULL : new Data.String(this.name));
@@ -235,7 +236,7 @@ public class Fsm {
         this.enterStates(datamodel, inital_states);
         this.mainEventLoop(datamodel);
         if (StaticOptions.trace_method) {
-            this.tracer.exit_method("interpret");
+            this.tracer.exit_method(session_id, "interpret");
         }
     }
 
@@ -286,15 +287,16 @@ public class Fsm {
     }
 
     protected void executeGlobalScriptElement(Datamodel datamodel) {
+        final int sessionId = datamodel.global().session_id;
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("executeGlobalScriptElement");
+            this.tracer.enter_method(sessionId, "executeGlobalScriptElement");
         }
 
         if (this.script != null) {
             datamodel.executeContent(this, this.script);
         }
         if (StaticOptions.trace_method) {
-            this.tracer.exit_method("executeGlobalScriptElement");
+            this.tracer.exit_method(sessionId, "executeGlobalScriptElement");
         }
     }
 
@@ -376,31 +378,32 @@ public class Fsm {
      * </pre>
      */
     protected void mainEventLoop(Datamodel datamodel) {
-        if (StaticOptions.trace_method) {
-            this.tracer.enter_method("mainEventLoop");
-        }
+        final var gd = datamodel.global();
 
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method(gd.session_id, "mainEventLoop");
+        }
         final var caller_invoke_id = this.caller_invoke_id == null ? "" : this.caller_invoke_id;
 
-        while (datamodel.global().running) {
+        while (gd.running) {
             OrderedSet<Transition> enabledTransitions;
             boolean macrostepDone = false;
             // Here we handle eventless transitions and transitions
             // triggered by internal events until macrostep is complete
-            while (datamodel.global().running && !macrostepDone) {
+            while (gd.running && !macrostepDone) {
                 enabledTransitions = this.selectEventlessTransitions(datamodel);
                 if (enabledTransitions.isEmpty()) {
-                    if (datamodel.global().internalQueue.isEmpty()) {
+                    if (gd.internalQueue.isEmpty()) {
                         macrostepDone = true;
                     } else {
                         if (StaticOptions.trace_method) {
-                            this.tracer.enter_method("internalQueue.dequeue");
+                            this.tracer.enter_method(gd.session_id, "internalQueue.dequeue");
                         }
-                        Event internalEvent = datamodel.global().internalQueue.dequeue();
+                        Event internalEvent = gd.internalQueue.dequeue();
                         if (StaticOptions.trace_method)
-                            this.tracer.exit_method("internalQueue.dequeue");
+                            this.tracer.exit_method(gd.session_id, "internalQueue.dequeue");
                         if (StaticOptions.trace_event)
-                            this.tracer.event_internal_received(internalEvent);
+                            this.tracer.event_internal_received(gd.session_id, internalEvent);
                         // TODO: Optimize it, set event only once
                         datamodel.set_event(internalEvent);
                         enabledTransitions = this.selectTransitions(datamodel, internalEvent);
@@ -411,12 +414,12 @@ public class Fsm {
                 }
             }
             // either we're in a final state, and we break out of the loop
-            if (!datamodel.global().running) {
+            if (!gd.running) {
                 break;
             }
             // or we've completed a macrostep, so we start a new macrostep by waiting for an external event
             // Here we invoke whatever needs to be invoked. The implementation of 'invoke' is platform-specific
-            var sortedStatesToInvoke = datamodel.global().statesToInvoke.sort(Fsm.state_entry_order);
+            var sortedStatesToInvoke = gd.statesToInvoke.sort(Fsm.state_entry_order);
             for (Iterator<State> it = sortedStatesToInvoke.iterator(); it.hasNext(); ) {
                 var state = it.next();
                 for (Iterator<Invoke> iter = state.invoke.sort(Fsm.invoke_document_order).iterator(); iter.hasNext(); ) {
@@ -428,9 +431,9 @@ public class Fsm {
             Event externalEvent;
             {
 
-                datamodel.global().statesToInvoke.clear();
+                gd.statesToInvoke.clear();
                 // Invoking may have raised internal error events and we iterate to handle them
-                if (!datamodel.global().internalQueue.isEmpty()) {
+                if (!gd.internalQueue.isEmpty()) {
                     continue;
                 }
 
@@ -439,11 +442,11 @@ public class Fsm {
                 //   our parent session also might cancel us.  The mechanism for this is platform specific,
                 //   but here we assume it’s a special event we receive
                 if (StaticOptions.trace_method)
-                    this.tracer.enter_method("externalQueue.dequeue");
+                    this.tracer.enter_method(gd.session_id, "externalQueue.dequeue");
                 while (true) {
-                    var externalEventTmp = datamodel.global().externalQueue.dequeue();
+                    var externalEventTmp = gd.externalQueue.dequeue();
                     if (externalEventTmp == null) {
-                        if (!datamodel.global().running) {
+                        if (!gd.running) {
                             externalEvent = null;
                             break;
                         }
@@ -459,13 +462,11 @@ public class Fsm {
                                 //    it receives from that session. In particular it MUST NOT not insert them
                                 //    into the external event queue of the invoking session.
                                 // Check if the session is active.
-                                if (datamodel.global().child_sessions
-                                        .containsKey(externalEventTmp.invoke_id)) {
+                                if (gd.child_sessions.containsKey(externalEventTmp.invoke_id)) {
                                     externalEvent = externalEventTmp;
                                     break;
                                 } else {
                                     if (StaticOptions.debug)
-
                                         Log.debug(
                                                 "Ignore event %s from invoke %s",
                                                 externalEventTmp.name, externalEventTmp.invoke_id
@@ -482,25 +483,25 @@ public class Fsm {
                     }
                 }
                 if (StaticOptions.trace_method)
-                    this.tracer.exit_method("externalQueue.dequeue");
+                    this.tracer.exit_method(gd.session_id, "externalQueue.dequeue");
                 if (StaticOptions.trace_event && externalEvent != null)
-                    this.tracer.event_external_received(externalEvent);
+                    this.tracer.event_external_received(gd.session_id, externalEvent);
                 if (this.isCancelEvent(externalEvent)) {
-                    datamodel.global().running = false;
+                    gd.running = false;
                     continue;
                 }
 
                 if (externalEvent != null && externalEvent.name.startsWith(EVENT_DONE_INVOKE_PREFIX)) {
                     if (externalEvent.invoke_id != null) {
-                        datamodel.global().child_sessions.remove(externalEvent.invoke_id);
+                        gd.child_sessions.remove(externalEvent.invoke_id);
                     }
                 }
             }
             java.util.List<ExecutableContent> toFinalize = new ArrayList<>();
             java.util.List<String> toForward = new ArrayList<>();
 
-            if (externalEvent.invoke_id != null) {
-                ScxmlSession session = datamodel.global().child_sessions.get(externalEvent.invoke_id);
+            if (externalEvent != null && externalEvent.invoke_id != null) {
+                ScxmlSession session = gd.child_sessions.get(externalEvent.invoke_id);
                 if (session != null) {
                     // Get state of invokeid
                     if (session.state != null) {
@@ -528,7 +529,7 @@ public class Fsm {
                 // same values in the forwarded copy of the event. The SCXML Processor must forward
                 // the event at the point at which it removes it from the external event queue of
                 // the invoking session for processing.
-                ScxmlSession session = datamodel.global().child_sessions.get(invokeId);
+                ScxmlSession session = gd.child_sessions.get(invokeId);
                 if (session == null) {
                     // TODO: Clarify, communication error?
                 } else {
@@ -544,7 +545,7 @@ public class Fsm {
         // End of outer while running loop.  If we get here, we have reached a top-level final state or have been cancelled
         this.exitInterpreter(datamodel);
         if (StaticOptions.trace_method) {
-            this.tracer.exit_method("mainEventLoop");
+            this.tracer.exit_method(gd.session_id, "mainEventLoop");
         }
     }
 
@@ -572,19 +573,19 @@ public class Fsm {
      * </pre>
      */
     protected void exitInterpreter(Datamodel datamodel) {
-        var global = datamodel.global();
-        if (global.final_configuration != null) {
-            global.final_configuration.clear();
-            for (Iterator<State> it = global.configuration.iterator(); it.hasNext(); ) {
-                global.final_configuration.add(it.next().name);
-            }
+        final var gd = datamodel.global();
+
+        gd.final_configuration.clear();
+        for (Iterator<State> it = gd.configuration.iterator(); it.hasNext(); ) {
+            gd.final_configuration.add(it.next().name);
         }
-        List<State> statesToExit = global
+
+        List<State> statesToExit = gd
                 .configuration
                 .toList()
                 .sort(Fsm.state_exit_order);
 
-        for (var session : global.child_sessions.values()) {
+        for (var session : gd.child_sessions.values()) {
             datamodel.send(
                     ScxmlEventIOProcessor.SCXML_EVENT_PROCESSOR_SHORT_TYPE,
                     new Data.String(String.format("%s%s", ScxmlEventIOProcessor.SCXML_TARGET_SESSION_ID_PREFIX,
@@ -596,7 +597,7 @@ public class Fsm {
         for (Iterator<State> it = statesToExit.iterator(); it.hasNext(); ) {
             State s = it.next();
             this.executeContentBlocks(datamodel, s.onexit);
-            global.configuration.delete(s);
+            gd.configuration.delete(s);
             if (this.isFinalState(s) && this.isSCXMLElement(s.parent)) {
                 this.returnDoneEvent(s.donedata, datamodel);
             }
@@ -611,10 +612,10 @@ public class Fsm {
      * the id generated in that session when the &lt;invoke> was executed.
      */
     protected void returnDoneEvent(DoneData done_data, Datamodel datamodel) {
-        final var global = datamodel.global();
+        final var gd = datamodel.global();
 
-        var caller_invoke_id = global.caller_invoke_id;
-        var parent_session_id = global.parent_session_id;
+        var caller_invoke_id = gd.caller_invoke_id;
+        var parent_session_id = gd.parent_session_id;
 
         if (parent_session_id != null) {
             if (caller_invoke_id == null) {
@@ -666,16 +667,15 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<Transition> selectEventlessTransitions(Datamodel datamodel) {
-        var atomicStates = datamodel.global()
-                .configuration
+        final var gd = datamodel.global();
+        var atomicStates = gd.configuration
                 .toList()
                 .filter_by(this::isAtomicState)
                 .sort(Fsm.state_document_order);
 
         if (StaticOptions.trace_method)
             this.tracer.enter_method_with_arguments(
-                    "selectEventlessTransitions",
-                    new Argument("atomicStates", atomicStates));
+                    gd.session_id, "selectEventlessTransitions", new Argument("atomicStates", atomicStates));
 
         OrderedSet<Transition> enabledTransitions = new OrderedSet<>();
 
@@ -706,8 +706,8 @@ public class Fsm {
         }
         enabledTransitions = this.removeConflictingTransitions(datamodel, enabledTransitions);
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result("enabledTransitions", enabledTransitions);
-            this.tracer.exit_method("selectEventlessTransitions");
+            this.tracer.trace_result(gd.session_id, "enabledTransitions", enabledTransitions);
+            this.tracer.exit_method(gd.session_id, "selectEventlessTransitions");
         }
         return enabledTransitions;
     }
@@ -740,10 +740,11 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<Transition> selectTransitions(Datamodel datamodel, Event event) {
-        if (StaticOptions.trace_method) {
-            this.tracer.enter_method("selectTransitions");
-        }
         final GlobalData gd = datamodel.global();
+
+        if (StaticOptions.trace_method) {
+            this.tracer.enter_method(gd.session_id, "selectTransitions");
+        }
 
         OrderedSet<Transition> enabledTransitions = new OrderedSet<>();
         var atomicStates = gd.configuration.toList()
@@ -771,8 +772,8 @@ public class Fsm {
         }
         enabledTransitions = this.removeConflictingTransitions(datamodel, enabledTransitions);
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result("enabledTransitions", enabledTransitions);
-            this.tracer.exit_method("selectTransitions");
+            this.tracer.trace_result(gd.session_id, "enabledTransitions", enabledTransitions);
+            this.tracer.exit_method(gd.session_id, "selectTransitions");
         }
         return enabledTransitions;
     }
@@ -884,7 +885,7 @@ public class Fsm {
      */
     protected void microstep(Datamodel datamodel, List<Transition> enabledTransitions) {
         if (StaticOptions.trace_method)
-            this.tracer.enter_method("microstep");
+            this.tracer.enter_method(datamodel.global().session_id, "microstep");
         if (StaticOptions.debug) {
             if (enabledTransitions.size() > 0) {
                 if (enabledTransitions.size() > 1) {
@@ -901,7 +902,7 @@ public class Fsm {
         this.executeTransitionContent(datamodel, enabledTransitions);
         this.enterStates(datamodel, enabledTransitions);
         if (StaticOptions.trace_method)
-            this.tracer.exit_method("microstep");
+            this.tracer.exit_method(datamodel.global().session_id, "microstep");
     }
 
     /**
@@ -943,10 +944,11 @@ public class Fsm {
      * </pre>
      */
     protected void exitStates(Datamodel datamodel, List<Transition> enabledTransitions) {
-        if (StaticOptions.trace_method)
-            this.tracer.enter_method("exitStates");
-
         final GlobalData gd = datamodel.global();
+
+        if (StaticOptions.trace_method)
+            this.tracer.enter_method(gd.session_id, "exitStates");
+
 
         var statesToExit = this.computeExitSet(datamodel, enabledTransitions);
         for (State s : statesToExit.data) {
@@ -979,7 +981,7 @@ public class Fsm {
             HashSet<Integer> invoke_doc_ids = new HashSet<>();
             List<ExecutableContentBlock> exitList = new List<>();
             if (StaticOptions.trace_state)
-                this.tracer.trace_exit_state(s);
+                this.tracer.trace_exit_state(gd.session_id, s);
             for (var inv : s.invoke.data) {
                 invoke_doc_ids.add(inv.doc_id);
             }
@@ -997,7 +999,7 @@ public class Fsm {
             gd.configuration.delete(s);
         }
         if (StaticOptions.trace_method)
-            this.tracer.exit_method("exitStates");
+            this.tracer.exit_method(gd.session_id, "exitStates");
     }
 
     /**
@@ -1046,10 +1048,11 @@ public class Fsm {
      * </pre>
      */
     protected void enterStates(Datamodel datamodel, List<Transition> enabledTransitions) {
-        if (StaticOptions.trace_method)
-            this.tracer.enter_method("enterStates");
+        final var gd = datamodel.global();
 
-        var gd = datamodel.global();
+        if (StaticOptions.trace_method)
+            this.tracer.enter_method(gd.session_id, "enterStates");
+
         OrderedSet<State> statesToEnter = new OrderedSet<>();
         OrderedSet<State> statesForDefaultEntry = new OrderedSet<>();
 
@@ -1058,7 +1061,7 @@ public class Fsm {
         this.computeEntrySet(datamodel, enabledTransitions, statesToEnter, statesForDefaultEntry, defaultHistoryContent);
         for (State s : statesToEnter.toList().sort(Fsm.state_entry_order).data) {
             if (StaticOptions.trace_state)
-                this.tracer.trace_enter_state(s);
+                this.tracer.trace_enter_state(gd.session_id, s);
             gd.configuration.add(s);
             gd.statesToInvoke.add(s);
             State to_init = null;
@@ -1105,9 +1108,8 @@ public class Fsm {
                                     EventType.external)
                     );
                     State grandparent = (parent == null) ? null : parent.parent;
-                    if (grandparent != null && this.isParallelState(grandparent)
-                            && this.getChildStates(grandparent)
-                            .every((state) -> this.isInFinalState(datamodel, state))) {
+                    if (grandparent != null && grandparent.is_parallel &&
+                            this.getChildStates(grandparent).every((state) -> this.isInFinalState(datamodel, state))) {
                         this.enqueue_internal(
                                 datamodel,
                                 // TODO: EventType::external ?
@@ -1119,7 +1121,7 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method)
-            this.tracer.exit_method("enterStates");
+            this.tracer.exit_method(gd.session_id, "enterStates");
     }
 
     /**
@@ -1150,33 +1152,21 @@ public class Fsm {
 
 
     protected boolean executeContent(@NotNull Datamodel datamodel, @Nullable ExecutableContent content) {
+        final int session_id = datamodel.global().session_id;
         if (content != null) {
             if (StaticOptions.trace_method) {
-                this.tracer.enter_method_with_arguments("executeContent",
+                this.tracer.enter_method_with_arguments(session_id, "executeContent",
                         new Argument("content", content));
             }
             boolean r = datamodel.executeContent(this, content);
             if (StaticOptions.trace_method) {
-                this.tracer.trace_result("result", r);
-                this.tracer.exit_method("executeContent");
+                this.tracer.trace_result(session_id, "result", r);
+                this.tracer.exit_method(session_id, "executeContent");
             }
             return r;
         } else {
             return true;
         }
-    }
-
-    public boolean isParallelState(State state) {
-        if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("isParallelState",
-                    new Argument("state", state.name));
-        }
-        final boolean b = state.is_parallel;
-        if (StaticOptions.trace_method) {
-            this.tracer.trace_result("parallel", Boolean.toString(b));
-            this.tracer.exit_method("isParallelState");
-        }
-        return b;
     }
 
     protected boolean isSCXMLElement(State state) {
@@ -1211,15 +1201,16 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<State> computeExitSet(Datamodel datamodel, List<Transition> transitions) {
+        final var gd = datamodel.global();
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("computeExitSet",
+            this.tracer.enter_method_with_arguments(gd.session_id, "computeExitSet",
                     new Argument("transitions", transitions));
         }
         OrderedSet<State> statesToExit = new OrderedSet<>();
         for (var t : transitions.data) {
             if (!t.target.isEmpty()) {
                 State domain = this.getTransitionDomain(datamodel, t);
-                for (var s : datamodel.global().configuration.data) {
+                for (var s : gd.configuration.data) {
                     if (this.isDescendant(s, domain)) {
                         statesToExit.add(s);
                     }
@@ -1227,8 +1218,8 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result("statesToExit", statesToExit);
-            this.tracer.exit_method("computeExitSet");
+            this.tracer.trace_result(gd.session_id, "statesToExit", statesToExit);
+            this.tracer.exit_method(gd.session_id, "computeExitSet");
         }
         return statesToExit;
     }
@@ -1276,8 +1267,9 @@ public class Fsm {
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentBlock> defaultHistoryContent
     ) {
+        int session_id = datamodel.global().session_id;
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("computeEntrySet",
+            this.tracer.enter_method_with_arguments(session_id, "computeEntrySet",
                     new Argument("transitions", transitions));
         }
         for (Transition t : transitions.data) {
@@ -1303,8 +1295,8 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result("statesToEnter>", statesToEnter);
-            this.tracer.exit_method("computeEntrySet");
+            this.tracer.trace_result(session_id, "statesToEnter>", statesToEnter);
+            this.tracer.exit_method(session_id, "computeEntrySet");
         }
     }
 
@@ -1360,13 +1352,13 @@ public class Fsm {
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentBlock> defaultHistoryContent
     ) {
+        final var gd = datamodel.global();
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("addDescendantStatesToEnter",
+            this.tracer.enter_method_with_arguments(gd.session_id, "addDescendantStatesToEnter",
                     new Argument("State", state));
         }
-        var global = datamodel.global();
         if (this.isHistoryState(state)) {
-            var hv = global.historyValue.get(state);
+            var hv = gd.historyValue.get(state);
             if (hv != null) {
                 for (State s : hv.data) {
                     this.addDescendantStatesToEnter(
@@ -1437,7 +1429,7 @@ public class Fsm {
                         );
                     }
                 }
-            } else if (this.isParallelState(state)) {
+            } else if (state.is_parallel) {
                 for (var child : state.states) {
                     if (!statesToEnter.some((s) -> this.isDescendant(s, child))) {
                         this.addDescendantStatesToEnter(
@@ -1452,8 +1444,8 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result("statesToEnter", statesToEnter);
-            this.tracer.exit_method("addDescendantStatesToEnter");
+            this.tracer.trace_result(gd.session_id, "statesToEnter", statesToEnter);
+            this.tracer.exit_method(gd.session_id, "addDescendantStatesToEnter");
         }
     }
 
@@ -1478,13 +1470,14 @@ public class Fsm {
             OrderedSet<State> statesForDefaultEntry,
             HashTable<State, ExecutableContentBlock> defaultHistoryContent
     ) {
+        final int trace_sessionId = StaticOptions.trace_method ? datamodel.global().session_id : -1;
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("addAncestorStatesToEnter",
+            this.tracer.enter_method_with_arguments(trace_sessionId, "addAncestorStatesToEnter",
                     new Argument("state", state));
         }
         for (var anc : this.getProperAncestors(state, ancestor).data) {
             statesToEnter.add(anc);
-            if (this.isParallelState(anc)) {
+            if (anc.is_parallel) {
                 for (var child : anc.states) {
                     if (!statesToEnter.some(s -> this.isDescendant(s, child))) {
                         this.addDescendantStatesToEnter(
@@ -1499,7 +1492,7 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method)
-            this.tracer.exit_method("addAncestorStatesToEnter");
+            this.tracer.exit_method(trace_sessionId, "addAncestorStatesToEnter");
     }
 
     /**
@@ -1522,7 +1515,7 @@ public class Fsm {
         if (this.isCompoundState(s)) {
             final GlobalData gd = datamodel.global();
             return this.getChildStates(s).some(cs -> this.isFinalState(cs) && gd.configuration.isMember(cs));
-        } else if (this.isParallelState(s)) {
+        } else if (s.is_parallel) {
             return this.getChildStates(s)
                     .every(cs -> this.isInFinalState(datamodel, cs));
         } else {
@@ -1550,8 +1543,10 @@ public class Fsm {
      */
     @Nullable
     protected State getTransitionDomain(@NotNull Datamodel datamodel, Transition t) {
+        final int trace_sessionId = StaticOptions.trace_method ? datamodel.global().session_id : -1;
+
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("getTransitionDomain",
+            this.tracer.enter_method_with_arguments(trace_sessionId, "getTransitionDomain",
                     new Argument("t", t));
         }
         var tstates = this.getEffectiveTargetStates(datamodel, t);
@@ -1568,8 +1563,8 @@ public class Fsm {
             domain = this.findLCCA(l.append_set(tstates));
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result("domain", domain);
-            this.tracer.exit_method("getTransitionDomain");
+            this.tracer.trace_result(trace_sessionId, "domain", domain);
+            this.tracer.exit_method(trace_sessionId, "getTransitionDomain");
         }
         return domain;
     }
@@ -1590,10 +1585,7 @@ public class Fsm {
      * </pre>
      */
     protected State findLCCA(List<State> stateList) {
-        if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("findLCCA",
-                    new Argument("stateList", stateList));
-        }
+
         State lcca = null;
         for (var anc : this.getProperAncestors(stateList.head(), null).toList()
                 .filter_by(this::isCompoundStateOrScxmlElement).data) {
@@ -1601,10 +1593,6 @@ public class Fsm {
                 lcca = anc;
                 break;
             }
-        }
-        if (StaticOptions.trace_method) {
-            this.tracer.trace_result("lcca", lcca);
-            this.tracer.exit_method("findLCCA");
         }
         return lcca;
     }
@@ -1628,15 +1616,16 @@ public class Fsm {
      * </pre>
      */
     protected OrderedSet<State> getEffectiveTargetStates(Datamodel datamodel, Transition transition) {
+        final var gd = datamodel.global();
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("getEffectiveTargetStates",
+            this.tracer.enter_method_with_arguments(gd.session_id, "getEffectiveTargetStates",
                     new Argument("transition", transition));
         }
         OrderedSet<State> targets = new OrderedSet<>();
         for (State state : transition.target) {
             if (this.isHistoryState(state)) {
-                if (datamodel.global().historyValue.has(state)) {
-                    targets.union(datamodel.global().historyValue.get(state));
+                if (gd.historyValue.has(state)) {
+                    targets.union(gd.historyValue.get(state));
                 } else {
                     // History states have exactly one "transition"
                     targets.union(this.getEffectiveTargetStates(datamodel, state.transitions.head()));
@@ -1646,8 +1635,8 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result("targets", targets);
-            this.tracer.exit_method("getEffectiveTargetStates");
+            this.tracer.trace_result(gd.session_id, "targets", targets);
+            this.tracer.exit_method(gd.session_id, "getEffectiveTargetStates");
         }
         return targets;
     }
@@ -1664,12 +1653,6 @@ public class Fsm {
      * If state2 is state1's parent, or equal to state1, or a descendant of state1, this returns the empty set.
      */
     protected OrderedSet<State> getProperAncestors(@NotNull State state1, @Nullable State state2) {
-        if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("getProperAncestors",
-                    new Argument("state1", state1),
-                    new Argument("state2", state2));
-        }
-
         OrderedSet<State> properAncestors = new OrderedSet<>();
         if (!this.isDescendant(state2, state1)) {
             State currState = state1.parent;
@@ -1677,10 +1660,6 @@ public class Fsm {
                 properAncestors.add(currState);
                 currState = currState.parent;
             }
-        }
-        if (StaticOptions.trace_method) {
-            this.tracer.trace_result("properAncestors", properAncestors);
-            this.tracer.exit_method("getProperAncestors");
         }
         return properAncestors;
     }
@@ -1691,11 +1670,6 @@ public class Fsm {
      * Returns 'true' if state1 is a descendant of state2 (a child, or a child of a child, or a child of a child of a child, etc.) Otherwise returns 'false'.
      */
     protected boolean isDescendant(State state1, State state2) {
-        if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("isDescendant",
-                    new Argument("state1", state1),
-                    new Argument("state2", state2));
-        }
         boolean result;
         if (state1 == null || state2 == null || state1 == state2) {
             result = false;
@@ -1705,10 +1679,6 @@ public class Fsm {
                 currState = currState.parent;
             }
             result = (currState == state2);
-        }
-        if (StaticOptions.trace_method) {
-            this.tracer.trace_result("result", result);
-            this.tracer.exit_method("isDescendant");
         }
         return result;
     }
@@ -1756,13 +1726,14 @@ public class Fsm {
 
     protected void invoke(Datamodel datamodel, State state, Invoke inv) {
 
+        final var gd = datamodel.global();
+
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments("invoke",
+            this.tracer.enter_method_with_arguments(gd.session_id, "invoke",
                     new Argument("state", state),
                     new Argument("inv", inv));
         }
 
-        final GlobalData global = datamodel.global();
 
         // W3C: if the evaluation of its arguments produces an error, the SCXML Processor must
         // terminate the processing of the element without further action.
@@ -1771,7 +1742,7 @@ public class Fsm {
         if (type_name_data instanceof Data.Error) {
             // Error -> abort
             if (StaticOptions.trace_method) {
-                this.tracer.exit_method("invoke");
+                this.tracer.exit_method(gd.session_id, "invoke");
             }
             return;
         }
@@ -1785,7 +1756,7 @@ public class Fsm {
                 || (type_name.startsWith(Datamodel.SCXML_INVOKE_TYPE) && type_name.length() <= (Datamodel.SCXML_INVOKE_TYPE.length() + 1)))) {
             Log.error("Unsupported <invoke> type %s", type_name);
             if (StaticOptions.trace_method) {
-                this.tracer.exit_method("invoke");
+                this.tracer.exit_method(gd.session_id, "invoke");
             }
             return;
         }
@@ -1809,7 +1780,7 @@ public class Fsm {
         if (src instanceof Data.Error) {
             // Error -> Abort
             if (StaticOptions.trace_method) {
-                this.tracer.exit_method("invoke");
+                this.tracer.exit_method(gd.session_id, "invoke");
             }
             return;
         }
@@ -1819,7 +1790,7 @@ public class Fsm {
             if (value instanceof Data.Error) {
                 // Error -> Abort
                 if (StaticOptions.trace_method) {
-                    this.tracer.exit_method("invoke");
+                    this.tracer.exit_method(gd.session_id, "invoke");
                 }
                 return;
             }
@@ -1857,50 +1828,51 @@ public class Fsm {
                     } catch (IOException i) {
                         Log.exception("Failed to parse scxml source", i);
                         if (StaticOptions.trace_method) {
-                            this.tracer.exit_method("invoke");
+                            this.tracer.exit_method(gd.session_id, "invoke");
                         }
                         return;
                     }
                 }
                 fsm.tracer.enable_trace(this.tracer.trace_mode());
                 fsm.caller_invoke_id = invokeId;
-                fsm.parent_session_id = global.session_id;
+                fsm.parent_session_id = gd.session_id;
                 session = fsm.start_fsm_with_data(
-                        global.actions,
-                        global.executor,
+                        gd.actions,
+                        gd.executor,
                         name_values
                 );
 
             } else {
                 Log.error("No content to execute");
                 if (StaticOptions.trace_method) {
-                    this.tracer.exit_method("invoke");
+                    this.tracer.exit_method(gd.session_id, "invoke");
                 }
                 return;
             }
         } else {
-            session = global.executor.execute_with_data(
+            session = gd.executor.execute_with_data(
                     // Don't use "to_source" here as we need the raw content, not the scriptable value.
                     // e.g. A uri-string would get "'file:myfsm.scxml'"
                     src.toString(),
-                    global.actions,
+                    gd.actions,
                     name_values,
-                    global.session_id, invokeId, this.tracer.trace_mode()
+                    gd.session_id, invokeId, this.tracer.trace_mode()
             );
         }
 
         session.state = state;
         session.invoke_doc_id = inv.doc_id;
 
-        global.child_sessions.put(invokeId, session);
+        gd.child_sessions.put(invokeId, session);
         if (StaticOptions.trace_method) {
-            this.tracer.exit_method("invoke");
+            this.tracer.exit_method(gd.session_id, "invoke");
         }
     }
 
     protected void cancelInvoke(Datamodel datamodel, String invokeId, ScxmlSession session) {
+        final var gd = datamodel.global();
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method("cancelInvoke");
+            this.tracer.enter_method(gd.session_id, "cancelInvoke");
         }
         datamodel.global().child_sessions.remove(invokeId);
         datamodel.send(
@@ -1909,7 +1881,7 @@ public class Fsm {
                 Event.new_simple(EVENT_CANCEL_SESSION)
         );
         if (StaticOptions.trace_method) {
-            this.tracer.exit_method("cancelInvoke");
+            this.tracer.exit_method(gd.session_id, "cancelInvoke");
         }
     }
 

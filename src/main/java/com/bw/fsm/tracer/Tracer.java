@@ -18,16 +18,6 @@ public abstract class Tracer {
     public abstract void trace(String msg);
 
     /**
-     * Enter a sub-scope, e.g. by increase the log indentation.
-     */
-    public abstract void enter();
-
-    /**
-     * Leave the current sub-scope, e.g. by decrease the log indentation.
-     */
-    public abstract void leave();
-
-    /**
      * Enable traces for the specified scope.
      */
     public abstract void enable_trace(TraceMode flag);
@@ -45,64 +35,54 @@ public abstract class Tracer {
     /**
      * Called by FSM if a method is entered
      */
-    public void enter_method(String what) {
-        if (this.is_trace(TraceMode.METHODS)) {
-            this.trace(String.format(">>> %s", what));
-            this.enter();
-        }
-    }
+    public abstract void enter_method(int sessionId, String what);
 
     /**
      * Called by FSM if a method is entered
      */
-    public abstract void enter_method_with_arguments(String what, Argument... arguments);
+    public abstract void enter_method_with_arguments(int sessionId, String what, Argument... arguments);
 
 
     /**
      * Called by FSM if a method is exited
      */
-    public void exit_method(String what) {
-        if (this.is_trace(TraceMode.METHODS)) {
-            this.leave();
-            this.trace(String.format("<<< %s", what));
-        }
-    }
+    public abstract void exit_method(int sessionId, String what);
 
     /**
      * Called by FSM if an internal event is sent
      */
-    public void event_internal_send(Event what) {
-        if (this.is_trace(TraceMode.EVENTS)) {
-            this.trace(String.format("Send Internal Event: %s #%s", what.name, what.invoke_id));
+    public void event_internal_send(int sessionId, Event what) {
+        if (StaticOptions.trace_event && this.is_trace(TraceMode.EVENTS)) {
+            this.trace(String.format("[%d] Send Internal Event: %s #%s", sessionId, what.name, what.invoke_id));
         }
     }
 
     /**
      * Called by FSM if an internal event is received
      */
-    public void event_internal_received(Event what) {
-        if (this.is_trace(TraceMode.EVENTS)) {
+    public void event_internal_received(int sessionId, Event what) {
+        if (StaticOptions.trace_event && this.is_trace(TraceMode.EVENTS)) {
             this.trace(String.format(
-                            "Received Internal Event: %s, invokeId %s, content %s, param %s",
-                            what.name, what.invoke_id, what.content, what.param_values
+                            "[%d] Received Internal Event: %s, invokeId %s, content %s, param %s",
+                            sessionId, what.name, what.invoke_id, what.content, what.param_values
                     )
             );
         }
     }
 
     /**
-     * Called by FSM if an external event is send
+     * Called by FSM if an external event is sent
      */
-    public void event_external_send(Event what) {
-        if (this.is_trace(TraceMode.EVENTS)) {
-            this.trace(String.format("Send External Event: %s #%s", what.name, what.invoke_id));
+    public void event_external_sent(int fromSessionId, int toSessionId, Event what) {
+        if (StaticOptions.trace_event && this.is_trace(TraceMode.EVENTS)) {
+            this.trace(String.format("{´[%d] Send External Event: %s #%s to session #%d", fromSessionId, what.name, what.invoke_id, toSessionId));
         }
     }
 
     /**
      * Called by FSM if an external event is received
      */
-    public void event_external_received(Event what) {
+    public void event_external_received(int sessionId, Event what) {
         if (what.name.startsWith("trace.")) {
             var p = what.name.split("\\.");
             if (p.length == 3) {
@@ -116,44 +96,46 @@ public abstract class Tracer {
                 }
             }
         }
-        if (this.is_trace(TraceMode.EVENTS)) {
-            this.trace(String.format("Received External Event: %s #%s", what.name, what.invoke_id));
+        if (StaticOptions.trace_event && this.is_trace(TraceMode.EVENTS)) {
+            this.trace(String.format("[%d] Received External Event: %s #%s", sessionId, what.name, what.invoke_id));
         }
     }
 
     /**
      * Called by FSM if a state is entered or left.
      */
-    public void trace_state(String what, State s) {
-        if (this.is_trace(TraceMode.STATES)) {
+    public void trace_state(int sessionId, String what, State s) {
+        if (StaticOptions.trace_state && this.is_trace(TraceMode.STATES)) {
             if (s.name.isEmpty()) {
-                this.trace(String.format("%s #%d", what, s.id));
+                this.trace(String.format("[%d] %s #%d", sessionId, what, s.id));
             } else {
-                this.trace(String.format("%s <%s> #%d", what, s.name, s.id));
+                this.trace(String.format("[%d] %s <%s> #%d", sessionId, what, s.name, s.id));
             }
         }
     }
 
     /**
-     * Called by FSM if a state is entered. Calls [Tracer::trace_state].
+     * Called by FSM if a state is entered. Default implementation calls {@link Tracer#trace_state(int, String, State)}.
      */
-    public void trace_enter_state(State s) {
-        this.trace_state("Enter", s);
+    public void trace_enter_state(int sessionId, State s) {
+        if (StaticOptions.trace_state)
+            this.trace_state(sessionId, "Enter", s);
     }
 
     /**
      * Called by FSM if a state is left. Calls [Tracer::trace_state].
      */
-    public void trace_exit_state(State s) {
-        this.trace_state("Exit", s);
+    public void trace_exit_state(int sessionId, State s) {
+        if (StaticOptions.trace_state)
+            this.trace_state(sessionId, "Exit", s);
     }
 
     /**
      * Called by FSM for results in methods.
      */
-    public void trace_result(String what, Object d) {
-        if (this.is_trace(TraceMode.RESULTS)) {
-            this.trace(String.format("Result:%s=%s", what, value_to_string(d)));
+    public void trace_result(int sessionId, String what, Object d) {
+        if (StaticOptions.trace_method && this.is_trace(TraceMode.RESULTS)) {
+            this.trace(String.format("[%d] Result:%s=%s", sessionId, what, value_to_string(d)));
         }
     }
 

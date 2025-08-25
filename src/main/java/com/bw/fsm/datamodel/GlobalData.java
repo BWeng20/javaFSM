@@ -53,7 +53,7 @@ public class GlobalData {
 
     public void enqueue_internal(Event event) {
         if (StaticOptions.trace_event) {
-            tracer.event_internal_send(event);
+            tracer.event_internal_send(session_id, event);
         }
         this.internalQueue.enqueue(event);
     }

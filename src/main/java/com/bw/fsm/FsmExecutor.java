@@ -166,7 +166,9 @@ public class FsmExecutor {
         this.state.sessions.remove(session_id);
     }
 
-    /// Sends some event to a session.
+    /**
+     * Sends some event to a session.
+     */
     public void send_to_session(Integer session_id, Event event) {
         ScxmlSession session = this.state.sessions.get(session_id);
         if (session == null) {
