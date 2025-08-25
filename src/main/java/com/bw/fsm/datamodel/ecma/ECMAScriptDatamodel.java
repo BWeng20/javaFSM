@@ -129,7 +129,7 @@ public class ECMAScriptDatamodel extends Datamodel {
     protected @NotNull Data evalSource(String sourceText) throws ScriptException {
         try {
             if (StaticOptions.trace_script)
-                global().tracer.trace(String.format("JS: %s", sourceText));
+                global().tracer.trace(global().session_id, String.format("JS: %s", sourceText));
             Source source = Source.newBuilder("js", sourceText, null).build();
             return js_to_data_value(context.eval(source));
         } catch (Exception e) {
@@ -276,7 +276,7 @@ public class ECMAScriptDatamodel extends Datamodel {
             }
             String src = sb.toString();
             if (StaticOptions.trace_script)
-                global().tracer.trace("JS: " + src);
+                global().tracer.trace(global().session_id, "JS: " + src);
             Source source = Source.newBuilder("js", src, null).build();
             context.eval(source);
         } catch (Exception e) {

@@ -25,42 +25,57 @@ public class DefaultTracer extends Tracer {
     }
 
     @Override
-    public void trace(String msg) {
+    public void trace(int sessionId, String msg) {
         if (StaticOptions.trace) {
-            Log.info("Trace>%" + get_indent() + "s%s", "", msg);
+            Log.info("Trace #%d >%" + get_indent() + "s%s", sessionId, "", msg);
         }
     }
 
     @Override
-    public void enter_method(int sessionId, String what) {
+    public void enter_method(int sessionId, String what, TraceArgument... arguments) {
         if (this.is_trace(TraceMode.METHODS)) {
-            this.trace(String.format(">>> %s", what));
+            final StringBuilder sb = new StringBuilder(30);
+            sb.append(">>> ").append(what).append('(');
+            if (arguments.length > 0) {
+                boolean first = true;
+                for (TraceArgument a : arguments) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(",");
+                    }
+                    sb.append(a.name).append(':').append(value_to_string(a.value));
+                }
+            }
+            sb.append(')');
+            this.trace(sessionId, sb.toString());
             DefaultTracer.increase_indent();
         }
     }
 
     @Override
-    public void exit_method(int sessionId, String what) {
+    public void exit_method(int sessionId, String what, TraceArgument... results) {
         if (this.is_trace(TraceMode.METHODS)) {
             this.leave();
-            this.trace(String.format("<<< %s", what));
-        }
-    }
-
-    @Override
-    public void enter_method_with_arguments(int sessionId, String what, Argument... arguments) {
-        if (this.is_trace(TraceMode.METHODS)) {
-            this.trace(String.format(">>> %s", what));
-            DefaultTracer.increase_indent();
-            if (arguments.length > 0) {
-                this.trace("Arguments: {");
-                DefaultTracer.increase_indent();
-                for (Argument a : arguments) {
-                    this.trace(String.format("%s = %s", a.name, value_to_string(a.value)));
+            final StringBuilder sb = new StringBuilder(30);
+            sb.append("<<< ").append(what);
+            if (results.length > 0) {
+                sb.append(" -> ");
+                if (results.length > 1)
+                    sb.append('[');
+                boolean first = true;
+                for (TraceArgument a : results) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(",");
+                    }
+                    sb.append(a.name).append(':').append(value_to_string(a.value));
                 }
-                DefaultTracer.decrease_indent();
-                this.trace("}");
+                if (results.length > 1)
+                    sb.append(']');
             }
+            this.trace(sessionId, sb.toString());
         }
     }
 

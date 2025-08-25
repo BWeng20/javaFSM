@@ -5,7 +5,7 @@ import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.event_io_processor.ScxmlEventIOProcessor;
-import com.bw.fsm.tracer.Argument;
+import com.bw.fsm.tracer.TraceArgument;
 import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -202,7 +202,7 @@ public class Fsm {
             this.tracer.enter_method(session_id, "interpret");
         }
         if (!this.valid()) {
-            this.failWithError();
+            this.failWithError(datamodel);
             return;
         }
         this.expandScxmlSource();
@@ -242,8 +242,7 @@ public class Fsm {
 
     private boolean validateState(State state) {
         if (state.doc_id == 0) {
-            if (StaticOptions.trace)
-                this.tracer.trace(String.format("Referenced state '%s' is not declared", state.name));
+            Log.error("Referenced state '%s' is not declared", state.name);
             return false;
         }
         for (var subState : state.states) {
@@ -273,9 +272,9 @@ public class Fsm {
     /**
      * <b>#Actual implementation</b>:* Throws a runtime error
      */
-    protected void failWithError() {
+    protected void failWithError(Datamodel datamodel) {
         if (StaticOptions.trace)
-            this.tracer.trace("FSM has failed");
+            this.tracer.trace(datamodel.global().session_id, "FSM has failed");
         throw new RuntimeException("FSM has failed");
     }
 
@@ -674,8 +673,8 @@ public class Fsm {
                 .sort(Fsm.state_document_order);
 
         if (StaticOptions.trace_method)
-            this.tracer.enter_method_with_arguments(
-                    gd.session_id, "selectEventlessTransitions", new Argument("atomicStates", atomicStates));
+            this.tracer.enter_method(
+                    gd.session_id, "selectEventlessTransitions", new TraceArgument("atomicStates", atomicStates));
 
         OrderedSet<Transition> enabledTransitions = new OrderedSet<>();
 
@@ -706,8 +705,7 @@ public class Fsm {
         }
         enabledTransitions = this.removeConflictingTransitions(datamodel, enabledTransitions);
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result(gd.session_id, "enabledTransitions", enabledTransitions);
-            this.tracer.exit_method(gd.session_id, "selectEventlessTransitions");
+            this.tracer.exit_method(gd.session_id, "selectEventlessTransitions", new TraceArgument("enabledTransitions", enabledTransitions));
         }
         return enabledTransitions;
     }
@@ -772,8 +770,7 @@ public class Fsm {
         }
         enabledTransitions = this.removeConflictingTransitions(datamodel, enabledTransitions);
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result(gd.session_id, "enabledTransitions", enabledTransitions);
-            this.tracer.exit_method(gd.session_id, "selectTransitions");
+            this.tracer.exit_method(gd.session_id, "selectTransitions", new TraceArgument("enabledTransitions", enabledTransitions));
         }
         return enabledTransitions;
     }
@@ -1155,13 +1152,12 @@ public class Fsm {
         final int session_id = datamodel.global().session_id;
         if (content != null) {
             if (StaticOptions.trace_method) {
-                this.tracer.enter_method_with_arguments(session_id, "executeContent",
-                        new Argument("content", content));
+                this.tracer.enter_method(session_id, "executeContent",
+                        new TraceArgument("content", content));
             }
             boolean r = datamodel.executeContent(this, content);
             if (StaticOptions.trace_method) {
-                this.tracer.trace_result(session_id, "result", r);
-                this.tracer.exit_method(session_id, "executeContent");
+                this.tracer.exit_method(session_id, "executeContent", new TraceArgument("result", r));
             }
             return r;
         } else {
@@ -1203,8 +1199,8 @@ public class Fsm {
     protected OrderedSet<State> computeExitSet(Datamodel datamodel, List<Transition> transitions) {
         final var gd = datamodel.global();
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments(gd.session_id, "computeExitSet",
-                    new Argument("transitions", transitions));
+            this.tracer.enter_method(gd.session_id, "computeExitSet",
+                    new TraceArgument("transitions", transitions));
         }
         OrderedSet<State> statesToExit = new OrderedSet<>();
         for (var t : transitions.data) {
@@ -1218,8 +1214,7 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result(gd.session_id, "statesToExit", statesToExit);
-            this.tracer.exit_method(gd.session_id, "computeExitSet");
+            this.tracer.exit_method(gd.session_id, "computeExitSet", new TraceArgument("statesToExit", statesToExit));
         }
         return statesToExit;
     }
@@ -1269,8 +1264,8 @@ public class Fsm {
     ) {
         int session_id = datamodel.global().session_id;
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments(session_id, "computeEntrySet",
-                    new Argument("transitions", transitions));
+            this.tracer.enter_method(session_id, "computeEntrySet",
+                    new TraceArgument("transitions", transitions));
         }
         for (Transition t : transitions.data) {
             for (var s : t.target) {
@@ -1295,8 +1290,7 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result(session_id, "statesToEnter>", statesToEnter);
-            this.tracer.exit_method(session_id, "computeEntrySet");
+            this.tracer.exit_method(session_id, "computeEntrySet", new TraceArgument("statesToEnter", statesToEnter));
         }
     }
 
@@ -1354,8 +1348,8 @@ public class Fsm {
     ) {
         final var gd = datamodel.global();
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments(gd.session_id, "addDescendantStatesToEnter",
-                    new Argument("State", state));
+            this.tracer.enter_method(gd.session_id, "addDescendantStatesToEnter",
+                    new TraceArgument("State", state));
         }
         if (this.isHistoryState(state)) {
             var hv = gd.historyValue.get(state);
@@ -1444,8 +1438,7 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result(gd.session_id, "statesToEnter", statesToEnter);
-            this.tracer.exit_method(gd.session_id, "addDescendantStatesToEnter");
+            this.tracer.exit_method(gd.session_id, "addDescendantStatesToEnter", new TraceArgument("statesToEnter", statesToEnter));
         }
     }
 
@@ -1472,8 +1465,8 @@ public class Fsm {
     ) {
         final int trace_sessionId = StaticOptions.trace_method ? datamodel.global().session_id : -1;
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments(trace_sessionId, "addAncestorStatesToEnter",
-                    new Argument("state", state));
+            this.tracer.enter_method(trace_sessionId, "addAncestorStatesToEnter",
+                    new TraceArgument("state", state));
         }
         for (var anc : this.getProperAncestors(state, ancestor).data) {
             statesToEnter.add(anc);
@@ -1546,8 +1539,8 @@ public class Fsm {
         final int trace_sessionId = StaticOptions.trace_method ? datamodel.global().session_id : -1;
 
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments(trace_sessionId, "getTransitionDomain",
-                    new Argument("t", t));
+            this.tracer.enter_method(trace_sessionId, "getTransitionDomain",
+                    new TraceArgument("t", t));
         }
         var tstates = this.getEffectiveTargetStates(datamodel, t);
         State domain;
@@ -1563,8 +1556,7 @@ public class Fsm {
             domain = this.findLCCA(l.append_set(tstates));
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result(trace_sessionId, "domain", domain);
-            this.tracer.exit_method(trace_sessionId, "getTransitionDomain");
+            this.tracer.exit_method(trace_sessionId, "getTransitionDomain", new TraceArgument("domain", domain));
         }
         return domain;
     }
@@ -1618,8 +1610,8 @@ public class Fsm {
     protected OrderedSet<State> getEffectiveTargetStates(Datamodel datamodel, Transition transition) {
         final var gd = datamodel.global();
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments(gd.session_id, "getEffectiveTargetStates",
-                    new Argument("transition", transition));
+            this.tracer.enter_method(gd.session_id, "getEffectiveTargetStates",
+                    new TraceArgument("transition", transition));
         }
         OrderedSet<State> targets = new OrderedSet<>();
         for (State state : transition.target) {
@@ -1635,8 +1627,7 @@ public class Fsm {
             }
         }
         if (StaticOptions.trace_method) {
-            this.tracer.trace_result(gd.session_id, "targets", targets);
-            this.tracer.exit_method(gd.session_id, "getEffectiveTargetStates");
+            this.tracer.exit_method(gd.session_id, "getEffectiveTargetStates", new TraceArgument("targets", targets));
         }
         return targets;
     }
@@ -1729,9 +1720,9 @@ public class Fsm {
         final var gd = datamodel.global();
 
         if (StaticOptions.trace_method) {
-            this.tracer.enter_method_with_arguments(gd.session_id, "invoke",
-                    new Argument("state", state),
-                    new Argument("inv", inv));
+            this.tracer.enter_method(gd.session_id, "invoke",
+                    new TraceArgument("state", state),
+                    new TraceArgument("inv", inv));
         }
 
 
@@ -1901,7 +1892,7 @@ public class Fsm {
         } else {
             var r = datamodel.execute_condition(t.cond);
             if (StaticOptions.trace) {
-                tracer.trace(String.format("Checking %s: %s -> %s", t, t.cond, r));
+                tracer.trace(datamodel.global().session_id, String.format("Checking %s: %s -> %s", t, t.cond, r));
             }
             return r;
         }
