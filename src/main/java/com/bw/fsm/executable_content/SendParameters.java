@@ -135,7 +135,7 @@ public class SendParameters implements ExecutableContent {
             return false;
         }
 
-        String type_val_string = type_val.is_empty() ? Datamodel.SCXML_EVENT_PROCESSOR : type_val.toString();
+        String type_val_string = type_val.is_empty() ? ScxmlEventIOProcessor.SCXML_EVENT_PROCESSOR : type_val.toString();
 
         Event event = new Event();
         event.name = event_name.toString();

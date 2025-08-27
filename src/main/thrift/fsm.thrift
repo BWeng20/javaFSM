@@ -27,30 +27,6 @@ struct Event {
 }
 
 
-/**
- * FSM Trace Server
- */
-service TraceServer
- {
-    string registerFsm(1: string clientAddress, 2: i32 session);
-
-    oneway void message( 1: string fsm, 2: string message );
-
-    oneway void sentEvent( 1: Event event );
-    oneway void receivedEvent( 1: Event event );
-
-    oneway void enterMethod(
-        1: string fsm,
-        2: string name,
-        3: list<Argument> arguments );
-
-    oneway void exitMethod(
-        1: string fsm,
-        2: string name,
-        3: list<Argument> results );
-
-}
-
 enum DatamodelType {
   Error   = 0,
   Null    = 1,
@@ -75,6 +51,41 @@ struct Data {
       */
      3: string value
 }
+
+/**
+ * FSM IO Processor
+ */
+service EventIOProcessor {
+
+    oneway void sendEvent(1: i32 session, 2: Event event);
+
+}
+
+
+/**
+ * FSM Trace Server
+ */
+service TraceServer
+ {
+    string registerFsm(1: string clientAddress, 2: i32 session);
+
+    oneway void message( 1: string fsm, 2: string message );
+
+    oneway void sentEvent( 1: Event event );
+    oneway void receivedEvent( 1: Event event );
+
+    oneway void enterMethod(
+        1: string fsm,
+        2: string name,
+        3: list<Argument> arguments );
+
+    oneway void exitMethod(
+        1: string fsm,
+        2: string name,
+        3: list<Argument> results );
+
+}
+
 
 /**
  * FSM Trace Client

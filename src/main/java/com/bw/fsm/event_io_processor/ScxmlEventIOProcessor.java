@@ -1,8 +1,8 @@
 package com.bw.fsm.event_io_processor;
 
 import com.bw.fsm.*;
-import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.GlobalData;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +14,15 @@ import java.util.Map;
  * See <a href="https://www.w3.org/TR/scxml/#SCXMLEventProcessor">W3C:SCXML - SCXML Event I/O Processor</a>,
  */
 public class ScxmlEventIOProcessor extends EventIOProcessor {
+
+    public static final String SCXML_EVENT_PROCESSOR = "http://www.w3.org/TR/scxml/#SCXMLEventProcessor";
+
+    /**
+     * W3C: Processors MAY define short form notations as an authoring convenience.<br>
+     * Shortcut for SCXML I/O Processors type
+     */
+    public static final String SCXML_EVENT_PROCESSOR_SHORT_TYPE = "scxml";
+
 
     /**
      * SCXML Processors specific target:<br>
@@ -45,11 +54,6 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
      */
     public static final String SCXML_TARGET_INVOKE_ID_PREFIX = "#_";
 
-    /**
-     * Shortcut for SCXML I/O Processors type
-     */
-    public static final String SCXML_EVENT_PROCESSOR_SHORT_TYPE = "scxml";
-
     public String location = SCXML_TARGET_SESSION_ID_PREFIX;
     public Map<Integer, BlockingQueue<Event>> sessions = new HashMap<>();
 
@@ -75,7 +79,7 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
         return String.format("%s%s", this.location, id);
     }
 
-    public static final List<String> TYPES = List.of(Datamodel.SCXML_EVENT_PROCESSOR, SCXML_EVENT_PROCESSOR_SHORT_TYPE);
+    public static final List<String> TYPES = List.of(SCXML_EVENT_PROCESSOR, SCXML_EVENT_PROCESSOR_SHORT_TYPE);
 
     @Override
     public List<String> get_types() {
@@ -104,8 +108,8 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
      * </ul>
      */
     @Override
-    public boolean send(GlobalData global, String target, Event event) {
-        event.origin_type = Datamodel.SCXML_EVENT_PROCESSOR;
+    public boolean send(@NotNull GlobalData global, @NotNull String target, @NotNull Event event) {
+        event.origin_type = SCXML_EVENT_PROCESSOR_SHORT_TYPE;
         if (event.origin == null) {
             event.origin = this.get_location(global.session_id);
         }

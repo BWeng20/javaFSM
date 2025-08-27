@@ -45,8 +45,6 @@ public class GlobalData {
     public Map<String, FsmTimer> delayed_send = new HashMap<>();
     public Map<String, EventIOProcessor> io_processors = new HashMap<>();
 
-    public DataStore data = new DataStore();
-
     public GlobalData(@NotNull Tracer tracer) {
         this.tracer = Objects.requireNonNull(tracer);
     }

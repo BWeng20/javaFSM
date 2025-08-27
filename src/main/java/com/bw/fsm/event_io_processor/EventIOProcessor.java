@@ -3,13 +3,14 @@ package com.bw.fsm.event_io_processor;
 import com.bw.fsm.*;
 import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.GlobalData;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
 
 /**
  * Interface for Event I/O Processors.<br>
- * As the I/O Processors hold session related data, an instance of this trait must be bound to one session,
+ * As the I/O Processors hold session related data, an instance of this interface must be bound to one session,
  * but may share backends with other sessions, e.g. an http server.
  */
 public abstract class EventIOProcessor {
@@ -34,7 +35,7 @@ public abstract class EventIOProcessor {
                 .put(global.session_id, global.externalQueue);
     }
 
-    public abstract boolean send(GlobalData global, String target, Event event);
+    public abstract boolean send(@NotNull GlobalData global, @NotNull String target, @NotNull Event event);
 
     public abstract void shutdown();
 

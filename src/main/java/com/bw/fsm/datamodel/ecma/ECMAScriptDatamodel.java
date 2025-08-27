@@ -1,10 +1,7 @@
 package com.bw.fsm.datamodel.ecma;
 
 import com.bw.fsm.*;
-import com.bw.fsm.datamodel.Datamodel;
-import com.bw.fsm.datamodel.DatamodelFactory;
-import com.bw.fsm.datamodel.GlobalData;
-import com.bw.fsm.datamodel.ScriptException;
+import com.bw.fsm.datamodel.*;
 import com.bw.fsm.event_io_processor.EventIOProcessor;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
@@ -53,8 +50,8 @@ public class ECMAScriptDatamodel extends Datamodel {
     }
 
     @Override
-    public ECMAScriptProducer createScriptProducer() {
-        return new ECMAScriptProducer();
+    public JsonScriptProducer createScriptProducer() {
+        return new JsonScriptProducer();
     }
 
     @Override
@@ -155,7 +152,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         int session_id = gd.session_id;
 
         // Create I/O-Processor Objects.
-        ECMAScriptProducer script = createScriptProducer();
+        JsonScriptProducer script = createScriptProducer();
         script.startMap();
         for (var entry : gd.io_processors.entrySet()) {
             script.startMember(entry.getKey());
@@ -170,7 +167,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public void set_from_state_data(Map<String, Data> data, boolean set_data) {
-        ECMAScriptProducer script = createScriptProducer();
+        JsonScriptProducer script = createScriptProducer();
         for (var entry : data.entrySet()) {
             try {
                 if (set_data) {
@@ -207,7 +204,7 @@ public class ECMAScriptDatamodel extends Datamodel {
     @Override
     public void initialize_read_only(String name, Data value) {
         try {
-            ECMAScriptProducer script = new ECMAScriptProducer(true);
+            JsonScriptProducer script = new JsonScriptProducer(true);
             script.addToken("const ");
             script.addToken(name);
             script.addToken("=");
@@ -222,7 +219,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public void set(String name, Data data, boolean allow_undefined) {
-        ECMAScriptProducer script = new ECMAScriptProducer();
+        JsonScriptProducer script = new JsonScriptProducer();
         if (allow_undefined) script.addToken("var ");
         script.addToken(name);
         script.addToken("=");
@@ -234,7 +231,7 @@ public class ECMAScriptDatamodel extends Datamodel {
     @Override
     public void set_event(Event event) {
 
-        ECMAScriptProducer eventScript = new ECMAScriptProducer(true);
+        JsonScriptProducer eventScript = new JsonScriptProducer(true);
 
         eventScript.startMap();
         eventScript.addStringMember(EVENT_VARIABLE_FIELD_NAME, event.name);
@@ -260,7 +257,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         setReadOnly(EVENT_VARIABLE_NAME, eventScript);
     }
 
-    protected void setReadOnly(String name, ECMAScriptProducer script) {
+    protected void setReadOnly(String name, JsonScriptProducer script) {
 
         StringBuilder sb = new StringBuilder(200);
         sb
@@ -287,7 +284,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     @Override
     public boolean assign(Data left_expr, Data right_expr) {
-        ECMAScriptProducer script = new ECMAScriptProducer();
+        JsonScriptProducer script = new JsonScriptProducer();
 
         left_expr.as_script(script);
         String left = script.finish();
@@ -328,15 +325,16 @@ public class ECMAScriptDatamodel extends Datamodel {
         if (StaticOptions.debug)
             Log.debug("ForEach: array: %s", array_expression);
         Data r = evalData(array_expression);
-        if (r instanceof Data.Error) {
+        if (r.type == DataType.Error) {
             return false;
-        } else if (r instanceof Data.Map obj) {
+        } else if (r.type == DataType.Map) {
+            final Data.Map map = ((Data.Map) r);
             // Iterate through all members
             int idx = 0;
 
             if (assign_internal(item_name, "null", true)) {
-                for (var item_prop : obj.values.keySet()) {
-                    Data item = obj.values.get(item_prop);
+                for (var item_prop : map.values.keySet()) {
+                    Data item = map.values.get(item_prop);
                     if (StaticOptions.debug)
                         Log.debug("ForEach: #%s %s=%s", idx, item_name, item);
                     var str = item.toString();
@@ -353,8 +351,9 @@ public class ECMAScriptDatamodel extends Datamodel {
                     idx += 1;
                 }
             }
-        } else if (r instanceof Data.Array array) {
+        } else if (r.type == DataType.Array) {
             // Iterate through all elements
+            final Data.Array array = ((Data.Array) r);
             int idx = 0;
 
             if (assign_internal(item_name, "null", true)) {
@@ -385,21 +384,20 @@ public class ECMAScriptDatamodel extends Datamodel {
     @Override
     public boolean execute_condition(Data condition) {
         try {
-            ECMAScriptProducer script = new ECMAScriptProducer();
+            JsonScriptProducer script = new JsonScriptProducer();
             condition.as_script(script);
             Data r = evalSource(script.finish());
-            if (r instanceof Data.Boolean b) {
-                return b.value;
-            } else if (r.is_numeric()) {
-                return r.as_number().doubleValue() != 0;
-            } else if (r instanceof Data.Map || r instanceof Data.FsmDefinition || r instanceof Data.Array) {
+            return switch (r.type) {
+                case Boolean -> ((Data.Boolean) r).value;
+                case Integer, Double -> r.as_number().doubleValue() != 0;
                 // All object are true
-                return true;
-            } else if (r instanceof Data.Error) {
-                this.internal_error_execution();
-                return false;
-            } else
-                return !r.is_empty();
+                case Map, Fsm, Array -> true;
+                case Error -> {
+                    this.internal_error_execution();
+                    yield false;
+                }
+                default -> !r.is_empty();
+            };
         } catch (ScriptException e) {
             Log.exception(e.getMessage(), e);
             this.internal_error_execution();
@@ -467,8 +465,8 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     protected boolean assign_internal(String left_expr, String right_expr, boolean allow_undefined) {
         String exp = String.format("%s%s=%s;", allow_undefined ? "var " : "", left_expr, right_expr);
-        Object d = this.evalData(new Data.Source(exp));
-        if (d instanceof Data.Error err) {
+        Data d = this.evalData(new Data.Source(exp));
+        if (d.type == DataType.Error) {
             // W3C says:\
             // If the location expression does not denote a valid location in the data model or
             // if the value specified (by 'expr' or children) is not a legal value for the
@@ -476,7 +474,7 @@ public class ECMAScriptDatamodel extends Datamodel {
             // in the internal event queue.
             Log.error(
                     "Could not assign %s=%s, '%s'.",
-                    left_expr, right_expr, err.toString());
+                    left_expr, right_expr, d.toString());
             this.internal_error_execution();
             return false;
         }
@@ -485,7 +483,7 @@ public class ECMAScriptDatamodel extends Datamodel {
 
     protected @NotNull Data evalData(Data source) {
         try {
-            ECMAScriptProducer script = new ECMAScriptProducer();
+            JsonScriptProducer script = new JsonScriptProducer();
             source.as_script(script);
             return evalSource(script.finish());
         } catch (Exception se) {

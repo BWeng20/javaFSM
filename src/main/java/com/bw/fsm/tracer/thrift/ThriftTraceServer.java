@@ -4,7 +4,6 @@ import com.bw.fsm.Log;
 import com.bw.fsm.thrift.Argument;
 import com.bw.fsm.thrift.Event;
 import com.bw.fsm.thrift.TraceServer;
-import org.apache.thrift.TException;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.transport.TServerSocket;
@@ -19,7 +18,7 @@ public class ThriftTraceServer implements TraceServer.Iface {
 
 
     @Override
-    public String registerFsm(String clientAddress, int session){
+    public String registerFsm(String clientAddress, int session) {
         System.out.println("registerFsm(address:" + clientAddress + ",session:" + session + ")");
         return "abc";
     }
@@ -30,7 +29,7 @@ public class ThriftTraceServer implements TraceServer.Iface {
     }
 
     @Override
-    public void sentEvent(Event event)  {
+    public void sentEvent(Event event) {
         System.out.println("sentEvent: event:" + event);
 
     }

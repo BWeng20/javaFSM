@@ -28,14 +28,6 @@ public abstract class Datamodel {
 
     public static final String SCXML_INVOKE_TYPE = "http://www.w3.org/TR/scxml";
 
-    /**
-     * W3C: Processors MAY define short form notations as an authoring convenience
-     * (e.g., "scxml" as equivalent to <a href="http://www.w3.org/TR/scxml">http://www.w3.org/TR/scxml</a>).
-     */
-    public static final String SCXML_INVOKE_TYPE_SHORT = "scxml";
-
-    public static final String SCXML_EVENT_PROCESSOR = "http://www.w3.org/TR/scxml/#SCXMLEventProcessor";
-
     public static final String BASIC_HTTP_EVENT_PROCESSOR = "http://www.w3.org/TR/scxml/#BasicHTTPEventProcessor";
 
     /**
@@ -368,7 +360,7 @@ public abstract class Datamodel {
                     }
                 } else if (param.hasExpression()) {
                     Data data = execute(new Data.Source(param.expr));
-                    if (data instanceof Data.Error err) {
+                    if (data.type == DataType.Error) {
                         //  W3C:<br>
                         // ...if the evaluation of the 'expr' produces an error, the SCXML
                         // Processor must place the error 'error.execution' on the internal event

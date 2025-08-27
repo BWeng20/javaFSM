@@ -1739,7 +1739,7 @@ public class Fsm {
         }
 
         String type_name = type_name_data.toString();
-        if (Datamodel.SCXML_INVOKE_TYPE_SHORT.equals(type_name)) {
+        if (ScxmlEventIOProcessor.SCXML_EVENT_PROCESSOR_SHORT_TYPE.equals(type_name)) {
             type_name = Datamodel.SCXML_INVOKE_TYPE;
         }
 
@@ -1768,7 +1768,7 @@ public class Fsm {
         }
 
         Data src = datamodel.get_expression_alternative_value(inv.src, inv.src_expr);
-        if (src instanceof Data.Error) {
+        if (src.type == DataType.Error) {
             // Error -> Abort
             if (StaticOptions.trace_method) {
                 this.tracer.exit_method(gd.session_id, "invoke");

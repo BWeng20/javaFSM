@@ -14,6 +14,8 @@ import java.util.*;
 @SuppressWarnings("unused")
 public abstract class Data {
 
+    public final DataType type;
+
     /**
      * Tries to convert the data to a number.
      *
@@ -37,6 +39,10 @@ public abstract class Data {
     private static final java.lang.Integer NUL = 0;
     private static final java.lang.Integer ONE = 1;
     private static NumberFormat nf = NumberFormat.getInstance(Locale.UK);
+
+    protected Data(DataType type) {
+        this.type = type;
+    }
 
     /**
      * Tries to convert some object to a Data instance.
@@ -97,6 +103,7 @@ public abstract class Data {
         int value;
 
         public Integer(int value) {
+            super(DataType.Integer);
             this.value = value;
         }
 
@@ -148,6 +155,7 @@ public abstract class Data {
         private final double value;
 
         public Double(double value) {
+            super(DataType.Double);
             this.value = value;
         }
 
@@ -200,6 +208,7 @@ public abstract class Data {
         private @Nullable java.lang.String script_value;
 
         public String(@NotNull java.lang.String value) {
+            super(DataType.String);
             this.value = value;
         }
 
@@ -250,6 +259,7 @@ public abstract class Data {
         public final static Boolean FALSE = new Boolean(false);
 
         private Boolean(boolean value) {
+            super(DataType.Boolean);
             this.value = value;
         }
 
@@ -300,6 +310,7 @@ public abstract class Data {
         public java.util.List<Data> values;
 
         public Array(java.util.List<Data> values) {
+            super(DataType.Array);
             this.values = values;
         }
 
@@ -356,6 +367,7 @@ public abstract class Data {
         public java.util.Map<java.lang.String, Data> values;
 
         public Map(java.util.Map<java.lang.String, Data> values) {
+            super(DataType.Map);
             this.values = values;
         }
 
@@ -414,6 +426,7 @@ public abstract class Data {
     public static final class Null extends Data {
 
         private Null() {
+            super(DataType.Null);
         }
 
         @Override
@@ -451,6 +464,7 @@ public abstract class Data {
         java.lang.String message;
 
         public Error(java.lang.String message) {
+            super(DataType.Error);
             this.message = message;
         }
 
@@ -494,6 +508,7 @@ public abstract class Data {
         public java.lang.String xml;
 
         public FsmDefinition(java.lang.String xml, Fsm fsm) {
+            super(DataType.Fsm);
             this.fsm = fsm;
             this.xml = xml;
         }
@@ -539,6 +554,7 @@ public abstract class Data {
         SourceCode source;
 
         public Source(SourceCode source) {
+            super(DataType.Source);
             this.source = source;
         }
 
@@ -560,10 +576,12 @@ public abstract class Data {
          * Should be used for calculated script source, that is not part of FSM definition.
          */
         public Source(java.lang.String source) {
+            super(DataType.Source);
             this.source = new SourceCode(source, 0);
         }
 
         public Source(String source) {
+            super(DataType.Source);
             this.source = new SourceCode(source.value, 0);
         }
 
@@ -600,6 +618,7 @@ public abstract class Data {
     public static final class None extends Data {
 
         private None() {
+            super(DataType.None);
         }
 
         @Override

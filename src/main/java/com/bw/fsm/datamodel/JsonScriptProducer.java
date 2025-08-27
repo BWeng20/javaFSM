@@ -1,4 +1,4 @@
-package com.bw.fsm.datamodel.ecma;
+package com.bw.fsm.datamodel;
 
 import com.bw.fsm.ScriptProducer;
 
@@ -6,7 +6,8 @@ import java.text.NumberFormat;
 import java.util.Locale;
 import java.util.Stack;
 
-public class ECMAScriptProducer implements ScriptProducer {
+public class JsonScriptProducer implements ScriptProducer {
+
     final static String valueUndefined = "undefined";
     final static String valueNull = "null";
 
@@ -40,12 +41,12 @@ public class ECMAScriptProducer implements ScriptProducer {
     StringBuilder builder = new StringBuilder(200);
     static NumberFormat nf = NumberFormat.getInstance(Locale.UK);
 
-    public ECMAScriptProducer() {
+    public JsonScriptProducer() {
         this(false);
     }
 
 
-    public ECMAScriptProducer(boolean mapNull2Undefined) {
+    public JsonScriptProducer(boolean mapNull2Undefined) {
         this.mapNull2Undefined = mapNull2Undefined;
     }
 

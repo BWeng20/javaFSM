@@ -1,10 +1,7 @@
 package com.bw.fsm.tracer.thrift;
 
 import com.bw.fsm.Log;
-import com.bw.fsm.thrift.Data;
-import com.bw.fsm.thrift.Event;
-import com.bw.fsm.thrift.TraceClient;
-import com.bw.fsm.thrift.TraceServer;
+import com.bw.fsm.thrift.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -20,7 +17,7 @@ public class ThriftTraceClient implements TraceClient.Iface {
     Thread serverThread;
     TServer server;
     TraceServer.Client traceServer;
-    TTransport traceServerTransport;
+    TTransport transport;
 
     @Override
     public void event(String fsm, Event event) throws TException {
@@ -28,7 +25,7 @@ public class ThriftTraceClient implements TraceClient.Iface {
     }
 
     @Override
-    public Data getData(String fsm, String expression)  {
+    public Data getData(String fsm, String expression) {
         return null;
     }
 
@@ -47,15 +44,15 @@ public class ThriftTraceClient implements TraceClient.Iface {
             server = null;
             serverThread = null;
         }
-        if (traceServerTransport != null) {
+        if (transport != null) {
             try {
                 // TODO:
                 // traceServerTransport.unregister...
-                traceServerTransport.close();
+                transport.close();
             } catch (Exception e) {
                 Log.exception("Failed to disconnect from TraceServer", e);
             }
-            traceServerTransport = null;
+            transport = null;
             traceServer = null;
         }
 
@@ -65,9 +62,9 @@ public class ThriftTraceClient implements TraceClient.Iface {
         stop();
         String r;
         try {
-            traceServerTransport = ThriftIO.detectTransformFromAddress(serverAddress);
-            traceServerTransport.open();
-            TProtocol protocol = new TBinaryProtocol(traceServerTransport);
+            transport = ThriftIO.createClientTransportFromAddress(serverAddress);
+            transport.open();
+            TProtocol protocol = new TBinaryProtocol(transport);
             traceServer = new TraceServer.Client(protocol);
             r = traceServer.registerFsm("localhost:4211", 1);
         } catch (TTransportException te) {
@@ -103,7 +100,7 @@ public class ThriftTraceClient implements TraceClient.Iface {
 
     public static void main(String[] args) {
         ThriftTraceClient client = new ThriftTraceClient();
-        client.start("localhost:4212");
+        client.start("tcp:localhost:4212");
 
     }
 }
