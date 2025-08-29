@@ -2,6 +2,10 @@ package com.bw.fsm.expression_engine;
 
 import java.util.ArrayList;
 
+/**
+ * Lexer for Expressions. <br>
+ * Generates tokens from text.
+ */
 public class ExpressionLexer {
 
     final java.util.List<Character> chars;
@@ -54,13 +58,13 @@ public class ExpressionLexer {
     /// Read a String.\
     /// delimiter - The delimiter\
     /// Escape sequences see String state-chart on JSON.org.
-    public Token<?> read_string(char delimiter) {
+    public Token<?> read_string(char delimiter) throws ExpressionException {
         boolean escape = false;
         char c;
         while (true) {
             c = next_char();
             if (c == '\0') {
-                return new Token.Error("Missing string delimiter");
+                throw new ExpressionException("Missing string delimiter");
             } else if (escape) {
                 escape = false;
                 switch (c) {
@@ -80,18 +84,16 @@ public class ExpressionLexer {
                                 if (is_digit(cd)) {
                                     codepoint.append(cd);
                                 } else {
-                                    return new Token.Error("Illegal \\u sequence in String");
+                                    throw new ExpressionException("Illegal \\u sequence in String");
                                 }
                             }
                             buffer.append(Character.toChars(Integer.parseInt(codepoint.toString(), 16)));
                             continue;
                         } catch (Exception e) {
-                            return new Token.Error(String.format("Illegal \\u sequence %s", codepoint));
+                            throw new ExpressionException(String.format("Illegal \\u sequence %s", codepoint));
                         }
                     }
-                    default -> {
-                        return new Token.Error("Illegal escape sequence in String");
-                    }
+                    default -> throw new ExpressionException("Illegal escape sequence in String");
                 }
             } else if (c == '\\') {
                 escape = true;
@@ -104,7 +106,7 @@ public class ExpressionLexer {
     }
 
     /// Read (possible combined) operators
-    public Token<?> read_operator(char first) {
+    public Token<?> read_operator(char first) throws ExpressionException {
         Operator op =
                 switch (first) {
                     case '-' -> Operator.Minus;
@@ -145,7 +147,7 @@ public class ExpressionLexer {
 
     /// Read a JSON Number (see state chart at JSON.org).
     /// c - The starting character.
-    public Token<?> read_number(char c) {
+    public Token<?> read_number(char c) throws ExpressionException {
         // States:
         // 0: Init
         // 1: In fix-point part
@@ -229,7 +231,7 @@ public class ExpressionLexer {
                     var v = Integer.parseInt(this.buffer.toString());
                     yield new Token.NumericToken.Integer(v);
                 } catch (NumberFormatException ne) {
-                    yield new Token.Error(ne.getMessage());
+                    throw new ExpressionException(ne.getMessage());
                 }
             }
             case 2, 4 -> {
@@ -241,13 +243,13 @@ public class ExpressionLexer {
                         var v = Double.parseDouble(this.buffer.toString());
                         yield new Token.NumericToken.Double(v);
                     } catch (NumberFormatException ne) {
-                        yield new Token.Error(ne.getMessage());
+                        throw new ExpressionException(ne.getMessage());
                     }
                 }
             }
-            case 3, 6 -> new Token.Error("missing exponent in number");
+            case 3, 6 -> throw new ExpressionException("missing exponent in number");
             case 5 -> new Token.Operator(Operator.Minus);
-            default -> new Token.Error("internal error");
+            default -> throw new ExpressionException("internal error");
         };
     }
 
@@ -264,11 +266,11 @@ public class ExpressionLexer {
     private static final char[] no_stops = new char[0];
 
     /// Parse and return the next token.
-    public Token<?> next_token() {
+    public Token<?> next_token() throws ExpressionException {
         return next_token_with_stop(no_stops);
     }
 
-    public Token<?> next_token_with_stop(char[] hard_stops) {
+    public Token<?> next_token_with_stop(char[] hard_stops) throws ExpressionException {
         // at start of new symbol, eat all spaces
         eat_space();
         buffer.setLength(0);
@@ -323,8 +325,8 @@ public class ExpressionLexer {
         }
     }
 
-    /// Return the next token as a number, otherwise return Error.
-    public Token.NumericToken<?> next_number() {
+    /// Return the next token as a number, otherwise throw.
+    public Token.NumericToken<?> next_number() throws ExpressionException {
         var t = next_token();
         if (t instanceof Token.NumericToken<?> nb) {
             return nb;
@@ -333,7 +335,7 @@ public class ExpressionLexer {
     }
 
     /// Return the next token to an Identifier, otherwise return Error.
-    public String next_name() {
+    public String next_name() throws ExpressionException {
         var t = next_token();
         if (t instanceof Token.Identifier id) {
             return id.value;

@@ -1,26 +1,51 @@
 package com.bw.fsm.expression_engine;
 
+/**
+ * Enum of possible token types.
+ */
 public enum TokenType {
-    /// Some constant number. Integer or float.
+    /**
+     * Some constant number. Integer or float.
+     */
     Number,
-    /// An identifier
+    /**
+     * An identifier
+     */
     Identifier,
-    /// Some constant string expression
+    /**
+     * Some constant string expression
+     */
     TString,
-    /// A constant boolean expression.
+    /**
+     * A constant boolean expression.
+     */
     Boolean,
-    /// Some operator
+    /**
+     * Some operator
+     */
     Operator,
-    /// Some bracket
+    /**
+     * Some bracket
+     */
     Bracket,
-    /// A - none whitespace, none bracket - separator
+    /**
+     * A - none whitespace, none bracket - separator
+     */
     Separator,
-    /// The expression separator to join multiple expressions.
+    /**
+     * The expression separator to join multiple expressions.
+     */
     ExpressionSeparator,
-    /// a Null value
+    /**
+     * a Null value
+     */
     Null,
-    /// Indicates a lexer error.
+    /**
+     * Indicates a lexer error.
+     */
     Error,
-    /// Indicates the end of the expression.
+    /**
+     * Indicates the end of the expression.
+     */
     EOE,
 }

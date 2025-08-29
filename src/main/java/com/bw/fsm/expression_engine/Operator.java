@@ -16,7 +16,9 @@ public enum Operator {
     And,
     Or,
 
-    /// C-like modulus (mathematically the remainder) function.
+    /**
+     * C-like modulus (mathematically the remainder) function.
+     */
     Modulus,
     Not
 }

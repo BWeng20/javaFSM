@@ -1,6 +1,7 @@
 package com.bw.fsm;
 
 import com.bw.fsm.datamodel.Datamodel;
+import com.bw.fsm.expression_engine.ExpressionException;
 import com.bw.fsm.expression_engine.ExpressionLexer;
 
 import java.util.Map;
@@ -49,23 +50,28 @@ public interface ExecutableContent {
         if (ms == null || ms.isEmpty()) {
             return 0;
         } else {
-            var exp = new ExpressionLexer(ms);
-            var value_result = exp.next_number();
-            String unit = exp.next_name();
+            try {
+                var exp = new ExpressionLexer(ms);
+                var value_result = exp.next_number();
+                String unit = exp.next_name();
 
-            var v = value_result.as_double();
-            switch (unit) {
-                case "D", "d" -> v *= 24.0 * 60.0 * 60.0 * 1000.0;
-                case "H", "h" -> v *= 60.0 * 60.0 * 1000.0;
-                case "M", "m" -> v *= 60000.0;
-                case "S", "s" -> v *= 1000.0;
-                case "MS", "ms" -> {
+                var v = value_result.as_double();
+                switch (unit) {
+                    case "D", "d" -> v *= 24.0 * 60.0 * 60.0 * 1000.0;
+                    case "H", "h" -> v *= 60.0 * 60.0 * 1000.0;
+                    case "M", "m" -> v *= 60000.0;
+                    case "S", "s" -> v *= 1000.0;
+                    case "MS", "ms" -> {
+                    }
+                    default -> {
+                        return -1;
+                    }
                 }
-                default -> {
-                    return -1;
-                }
+                return (int) Math.round(v);
+            } catch (ExpressionException e) {
+                Log.exception("Failed to´parse duration.", e);
+                return -1;
             }
-            return (int) Math.round(v);
         }
     }
 

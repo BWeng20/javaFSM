@@ -5,6 +5,7 @@ import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
+import com.bw.fsm.expression_engine.ExpressionException;
 import com.bw.fsm.expression_engine.ExpressionLexer;
 import com.bw.fsm.expression_engine.Token;
 
@@ -67,7 +68,7 @@ public class NullDatamodel extends Datamodel {
     }
 
     @Override
-    public boolean execute_condition(Data script) {
+    public boolean execute_condition(Data script) throws ExpressionException {
         var lexer = new ExpressionLexer(script.toString());
         if (lexer.next_token() instanceof Token.Identifier identifier &&
                 identifier.value.equals("In") &&

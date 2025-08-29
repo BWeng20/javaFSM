@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
+import java.util.List;
 
 /**
  * Data Variant used to handle data in a type-safe but Datamodel-agnostic way.
@@ -15,6 +16,10 @@ import java.util.*;
 public abstract class Data {
 
     public final DataType type;
+
+    private boolean read_only = false;
+
+    public final static int DATA_FLAG_READONLY = 1;
 
     /**
      * Tries to convert the data to a number.
@@ -44,6 +49,14 @@ public abstract class Data {
         this.type = type;
     }
 
+    public boolean is_readonly() {
+        return read_only;
+    }
+
+    public void set_readonly(boolean read_only) {
+        this.read_only = read_only;
+    }
+
     /**
      * Tries to convert some object to a Data instance.
      *
@@ -67,7 +80,7 @@ public abstract class Data {
             return Boolean.fromBoolean(b);
         }
         if (value instanceof Collection<?> c) {
-            java.util.List<Data> l = new ArrayList<>(c.size());
+            List<Data> l = new ArrayList<>(c.size());
             for (Object o : c) {
                 l.add(fromObject(o));
             }
@@ -242,6 +255,8 @@ public abstract class Data {
                 return true;
             if (o instanceof String i) {
                 return Objects.equals(value, i.value);
+            } else if (o instanceof Source s) {
+                return Objects.equals(value, s.source.source);
             }
             return false;
         }
@@ -307,9 +322,9 @@ public abstract class Data {
 
     public static final class Array extends Data {
 
-        public java.util.List<Data> values;
+        public List<Data> values;
 
-        public Array(java.util.List<Data> values) {
+        public Array(List<Data> values) {
             super(DataType.Array);
             this.values = values;
         }
@@ -455,6 +470,12 @@ public abstract class Data {
         public @NotNull Data getCopy() {
             return NULL;
         }
+
+        @Override
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+        public boolean equals(Object o) {
+            return o == NULL;
+        }
     }
 
     /**
@@ -470,7 +491,7 @@ public abstract class Data {
 
         @Override
         public java.lang.String toString() {
-            return "Error: " + message;
+            return message;
         }
 
         @Override
@@ -529,7 +550,7 @@ public abstract class Data {
                 return true;
             if (o instanceof FsmDefinition s) {
                 // No feasible way to compare FSM by content.
-                return this.fsm == s.fsm;
+                return fsm == s.fsm || Objects.equals(this.xml, s.xml);
             }
             return false;
         }
@@ -601,6 +622,8 @@ public abstract class Data {
                 return true;
             if (o instanceof Source s) {
                 return Objects.equals(this.source, s.source);
+            } else if (o instanceof String str) {
+                return Objects.equals(this.source.source, str.value);
             }
             return false;
         }
@@ -642,6 +665,13 @@ public abstract class Data {
         public @NotNull Data getCopy() {
             return NONE;
         }
+
+        @Override
+        @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+        public boolean equals(Object o) {
+            return o == NONE;
+        }
+
     }
 
 }

@@ -5,6 +5,7 @@ import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.event_io_processor.ScxmlEventIOProcessor;
+import com.bw.fsm.expression_engine.ExpressionException;
 import com.bw.fsm.tracer.TraceArgument;
 import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
@@ -1887,14 +1888,19 @@ public class Fsm {
      * See {@link Datamodel#execute_condition(Data)}
      */
     protected boolean conditionMatch(Datamodel datamodel, Transition t) {
-        if (t.cond == null || t.cond.is_empty()) {
-            return true;
-        } else {
-            var r = datamodel.execute_condition(t.cond);
-            if (StaticOptions.trace) {
-                tracer.trace(datamodel.global().session_id, String.format("Checking %s: %s -> %s", t, t.cond, r));
+        try {
+            if (t.cond == null || t.cond.is_empty()) {
+                return true;
+            } else {
+                var r = datamodel.execute_condition(t.cond);
+                if (StaticOptions.trace) {
+                    tracer.trace(datamodel.global().session_id, String.format("Checking %s: %s -> %s", t, t.cond, r));
+                }
+                return r;
             }
-            return r;
+        } catch (ExpressionException e) {
+            Log.exception("Condition check failed.", e);
+            return false;
         }
     }
 

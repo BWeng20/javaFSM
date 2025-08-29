@@ -3,6 +3,7 @@ package com.bw.fsm.datamodel;
 import com.bw.fsm.*;
 import com.bw.fsm.event_io_processor.EventIOProcessor;
 import com.bw.fsm.executable_content.Parameter;
+import com.bw.fsm.expression_engine.ExpressionException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -256,7 +257,7 @@ public abstract class Datamodel {
      * ...<br>
      * Conditional expressions in conformant SCXML documents SHOULD NOT have side effects.
      */
-    public boolean execute_condition(Data script) {
+    public boolean execute_condition(Data script) throws ExpressionException {
         throw new UnsupportedOperationException();
     }
 
