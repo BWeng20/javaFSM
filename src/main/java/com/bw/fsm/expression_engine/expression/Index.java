@@ -7,6 +7,9 @@ import com.bw.fsm.expression_engine.Expression;
 import com.bw.fsm.expression_engine.ExpressionException;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Sub expression to access an element of a Map- or Array-data-instance.
+ */
 public class Index implements Expression {
 
     public final @NotNull Expression left;
@@ -26,8 +29,19 @@ public class Index implements Expression {
             throw new ExpressionException("Error result");
         }
         switch (left_result.type) {
-            case Integer, Double, String, Boolean, Source, Null, None ->
+            case Integer, Double, Boolean, Source, Null, None ->
                     throw new ExpressionException(String.format("Can't apply index on '%s'", left_result));
+            case String -> {
+                Data.String string = (Data.String)left_result;
+                if (index_result.is_numeric()) {
+                    final int idx = index_result.as_number().intValue();
+                    if (idx < 0 || idx >= string.value.length())
+                        throw new ExpressionException(String.format("Index not found: %s (len=%d)", index, string.value.length()));
+                    return new Data.String(""+string.value.charAt(idx));
+                } else {
+                    throw new ExpressionException(String.format("Illegal index type '%s' for strings", index_result));
+                }
+            }
             case Map -> {
                 String key = index_result.toString();
                 Data.Map m = (Data.Map) left_result;

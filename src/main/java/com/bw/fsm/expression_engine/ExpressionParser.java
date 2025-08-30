@@ -426,7 +426,7 @@ public final class ExpressionParser {
                         fold_stack_at(stack, best_idx,
                                 (le, re) -> {
                                     if (re instanceof Variable variable) {
-                                        Expression r = new MemberAccess(le, variable.name);
+                                        Expression r = new Index(le, new Constant(new Data.String(variable.name)));
                                         if (StaticOptions.debug) {
                                             Log.debug("Resulting expression: %s", r);
                                             if (!stack.isEmpty())
