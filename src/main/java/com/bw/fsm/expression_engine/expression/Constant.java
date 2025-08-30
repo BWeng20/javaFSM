@@ -19,6 +19,6 @@ public class Constant implements Expression {
 
     @Override
     public String toString() {
-        return "const " + data.toString();
+        return "const <" + data.toString() + ">";
     }
 }

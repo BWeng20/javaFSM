@@ -76,7 +76,7 @@ public class ECMAScriptDatamodel extends Datamodel {
         }
 
         @HostAccess.Export
-        public Object action(String name, Object[] arguments) {
+        public Object action(String name, Object[] arguments) throws Exception {
             GlobalData gd = global();
 
             int len = arguments.length;

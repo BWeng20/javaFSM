@@ -1,6 +1,8 @@
 package com.bw.fsm.expression_engine.expression;
 
 import com.bw.fsm.Data;
+import com.bw.fsm.Log;
+import com.bw.fsm.StaticOptions;
 import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.expression_engine.Expression;
 import com.bw.fsm.expression_engine.ExpressionException;
@@ -18,11 +20,15 @@ public class Variable implements Expression {
         if (value == null) {
             if (allow_undefined) {
                 context.data.put(this.name, Data.None.NONE);
+                if (StaticOptions.debug)
+                    Log.debug("Variable %s => NONE", name);
                 return Data.None.NONE;
             } else {
                 throw new ExpressionException(String.format("Variable '%s' not found", this.name));
             }
         } else {
+            if (StaticOptions.debug)
+                Log.debug("Variable %s => %s", name, value);
             return value;
         }
     }
@@ -33,12 +39,14 @@ public class Variable implements Expression {
         if (r != null && r.is_readonly())
             throw new ExpressionException(String.format("Can't set read-only %s", r));
 
+        if (StaticOptions.debug)
+            Log.debug("Variable %s <= %s", name, data);
         context.data.put(this.name, data);
     }
 
     @Override
     public String toString() {
-        return name;
+        return "var " + name;
     }
 
 

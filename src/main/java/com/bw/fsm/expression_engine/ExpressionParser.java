@@ -142,11 +142,11 @@ public final class ExpressionParser {
      */
     public static Data execute(String source, GlobalData context) throws ExpressionException {
         if (StaticOptions.debug)
-            Log.debug("ExpressionParser::execute: %s", source);
+            Log.debug("execute: %s", source);
         Expression parser_result = parse(source);
         Data r = parser_result.execute(context, false);
         if (StaticOptions.debug)
-            Log.debug("ExpressionParser::execute: result %s", r);
+            Log.debug("result: %s", r);
         return r;
     }
 
@@ -321,7 +321,7 @@ public final class ExpressionParser {
     /// Tries to create an expression from the current contents of the parser-stack.
     private static Expression stack_to_expression(List<ExpressionParserItem> stack) throws ExpressionException {
         if (StaticOptions.debug)
-            Log.debug("ExpressionParser.stack_to_expression: stack=%s", toString(stack));
+            Log.debug("stack=%s", toString(stack));
         if (stack.isEmpty()) {
             return null;
         }
@@ -350,21 +350,11 @@ public final class ExpressionParser {
                         Operator op = (Operator) item.token.value;
                         int prio = switch (op) {
                             case Not -> 3;
-                            case And -> 5;
-                            case Multiply -> 5;
-                            case Divide -> 5;
-                            case Modulus -> 5;
-                            case Or -> 6;
-                            case Plus -> 6;
-                            case Minus -> 6;
-                            case Less -> 9;
-                            case LessEqual -> 9;
-                            case Greater -> 9;
-                            case GreaterEqual -> 9;
-                            case Equal -> 10;
-                            case NotEqual -> 10;
-                            case Assign -> 16;
-                            case AssignUndefined -> 16;
+                            case And, Multiply, Divide, Modulus -> 5;
+                            case Or, Plus, Minus -> 6;
+                            case Less, LessEqual, Greater, GreaterEqual -> 9;
+                            case Equal, NotEqual -> 10;
+                            case Assign, AssignUndefined -> 16;
                         };
                         if (prio <= best_idx_prio) {
                             best_idx = sidx;
@@ -413,7 +403,7 @@ public final class ExpressionParser {
                         }
                     }
                     case Assign -> {
-                        if (fold_stack_at( stack, best_idx, Assign::new)) {
+                        if (fold_stack_at(stack, best_idx, Assign::new)) {
                             return stack_to_expression(stack);
                         }
                     }
@@ -422,7 +412,7 @@ public final class ExpressionParser {
                             stack.remove(best_idx);
                             ExpressionParserItem right = stack.remove(best_idx);
                             if (right.expression != null) {
-                                stack.add( best_idx, new ExpressionParserItem(new Not(right.expression)));
+                                stack.add(best_idx, new ExpressionParserItem(new Not(right.expression)));
                                 return stack_to_expression(stack);
                             }
                         }
@@ -433,14 +423,25 @@ public final class ExpressionParser {
                 char sep_char = (Character) si.token.value;
                 if (best_idx > 0 && (best_idx + 1) < stack.size()) {
                     try {
-                        fold_stack_at( stack, best_idx,
+                        fold_stack_at(stack, best_idx,
                                 (le, re) -> {
                                     if (re instanceof Variable variable) {
-                                        return new MemberAccess(le, variable.name);
+                                        Expression r = new MemberAccess(le, variable.name);
+                                        if (StaticOptions.debug) {
+                                            Log.debug("Resulting expression: %s", r);
+                                            if (!stack.isEmpty())
+                                                Log.debug("Remaining stack: %s", stack);
+                                        }
+                                        return r;
                                     }
                                     if (re instanceof Method method) {
                                         Method method_copy = new Method(method.method, new ArrayList<>(method.arguments));
                                         method_copy.arguments.add(0, le);
+                                        if (StaticOptions.debug) {
+                                            Log.debug("Resulting expression: %s", method_copy);
+                                            if (!stack.isEmpty())
+                                                Log.debug("Remaining stack: %s", stack);
+                                        }
                                         return method_copy;
                                     } else {
                                         throw new RuntimeException("No Field/Method on right side of '.'");
@@ -457,6 +458,12 @@ public final class ExpressionParser {
         } else {
             var x = stack.remove(0);
             if (x.expression != null) {
+                if (StaticOptions.debug) {
+                    Log.debug("Resulting expression: %s", x.expression);
+                    if (!stack.isEmpty())
+                        Log.debug("Remaining stack: %s", stack);
+                }
+
                 // No operator? Return first one.
                 return x.expression;
             } else {

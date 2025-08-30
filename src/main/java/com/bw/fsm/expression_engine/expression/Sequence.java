@@ -19,7 +19,8 @@ public class Sequence implements Expression {
     public Data execute(GlobalData context, boolean allow_undefined) throws ExpressionException {
         Data r = Data.None.NONE;
         for (Expression exp : expressions) {
-            r = exp.execute(context, allow_undefined);
+            if (exp != null)
+                r = exp.execute(context, allow_undefined);
         }
         return r;
     }

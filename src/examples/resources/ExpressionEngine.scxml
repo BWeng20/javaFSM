@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A Simple FSM that demonstrate use of custom actions.  -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml" initial="s0" version="1.0" datamodel="rfsm-expression"
+       name="ExpressionEngineExample">
+<script>
+    log("Hello");
+</script>
+    <state id="s0">
+        <onentry>
+            <send delay="1s" event="leave"/>
+            <log expr="'Custom action will now be called.'"/>
+            <script>
+                result ?= SuperMul( 2, 3, 4, 1);
+                log( "result : " + result );
+            </script>
+        </onentry>
+        <onexit>
+            <script>
+                log( "result * 1.5: " + SuperMul( 1.5, result) );
+            </script>
+        </onexit>
+        <!-- Can also be used in conditions.
+             In this example the action returns always true, the transition will be triggered. -->
+        <transition event="leave" cond="SuperMul(result, 3) == 2*3*4*3" target="end"/>
+    </state>
+
+    <final id="end">
+        <onentry>
+            <log expr="'FSM Finished'"/>
+        </onentry>
+    </final>
+</scxml>

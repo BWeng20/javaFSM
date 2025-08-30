@@ -36,17 +36,17 @@ public class BinaryOperator implements Expression {
     public Data execute(GlobalData context, boolean allow_undefined) throws ExpressionException {
         Data left_result = left.execute(context, allow_undefined);
         Data right_result = right.execute(context, allow_undefined);
+        Data r = operation(left_result, this.operator, right_result);
         if (StaticOptions.debug)
             Log.debug(
-                    "ExpressionOperator::execute: <%s=%s> %s <%s=%s>",
-                    left, left_result, operator, right, right_result);
-
-        return operation(left_result, this.operator, right_result);
+                    "execute <%s=%s> %s <%s=%s> => %s",
+                    left, left_result, operator, right, right_result, r);
+        return r;
     }
 
     @Override
     public String toString() {
-        return  '(' + left.toString() +
+        return '(' + left.toString() +
                 ' ' + operator + ' ' + right.toString() +
                 ')';
     }

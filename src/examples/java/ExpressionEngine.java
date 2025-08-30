@@ -4,49 +4,57 @@ import com.bw.fsm.ScxmlSession;
 import com.bw.fsm.actions.Action;
 import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.GlobalData;
-import com.bw.fsm.datamodel.ecma.ECMAScriptDatamodel;
+import com.bw.fsm.datamodel.expression_engine.RFsmExpressionDatamodel;
 import com.bw.fsm.datamodel.null_datamodel.NullDatamodel;
+import com.bw.fsm.expression_engine.ExpressionException;
 import com.bw.fsm.tracer.TraceMode;
 
 import java.net.URL;
 import java.util.List;
 
-public class CustomActions {
+public class ExpressionEngine {
 
-    public static class MyAction implements Action {
+    public static class MySuperMul implements Action {
 
         @Override
-        public Data execute(List<Data> arguments, GlobalData global) {
+        public Data execute(List<Data> arguments, GlobalData global) throws ExpressionException {
             int i = 0;
-            System.out.printf("MyAction called with %d arguments:\n", arguments.size());
+            double d = 0;
+            boolean first = true;
+            System.out.printf("Called called with %d arguments:\n", arguments.size());
             for (var data : arguments) {
                 i += 1;
+                if (data.is_numeric()) {
+                    if (first) {
+                        d = data.as_number().doubleValue();
+                        first = false;
+                    } else
+                        d *= data.as_number().doubleValue();
+                } else
+                    throw new ExpressionException("Argument " + i + " is NOT a number");
                 System.out.printf("\t%d: %s\n", i, data);
             }
-            return Data.Boolean.TRUE;
+            return new Data.Double(d);
         }
     }
 
     public static void main(String[] args) {
         System.out.println("""
                 
-                Action Example
+                ExpressionEngine Example
                 -----------------------------------------
-                The FSM will call two custom actions from different places.
-                These actions can be called at any element that containt expressions or executable content.
+                The FSM will use the Expression Language of this project to calculate transition conditions.
+                Also it will integrate a custom action.
                 """);
 
         // Register Data Models
-        ECMAScriptDatamodel.register();
+        RFsmExpressionDatamodel.register();
         NullDatamodel.register();
 
-        // Create the wrapper to store our actions.
+        // Create the wrapper to store our action.
         var actions = new ActionWrapper();
-
-        // We register the same function with different names.
-        var my_action = new MyAction();
-        actions.add_action("myEnterAction", my_action);
-        actions.add_action("myLeaveAction", my_action);
+        var myOperation = new ExpressionEngine.MySuperMul();
+        actions.add_action("SuperMul", myOperation);
 
         try {
 
@@ -58,7 +66,7 @@ public class CustomActions {
             // Start the FSM. Executor has different alternative
             // of this execute-methode. You can load the FSM also from memory,
             // or add some data to initialize the data-model.
-            URL source = CustomActions.class.getResource("CustomActions.scxml");
+            URL source = CustomActions.class.getResource("ExpressionEngine.scxml");
             ScxmlSession session = executor.execute(source.toURI().toString(), actions,
                     // If Trace feature is enabled, we can trigger additional output about
                     // states and transitions. See TraceMode for the different modes.
@@ -92,4 +100,5 @@ public class CustomActions {
         }
         System.exit(0);
     }
+
 }

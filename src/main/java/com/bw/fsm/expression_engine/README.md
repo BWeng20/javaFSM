@@ -3,11 +3,12 @@
 This package implements a fast and simple W3C-SCXML Datamodel.
 It an expression-like, non-Turing-complete language.
 
-It is available if static switch _"rfsm_expression_model"_ is turned on.
-
 ### Selection of Datamodel
 
-To select this model in SCXML use `datamodel="rfsm-expression"`.
+To select this model in SCXML use `datamodel="rfsm-expression"`.<br>
+Remind, that the datamodel must be registered before use.
+
+See [ExpressionEngine Example](/../../examples/java/ExpressionEngine.java)
 
 ### Syntax (_DRAFT_)
 
@@ -52,9 +53,9 @@ The available operators and their meaning
 | `==`                 | Equal          | Results to `true` if the left side is equal to the right side.                                                       |
 | `!=`                 | Not Equal      | Results to `true` if the left side is _not_ equal to the right side.                                                 |
 | `>=`, `<=`, `>`, `<` | Comparison     | Results to `true` if left and right satisfies the condition.                                                         |
-| `/`, `:`             | Division       | Works only on numeric types. Returns a Data::Double.                                                                 |
-| `*`                  | Multiplication | Works only on numeric types. Returns a Data::Double if at least one operant is Double, otherwise Data::Integer.      |
-| `+`                  | Aggregation    | Computes the sum for Data::Integer or Data::Double and the aggregation for Data::Map and Data::Array.                |
+| `/`, `:`             | Division       | Works only on numeric types. Returns a `Data.Double`.                                                                |
+| `*`                  | Multiplication | Works only on numeric types. Returns a `Data.Double` if at least one operant is Double, otherwise `Data.Integer`.    |
+| `+`                  | Aggregation    | Computes the sum for Data::Integer or `Data.Double` and the aggregation for Data::Map and `Data.Array`.              |
 | `-`                  | Minus          | Computes the difference of left and right. Works only on numeric types.                                              |
 | `%`                  | Modulus        | Computes the remainder of dividing left by right. Works only on numeric types.                                       |
 
@@ -143,6 +144,13 @@ There are several pre-defined Actions:
 | indexOf   | Two arguments of type Data::String.                                                                                                                                                                | Data::Integer | Get the index of the second string inside the first one. Returns -1, if the string was not found.   |
 | toString  | One argument of any type except Data::Error                                                                                                                                                        | Data::String  | Calculates the textual representation of the argument.                                              |
 | In        | One argument of type Data::String.                                                                                                                                                                 | Data::Boolean | Implements SCXML "In" function. Returns _true_, if the given state is in the current configuration. |
+
+### Error Handling
+
+The data itself can handle errors as values (see `Data.Error`).
+The expression language doesn't handle these types, it handles all errors during parsing or execution via
+exceptions (see `ExpressionException`).
+If you try to process a Data.Error value via expression language, it will fail with an exception.
 
 ### Control Structures
 

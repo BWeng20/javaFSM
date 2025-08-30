@@ -18,7 +18,7 @@ public class ActionWrapper {
         this.actions.put(name, action);
     }
 
-    public Data execute(String action_name, List<Data> arguments, GlobalData global) {
+    public Data execute(String action_name, List<Data> arguments, GlobalData global) throws Exception {
         Action action = this.actions.get(action_name);
         if (action != null) {
             return action.execute(arguments, global);

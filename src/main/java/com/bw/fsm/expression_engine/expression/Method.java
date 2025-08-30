@@ -19,8 +19,14 @@ public class Method implements Expression {
     }
 
     public Data execute_with_arguments(
-            List<Data> arguments, GlobalData context) {
-        return context.actions.execute(method, arguments, context);
+            List<Data> arguments, GlobalData context) throws ExpressionException {
+        try {
+            return context.actions.execute(method, arguments, context);
+        } catch (ExpressionException ee) {
+            throw ee;
+        } catch (Exception e) {
+            throw new ExpressionException(e);
+        }
     }
 
     public void eval_arguments(List<Data> v, GlobalData context) throws ExpressionException {
