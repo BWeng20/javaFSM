@@ -10,9 +10,9 @@ import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.datamodel.JsonScriptProducer;
 import com.bw.fsm.datamodel.expression_engine.action.*;
-import com.bw.fsm.expression_engine.Expression;
-import com.bw.fsm.expression_engine.ExpressionException;
-import com.bw.fsm.expression_engine.ExpressionParser;
+import com.bw.fsm.expressionEngine.Expression;
+import com.bw.fsm.expressionEngine.ExpressionException;
+import com.bw.fsm.expressionEngine.ExpressionParser;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;

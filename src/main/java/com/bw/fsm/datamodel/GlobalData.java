@@ -2,7 +2,7 @@ package com.bw.fsm.datamodel;
 
 import com.bw.fsm.*;
 import com.bw.fsm.actions.ActionWrapper;
-import com.bw.fsm.event_io_processor.EventIOProcessor;
+import com.bw.fsm.eventIoProcessor.EventIOProcessor;
 import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 

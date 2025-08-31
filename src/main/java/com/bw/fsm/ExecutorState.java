@@ -1,6 +1,6 @@
 package com.bw.fsm;
 
-import com.bw.fsm.event_io_processor.EventIOProcessor;
+import com.bw.fsm.eventIoProcessor.EventIOProcessor;
 
 import java.util.ArrayList;
 import java.util.HashMap;

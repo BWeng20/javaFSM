@@ -2,7 +2,7 @@ package com.bw.fsm.datamodel.ecma;
 
 import com.bw.fsm.*;
 import com.bw.fsm.datamodel.*;
-import com.bw.fsm.event_io_processor.EventIOProcessor;
+import com.bw.fsm.eventIoProcessor.EventIOProcessor;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.HostAccess;
 import org.graalvm.polyglot.Source;

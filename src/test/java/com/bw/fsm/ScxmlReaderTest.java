@@ -1,8 +1,8 @@
 package com.bw.fsm;
 
-import com.bw.fsm.executable_content.ForEach;
-import com.bw.fsm.executable_content.If;
-import com.bw.fsm.executable_content.Log;
+import com.bw.fsm.executableContent.ForEach;
+import com.bw.fsm.executableContent.If;
+import com.bw.fsm.executableContent.Log;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

@@ -2,8 +2,8 @@ package com.bw.fsm;
 
 import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.Datamodel;
-import com.bw.fsm.event_io_processor.EventIOProcessor;
-import com.bw.fsm.event_io_processor.ScxmlEventIOProcessor;
+import com.bw.fsm.eventIoProcessor.EventIOProcessor;
+import com.bw.fsm.eventIoProcessor.ScxmlEventIOProcessor;
 import com.bw.fsm.serializer.DefaultProtocolReader;
 import com.bw.fsm.serializer.FsmReader;
 import com.bw.fsm.tracer.TraceMode;

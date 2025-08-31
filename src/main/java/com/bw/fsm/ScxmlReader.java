@@ -1,8 +1,8 @@
 package com.bw.fsm;
 
 import com.bw.fsm.datamodel.SourceCode;
-import com.bw.fsm.executable_content.*;
-import com.bw.fsm.executable_content.Log;
+import com.bw.fsm.executableContent.*;
+import com.bw.fsm.executableContent.Log;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.stream.*;

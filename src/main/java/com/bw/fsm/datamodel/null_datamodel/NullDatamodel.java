@@ -5,9 +5,9 @@ import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.Datamodel;
 import com.bw.fsm.datamodel.DatamodelFactory;
 import com.bw.fsm.datamodel.GlobalData;
-import com.bw.fsm.expression_engine.ExpressionException;
-import com.bw.fsm.expression_engine.ExpressionLexer;
-import com.bw.fsm.expression_engine.Token;
+import com.bw.fsm.expressionEngine.ExpressionException;
+import com.bw.fsm.expressionEngine.ExpressionLexer;
+import com.bw.fsm.expressionEngine.Token;
 
 /// The "Null" Datamodel as specified by W3C. A minimal model without any data.
 /// ## W3C says:

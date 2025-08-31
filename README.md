@@ -97,7 +97,7 @@ To add new data-models, use function ``.
 As interpreting JavaScript is expensive and if you need only basic logic in your scripts, 
 use "rfsm-expression" instead.
 
-For details see the [Expression-Engine-Readme](src/main/java/com/bw/fsm/expression_engine/README.md).
+For details see the [Expression-Engine-Readme](src/main/java/com/bw/fsm/expressionEngine/README.md).
 
 ### Custom Actions
 

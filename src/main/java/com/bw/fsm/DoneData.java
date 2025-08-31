@@ -1,6 +1,6 @@
 package com.bw.fsm;
 
-import com.bw.fsm.executable_content.Parameter;
+import com.bw.fsm.executableContent.Parameter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;

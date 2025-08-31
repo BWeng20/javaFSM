@@ -6,7 +6,7 @@ import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.datamodel.expression_engine.RFsmExpressionDatamodel;
 import com.bw.fsm.datamodel.null_datamodel.NullDatamodel;
-import com.bw.fsm.expression_engine.ExpressionException;
+import com.bw.fsm.expressionEngine.ExpressionException;
 import com.bw.fsm.tracer.TraceMode;
 
 import java.net.URL;

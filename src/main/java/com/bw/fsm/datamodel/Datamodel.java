@@ -1,9 +1,9 @@
 package com.bw.fsm.datamodel;
 
 import com.bw.fsm.*;
-import com.bw.fsm.event_io_processor.EventIOProcessor;
-import com.bw.fsm.executable_content.Parameter;
-import com.bw.fsm.expression_engine.ExpressionException;
+import com.bw.fsm.eventIoProcessor.EventIOProcessor;
+import com.bw.fsm.executableContent.Parameter;
+import com.bw.fsm.expressionEngine.ExpressionException;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

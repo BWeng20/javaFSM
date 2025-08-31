@@ -6,7 +6,7 @@ import com.bw.fsm.Log;
 import com.bw.fsm.StaticOptions;
 import com.bw.fsm.actions.Action;
 import com.bw.fsm.datamodel.GlobalData;
-import com.bw.fsm.expression_engine.ExpressionException;
+import com.bw.fsm.expressionEngine.ExpressionException;
 
 import java.util.List;
 
