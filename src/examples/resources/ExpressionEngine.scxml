@@ -12,6 +12,7 @@
             <script>
                 result ?= SuperMul( 2, 3, 4, 1);
                 log( "result : " + result );
+                log( "abc[1] : " + "abc"[1] );
             </script>
         </onentry>
         <onexit>

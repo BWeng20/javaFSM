@@ -12,6 +12,5 @@ public interface StaticOptions {
     boolean trace_script = trace;
 
     boolean ecma_script_model = true;
-    boolean rfsm_expression_model = true;
 
 }

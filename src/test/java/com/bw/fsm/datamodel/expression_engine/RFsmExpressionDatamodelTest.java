@@ -1,17 +1,25 @@
 package com.bw.fsm.datamodel.expression_engine;
 
 import com.bw.fsm.Data;
+import com.bw.fsm.FsmExecutor;
+import com.bw.fsm.ScxmlSession;
+import com.bw.fsm.actions.Action;
+import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.GlobalData;
+import com.bw.fsm.datamodel.null_datamodel.NullDatamodel;
 import com.bw.fsm.expression_engine.ExpressionException;
 import com.bw.fsm.expression_engine.ExpressionParser;
 import com.bw.fsm.tracer.DefaultTracer;
+import com.bw.fsm.tracer.TraceMode;
 import org.junit.jupiter.api.Test;
 
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 class RFsmExpressionDatamodelTest {
 
@@ -30,7 +38,7 @@ class RFsmExpressionDatamodelTest {
         var rs = ExpressionParser.execute("a._b = 2", gd);
 
         System.out.println("Result " + rs);
-        assertEquals( new Data.Integer(2), rs);
+        assertEquals(new Data.Integer(2), rs);
     }
 
     @Test
@@ -116,7 +124,7 @@ class RFsmExpressionDatamodelTest {
 
         // Compare with Empty on both sides
         rs = ExpressionParser.execute("{} == {} ", context);
-        assertEquals( Data.Boolean.TRUE, rs);
+        assertEquals(Data.Boolean.TRUE, rs);
 
         // Compare with Empty on one side (shall fail)
         rs = ExpressionParser.execute("{} == {'a':1} ", context);
@@ -141,7 +149,7 @@ class RFsmExpressionDatamodelTest {
 
         var rs = ExpressionParser.execute("2 + 1", context);
         System.out.println("Result " + rs);
-        assertEquals(new Data.Integer(3), rs );
+        assertEquals(new Data.Integer(3), rs);
 
         rs = ExpressionParser.execute("true | false", context);
         System.out.println("Result " + rs);
@@ -170,5 +178,61 @@ class RFsmExpressionDatamodelTest {
         var rs = ExpressionParser.execute("1+1;2+2;3*3", ec.global_data);
         System.out.println("Result " + rs);
         assertEquals(new Data.Integer(9), rs);
+    }
+
+    public static class MyTestAction implements Action {
+
+        int nextIdx = 0;
+        int[] values;
+
+        public MyTestAction(int[] values) {
+            this.values = values;
+        }
+
+        @Override
+        public Data execute(List<Data> arguments, GlobalData global) {
+
+            assertEquals(1, arguments.size());
+            assertTrue(nextIdx < values.length, "Values exceeded");
+
+            int val = arguments.get(0).as_number().intValue();
+            if (val != values[nextIdx])
+                System.out.println("Test: Expected: " + values[nextIdx] + " got " + val);
+            return Data.Boolean.fromBoolean(val == values[nextIdx++]);
+        }
+
+    }
+
+    @Test
+    public void scxml_test() throws URISyntaxException {
+        // Register Data Models
+        RFsmExpressionDatamodel.register();
+        NullDatamodel.register();
+
+        int[] testValues = new int[]{1, 2, 3, 4, 5, 99};
+
+        // Create the wrapper to store our action.
+        var actions = new ActionWrapper();
+        var testAction = new MyTestAction(testValues);
+        actions.add_action("test", testAction);
+
+        var executor = new FsmExecutor(false);
+        URL source = RFsmExpressionDatamodelTest.class.getResource("/scxml_test.scxml");
+        ScxmlSession session = executor.execute(source.toURI().toString(), actions, TraceMode.ALL);
+
+        long toWait = System.currentTimeMillis() + 2000;
+        do {
+            try {
+                session.thread.join(2000);
+            } catch (Exception e) {
+                System.out.println("Join interrupted...");
+            }
+        } while (session.thread.isAlive() && System.currentTimeMillis() < toWait);
+
+        assertFalse(session.thread.isAlive(), "FSM not finished in time");
+        System.out.println("FSM terminated!");
+        assertTrue(session.global_data.final_configuration.contains("end"));
+        assertEquals(testValues.length, testAction.nextIdx);
+
     }
 }
