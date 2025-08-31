@@ -123,6 +123,7 @@ public class ThriftEventIOProcessor extends EventIOProcessor {
 
     /**
      * Send a evwnt via thrift.
+     *
      * @param url             The transport Url as used by {@link ThriftIO#createClientTransportFromAddress(String)}
      * @param sourceSessionId The id of the local session that sends this event                    .
      * @param targetSessionId The id of the session inside the target processor.

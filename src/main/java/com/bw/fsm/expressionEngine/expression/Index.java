@@ -32,12 +32,12 @@ public class Index implements Expression {
             case Integer, Double, Boolean, Source, Null, None ->
                     throw new ExpressionException(String.format("Can't apply index on '%s'", left_result));
             case String -> {
-                Data.String string = (Data.String)left_result;
+                Data.String string = (Data.String) left_result;
                 if (index_result.is_numeric()) {
                     final int idx = index_result.as_number().intValue();
                     if (idx < 0 || idx >= string.value.length())
                         throw new ExpressionException(String.format("Index not found: %s (len=%d)", index, string.value.length()));
-                    return new Data.String(""+string.value.charAt(idx));
+                    return new Data.String("" + string.value.charAt(idx));
                 } else {
                     throw new ExpressionException(String.format("Illegal index type '%s' for strings", index_result));
                 }
@@ -115,7 +115,7 @@ public class Index implements Expression {
 
     @Override
     public String toString() {
-        return left + "[" + index + "]";
+        return left + " index " + index;
     }
 
 }

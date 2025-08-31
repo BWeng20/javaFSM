@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Holds all parameters of a &lt;send> call.
@@ -27,19 +28,19 @@ public class SendParameters implements ExecutableContent {
     /// SCXML \<send\> attribute 'event'.
     public @NotNull Data event = Data.None.NONE;
     /// SCXML \<send\> attribute 'eventexpr'.
-    public Data event_expr = Data.None.NONE;
+    public @NotNull Data event_expr = Data.None.NONE;
     /// SCXML \<send\> attribute 'target'.
-    public Data target = Data.None.NONE;
+    public @NotNull Data target = Data.None.NONE;
     /// SCXML \<send\> attribute 'targetexpr'.
-    public Data target_expr = Data.None.NONE;
+    public @NotNull Data target_expr = Data.None.NONE;
     /// SCXML \<send\> attribute 'type'.
-    public Data type_value = Data.None.NONE;
+    public @NotNull Data type_value = Data.None.NONE;
     /// SCXML \<send\> attribute 'typeexpr'.
-    public Data type_expr = Data.None.NONE;
+    public @NotNull Data type_expr = Data.None.NONE;
     /// SCXML \<send\> attribute 'delay' in milliseconds.
     public int delay_ms = 0;
     /// SCXML \<send\> attribute 'delayexpr'.
-    public Data delay_expr = Data.None.NONE;
+    public @NotNull Data delay_expr = Data.None.NONE;
     /// SCXML \<send\> attribute 'namelist'. Must not be specified in conjunction with 'content'.
     public final List<String> name_list = new ArrayList<>();
 
@@ -214,5 +215,92 @@ public class SendParameters implements ExecutableContent {
         if (params == null)
             params = new ArrayList<>(1);
         params.add(param);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append("Send {");
+
+        boolean comma = false;
+        if (!this.name.isEmpty()) {
+            sb.append("id:").append(this.name);
+            comma = true;
+        }
+        if (!this.name_location.isEmpty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("idLocation:").append(this.name_location);
+            comma = true;
+        }
+        if (!this.event.is_empty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("event:").append(this.event);
+            comma = true;
+        }
+        if (!this.event_expr.is_empty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("eventexpr:").append(this.event_expr);
+            comma = true;
+        }
+        if (!this.target.is_empty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("target:").append(this.target);
+            comma = true;
+        }
+        if (!this.target_expr.is_empty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("targetexpr:").append(this.target_expr);
+            comma = true;
+        }
+        if (!this.type_value.is_empty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("type:").append(this.type_value);
+            comma = true;
+        }
+        if (!this.type_expr.is_empty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("typeexpr:").append(this.type_expr);
+            comma = true;
+        }
+        if (this.delay_ms > 0) {
+            if (comma)
+                sb.append(',');
+            sb.append("delay:").append(this.delay_ms);
+            comma = true;
+        }
+        if (!this.delay_expr.is_empty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("delayexpr:").append(this.delay_expr);
+            comma = true;
+        }
+        if (!this.name_list.isEmpty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("namelist:").append(this.name_list);
+            comma = true;
+        }
+        if (this.params != null && !this.params.isEmpty()) {
+            if (comma)
+                sb.append(',');
+            sb.append("params:{");
+            sb.append(this.params.stream().map(Parameter::toString).collect(Collectors.joining()));
+            sb.append("}");
+            comma = true;
+        }
+        if (this.content != null) {
+            if (comma)
+                sb.append(',');
+            sb.append("content").append(this.content);
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }

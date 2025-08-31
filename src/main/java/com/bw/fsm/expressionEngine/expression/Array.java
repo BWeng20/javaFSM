@@ -33,7 +33,7 @@ public class Array implements Expression {
     public String toString() {
         StringBuilder sb = new StringBuilder(100);
         boolean first = true;
-        sb.append('[');
+        sb.append("array [");
         for (Expression e : array) {
             if (first)
                 first = false;

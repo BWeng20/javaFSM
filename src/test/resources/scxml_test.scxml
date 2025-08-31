@@ -6,7 +6,7 @@
         <onentry>
             <send delay="0.5s" event="leave"/>
             <script>
-                test(1);
+                test([0,1,2,3,4][1]);
                 test(2);
             </script>
         </onentry>

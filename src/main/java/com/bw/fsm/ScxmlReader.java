@@ -270,12 +270,12 @@ public class ScxmlReader {
                 this.current = this.stack.pop();
         }
 
-        protected String generate_name() {
+        protected @NotNull String generate_name() {
             ++this.id_count;
             return String.format("__id%d", this.id_count);
         }
 
-        protected Data create_source(String src) {
+        protected @NotNull Data create_source(String src) {
             return new Data.Source(new SourceCode(
                     src,
                     SOURCE_ID_COUNTER.incrementAndGet()));

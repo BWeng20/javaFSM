@@ -26,4 +26,9 @@ public class Expression implements ExecutableContent {
     public Map<String, Object> get_trace() {
         return ExecutableContent.toMap("content", content);
     }
+
+    @Override
+    public String toString() {
+        return "Expression {" + content + "}";
+    }
 }

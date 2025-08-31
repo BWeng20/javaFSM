@@ -60,13 +60,13 @@ public class ForEach implements ExecutableContent {
             comma = true;
         }
         if (index != null) {
-            if ( comma )
+            if (comma)
                 stringBuilder.append(',');
             comma = true;
             stringBuilder.append("index:").append(index);
         }
         if (content != null) {
-            if ( comma )
+            if (comma)
                 stringBuilder.append(',');
             stringBuilder.append("content:").append(content);
         }
