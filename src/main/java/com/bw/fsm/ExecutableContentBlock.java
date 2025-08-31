@@ -19,7 +19,7 @@ public class ExecutableContentBlock {
         StringBuilder sb = new StringBuilder(50);
         sb.append("ECBlock #").append(tag);
         if (!content.isEmpty())
-            sb.append(" (").append(content.get(0)).append(')');
+            sb.append(" {").append(content.get(0)).append('}');
         return sb.toString();
     }
 }

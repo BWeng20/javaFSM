@@ -139,14 +139,14 @@ public class Fsm {
                         if (StaticOptions.debug)
                             Log.debug("SM finished");
                     } catch (Exception e) {
-                        Log.exception("FSM terminated with exception.", e);
+                        Log.exception("SM terminated with exception.", e);
                     } finally {
                         Log.releaseStream();
                     }
-                }, String.format("fsm_%s", THREAD_ID_COUNTER.incrementAndGet()));
+                }, String.format("sm_%s", THREAD_ID_COUNTER.incrementAndGet()));
 
         session.thread = thread;
-        Log.info("Starting " + name + " in tread " + thread.getName());
+        Log.info("Starting SM '" + name + "' in thread " + thread.getName());
         thread.start();
         return session;
     }
@@ -275,8 +275,8 @@ public class Fsm {
      */
     protected void failWithError(Datamodel datamodel) {
         if (StaticOptions.trace)
-            this.tracer.trace(datamodel.global().session_id, "FSM has failed");
-        throw new RuntimeException("FSM has failed");
+            this.tracer.trace(datamodel.global().session_id, "SM has failed");
+        throw new RuntimeException("SM has failed");
     }
 
     /**

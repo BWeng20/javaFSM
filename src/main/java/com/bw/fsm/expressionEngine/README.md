@@ -8,7 +8,7 @@ It an expression-like, non-Turing-complete language.
 To select this model in SCXML use `datamodel="rfsm-expression"`.<br>
 Remind, that the datamodel must be registered before use.
 
-See [ExpressionEngine Example](/../../examples/java/ExpressionEngine.java)
+See [ExpressionEngine Example](../../../../../../examples/java/ExpressionEngine.java)
 
 ### Syntax (_DRAFT_)
 

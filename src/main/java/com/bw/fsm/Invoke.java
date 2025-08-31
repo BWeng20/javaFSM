@@ -102,7 +102,7 @@ public class Invoke {
         if (invoke_id != null)
             stringBuilder.append("invoke-id: ").append(invoke_id);
         if (content != null)
-            stringBuilder.append("content: ").append(content.toString());
+            stringBuilder.append("content: ").append(content);
         return stringBuilder.toString();
     }
 }

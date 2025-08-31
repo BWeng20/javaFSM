@@ -562,7 +562,7 @@ public abstract class Data {
 
         @Override
         public java.lang.String toString() {
-            return "FSM {" + xml + "}";
+            return "SM {" + xml + "}";
         }
 
     }

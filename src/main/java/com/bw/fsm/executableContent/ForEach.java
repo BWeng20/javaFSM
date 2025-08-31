@@ -49,4 +49,27 @@ public class ForEach implements ExecutableContent {
     public ForEach() {
         array = Data.None.NONE;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder(50);
+        stringBuilder.append("ForEach {");
+        boolean comma = false;
+        if (item != null) {
+            stringBuilder.append("item:").append(item);
+            comma = true;
+        }
+        if (index != null) {
+            if ( comma )
+                stringBuilder.append(',');
+            comma = true;
+            stringBuilder.append("index:").append(index);
+        }
+        if (content != null) {
+            if ( comma )
+                stringBuilder.append(',');
+            stringBuilder.append("content:").append(content);
+        }
+        return stringBuilder.append('}').toString();
+    }
 }

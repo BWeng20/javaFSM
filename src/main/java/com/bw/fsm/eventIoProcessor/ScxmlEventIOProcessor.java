@@ -117,7 +117,7 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
 
         // W3C: If the sending SCXML session specifies a session that does not exist or is inaccessible,
         //      the SCXML Processor must place the error "error.communication" on the internal event queue of the sending session.
-        if (target == null || target.isEmpty()) {
+        if (target.isEmpty()) {
             global.externalQueue.enqueue(event);
             return true;
         } else if (SCXML_TARGET_INTERNAL.equals(target)) {

@@ -48,7 +48,7 @@ public class ThriftEventIOProcessor extends EventIOProcessor {
     }
 
     @Override
-    public boolean send(GlobalData global, String target, @NotNull Event event) {
+    public boolean send(@NotNull GlobalData global, @NotNull String target, @NotNull Event event) {
         int sessionIndex = target.indexOf("/session-");
         if (sessionIndex < 0) {
             Log.error("Thrift target format invalid: " + target);
@@ -122,12 +122,11 @@ public class ThriftEventIOProcessor extends EventIOProcessor {
 
 
     /**
-     *
+     * Send a evwnt via thrift.
      * @param url             The transport Url as used by {@link ThriftIO#createClientTransportFromAddress(String)}
      * @param sourceSessionId The id of the local session that sends this event                    .
      * @param targetSessionId The id of the session inside the target processor.
      * @param event           The event to send.
-     * @return
      */
     protected boolean sendViaThrift(String url, int sourceSessionId, int targetSessionId, @NotNull Event event) {
         event.origin_type = THRIFT_EVENT_PROCESSOR_SHORT_TYPE;

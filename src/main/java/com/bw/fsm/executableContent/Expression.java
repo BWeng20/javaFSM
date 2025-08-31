@@ -12,8 +12,8 @@ public class Expression implements ExecutableContent {
 
     @Override
     public boolean execute(Datamodel datamodel, Fsm fsm) {
-        Data r = datamodel.execute(this.content);
-        return r != null;
+        datamodel.execute(this.content);
+        return true;
     }
 
     @Override
