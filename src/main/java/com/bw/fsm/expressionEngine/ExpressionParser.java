@@ -282,7 +282,9 @@ public final class ExpressionParser {
                 case Error -> throw new ExpressionException("");
             }
         }
-        expressions.add(stack_to_expression(stack));
+        Expression last = stack_to_expression(stack);
+        if ( last != null)
+            expressions.add(last);
         if (!stack.isEmpty()) {
             throw new ExpressionException("Failed to evaluate expression");
         } else if (expressions.isEmpty()) {
