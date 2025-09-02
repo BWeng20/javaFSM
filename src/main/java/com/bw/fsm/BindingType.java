@@ -26,4 +26,29 @@ public enum BindingType {
             default -> Early;
         };
     }
+
+    /**
+     * Serializer Ordinal handling (other values than Enum.Ordinal).
+     */
+    public static BindingType from_ordinal(int ordinal) {
+        return switch (ordinal) {
+            case 1 -> Early;
+            case 2 -> Late;
+            default -> {
+                Log.panic("Unknown ordinal %d for BindingType", ordinal);
+                yield Early;
+            }
+        };
+    }
+
+    /**
+     * Serializer Ordinal handling (other values than Enum.Ordinal).
+     */
+    public int get_ordinal() {
+        return switch (this) {
+            case Early -> 1;
+            case Late -> 2;
+        };
+    }
+
 }

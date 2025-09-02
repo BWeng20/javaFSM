@@ -9,6 +9,7 @@ import com.bw.fsm.serializer.FsmReader;
 import com.bw.fsm.tracer.TraceMode;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
@@ -102,23 +103,26 @@ public class FsmExecutor {
         Fsm fsm = null;
 
         // Use reader to parse the scxml file:
-        if ("scxml".equalsIgnoreCase(extension) || "xml".equalsIgnoreCase(extension)) {
-            if (StaticOptions.debug)
-                Log.debug("Loading FSM from XML %s", url);
-            ScxmlReader sr = new ScxmlReader().withIncludePaths(this.include_paths);
-            try {
+        try {
+            if ("scxml".equalsIgnoreCase(extension) || "xml".equalsIgnoreCase(extension)) {
+                if (StaticOptions.debug)
+                    Log.debug("Loading FSM from XML %s", url);
+                ScxmlReader sr = new ScxmlReader().withIncludePaths(this.include_paths);
                 fsm = sr.parse_from_url(new URL(url));
-            } catch (Exception e) {
-                Log.error("Failed to parse %s", url);
-                throw new RuntimeException(e);
+            } else if ("rfsm".equalsIgnoreCase(extension)) {
+                if (StaticOptions.debug)
+                    Log.debug("Loading FSM from binary %s", url);
+                try (InputStream is = new URL(url).openStream()) {
+                    FsmReader reader = new FsmReader(new DefaultProtocolReader(is));
+                    // @TODO
+                    // sm = reader.read();
+                }
             }
-        } else if ("rfsm".equalsIgnoreCase(extension)) {
-            if (StaticOptions.debug)
-                Log.debug("Loading FSM from binary %s", url);
-            FsmReader<DefaultProtocolReader<?>> reader = new FsmReader<>();
-            // @TODO
-            // sm = reader.read();
+        } catch (Exception e) {
+            Log.error("Failed to parse %s", url);
+            throw new RuntimeException(e);
         }
+
 
         if (fsm != null) {
             fsm.file = url;

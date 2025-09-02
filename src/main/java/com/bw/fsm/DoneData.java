@@ -8,7 +8,7 @@ import java.util.List;
 
 public class DoneData {
     /* content of &lt;content> child. */
-    public CommonContent content;
+    public @Nullable CommonContent content;
 
     /**
      * &lt;param> children

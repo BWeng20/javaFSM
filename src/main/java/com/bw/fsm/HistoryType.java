@@ -21,4 +21,27 @@ public enum HistoryType {
             }
         };
     }
+
+
+    /**
+     * Serializer Ordinal handling (possibly other values than Enum.Ordinal).
+     */
+    public static HistoryType from_ordinal(int ordinal) {
+        return switch (ordinal) {
+            case 1 -> Shallow;
+            case 2 -> Deep;
+            default -> None;
+        };
+    }
+
+    /**
+     * Serializer Ordinal handling (possibly other values than Enum.Ordinal).
+     */
+    public int get_ordinal() {
+        return switch (this) {
+            case Shallow -> 1;
+            case Deep -> 2;
+            case None -> 0;
+        };
+    }
 }

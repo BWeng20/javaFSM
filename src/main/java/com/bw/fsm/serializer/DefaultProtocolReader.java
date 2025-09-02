@@ -12,14 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DefaultProtocolReader<R extends InputStream> implements ProtocolReader<R>, DefaultProtocolDefinitions {
+public class DefaultProtocolReader implements ProtocolReader, DefaultProtocolDefinitions {
 
-    protected R reader;
+    protected InputStream reader;
     protected boolean ok = true;
     protected TypeAndValue type_and_value = new TypeAndValue();
     protected final byte[] buffer = new byte[4096];
 
-    public DefaultProtocolReader() {
+    public DefaultProtocolReader(InputStream reader) {
+        this.reader = reader;
     }
 
     protected void error(String err, Object... arguments) {

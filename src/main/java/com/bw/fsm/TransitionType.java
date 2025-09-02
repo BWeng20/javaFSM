@@ -15,4 +15,29 @@ public enum TransitionType {
             }
         };
     }
+
+
+    /**
+     * Serializer Ordinal handling (possibly other values than Enum.Ordinal).
+     */
+    public static TransitionType from_ordinal(int ordinal) {
+        return switch (ordinal) {
+            case 0 -> Internal;
+            case 1 -> External;
+            default -> {
+                Log.panic("Unknown ordinal %d for TransitionType", ordinal);
+                yield External;
+            }
+        };
+    }
+
+    /**
+     * Serializer Ordinal handling (possibly other values than Enum.Ordinal).
+     */
+    public int get_ordinal() {
+        return switch (this) {
+            case Internal -> 0;
+            case External -> 1;
+        };
+    }
 }

@@ -4,6 +4,11 @@ public interface DefaultProtocolDefinitions {
 
     //! Constants, used in the protocol.
 
+    /**
+     * The serializer version, reader and writer must match the same version.
+     */
+    String FSM_SERIALIZER_VERSION = "fsmW2.0";
+
     String FSM_PROTOCOL_TYPE_PROTOCOL_VERSION = "DwP1.1";
     int FSM_PROTOCOL_TYPE_OPT_STRING_NONE = 0x10;
     int FSM_PROTOCOL_TYPE_BOOLEAN_TRUE = 0x1F;

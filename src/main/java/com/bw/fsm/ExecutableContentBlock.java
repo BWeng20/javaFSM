@@ -5,14 +5,21 @@ import java.util.List;
 
 public class ExecutableContentBlock {
 
-    public List<ExecutableContent> content = new ArrayList<>();
+    public List<ExecutableContent> content;
     public String tag;
 
-    ExecutableContentBlock(ExecutableContent content, String tag) {
+    public ExecutableContentBlock(ExecutableContent content, String tag) {
+        this.content = new ArrayList<>(1);
         if (content != null)
             this.content.add(content);
         this.tag = tag;
     }
+
+    public ExecutableContentBlock(List<ExecutableContent> content, String tag) {
+        this.content = new ArrayList<>(content);
+        this.tag = tag;
+    }
+
 
     @Override
     public String toString() {

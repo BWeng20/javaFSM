@@ -3,14 +3,12 @@ package com.bw.fsm.serializer;
 import com.bw.fsm.Data;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
- * Trait for reading binary data in some platform independent way.<br>
+ * Interface for reading binary data in some platform independent way.<br>
  * The resulting data should be sharable with different systems (different OS, Byte-Order... whatever).
  */
-public interface ProtocolReader<R extends InputStream> {
-
+public interface ProtocolReader {
 
     /**
      * Reads and verify the protocol version

@@ -331,7 +331,7 @@ public class ScxmlReader {
             } else {
                 this.executable_content_stack.clear();
             }
-            this.current_executable_content = new ExecutableContentBlock(null, tag);
+            this.current_executable_content = new ExecutableContentBlock((ExecutableContent) null, tag);
             if (debug)
                 com.bw.fsm.Log.debug(" start executable content block [%s]", this.current_executable_content);
             return this.current_executable_content;
