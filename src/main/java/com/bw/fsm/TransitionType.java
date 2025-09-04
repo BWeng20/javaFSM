@@ -2,6 +2,10 @@ package com.bw.fsm;
 
 public enum TransitionType {
     Internal,
+
+    /**
+     * Default
+     */
     External;
 
     public static TransitionType map_transition_type(String ts) {

@@ -572,7 +572,8 @@ public abstract class Data {
      * that needs to be evaluated by the datamodel.
      */
     public static final class Source extends Data {
-        SourceCode source;
+
+        public SourceCode source;
 
         public Source(SourceCode source) {
             super(DataType.Source);

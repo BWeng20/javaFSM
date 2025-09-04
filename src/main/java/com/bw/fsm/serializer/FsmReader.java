@@ -18,6 +18,10 @@ public class FsmReader implements DefaultProtocolDefinitions {
         this.reader = reader;
     }
 
+    public boolean has_error() {
+        return reader.has_error();
+    }
+
     protected Map<Integer, State> states = new HashMap<>();
     protected Map<Integer, Transition> transitions = new HashMap<>();
     Map<Integer, ExecutableContentBlock> executableContent = new HashMap<>();
@@ -30,34 +34,40 @@ public class FsmReader implements DefaultProtocolDefinitions {
         if (FSM_SERIALIZER_VERSION.equals(version)) {
             fsm.name = reader.read_string();
             fsm.datamodel = reader.read_string();
-            fsm.binding = BindingType.from_ordinal((int) read_int());
+            fsm.binding = BindingType.from_ordinal(read_int());
 
             int states_len = read_int();
             Log.info("states: %d", states_len);
             for (int idx = 0; idx < states_len; ++idx) {
                 var state = read_state();
-                fsm.statesNames.put(state.name, state);
-                states.put(state.id, state);
+                if ( state != null) {
+                    fsm.statesNames.put(state.name, state);
+                    states.put(state.id, state);
+                }
             }
+            int transitions_len = read_int();
+            if (StaticOptions.debug_serializer)
+                Log.debug("%d transitions to read", transitions_len);
 
-            long transitions_len = reader.read_long();
             for (int idx = 0; idx < transitions_len; ++idx) {
-                var transition = read_transition();
+               read_transition();
             }
+            int executable_content_len = read_int();
+            if (StaticOptions.debug_serializer)
+                Log.debug("%d executable content blocks to read", executable_content_len);
 
-
-            long executable_content_len = reader.read_long();
+            int ec_id = 0;
             for (int idx = 0; idx < executable_content_len; ++idx) {
-                ExecutableContentBlock block = read_executable_content_by_id();
-                long content_len = reader.read_long();
+                ++ec_id;
+                ExecutableContentBlock block = executableContent.computeIfAbsent(ec_id,
+                        k -> new ExecutableContentBlock(Collections.emptyList(), ""));
+                int content_len = read_int();
                 for (int idx2 = 0; idx2 < content_len; ++idx2) {
                     block.content.add(read_executable_content());
                 }
             }
-
             fsm.pseudo_root = read_or_create_state_by_id();
-            fsm.script = read_executable_content_by_id();
-
+            fsm.script = read_executable_content_id();
 
             long end = System.currentTimeMillis();
             Log.info("'%s' (RFSM) loaded in %dms", fsm.name, end - start);
@@ -103,18 +113,14 @@ public class FsmReader implements DefaultProtocolDefinitions {
 
     }
 
-    public ExecutableContentBlock read_executable_content_by_id() throws IOException {
+    public ExecutableContentBlock read_executable_content_id() throws IOException {
         int id = read_int();
         if (id == 0)
             return null;
-        ExecutableContentBlock e = executableContent.get(id);
-        if (e == null) {
-            e = new ExecutableContentBlock(Collections.emptyList(), "");
-        }
+        ExecutableContentBlock e = executableContent
+                .computeIfAbsent(id, k -> new ExecutableContentBlock(Collections.emptyList(), ""));
         return e;
-
     }
-
 
     public int read_int() throws IOException {
         long l = reader.read_long();
@@ -189,7 +195,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
         invoke.type_name = reader.read_data();
         invoke.external_id_location = reader.read_string();
         invoke.autoforward = reader.read_boolean();
-        invoke.finalize = read_executable_content_by_id();
+        invoke.finalize = read_executable_content_id();
 
         if (reader.read_boolean()) {
             invoke.content = read_common_content();
@@ -230,7 +236,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
         transition.wildcard = (flags & 2) != 0;
 
         transition.cond = ((flags & 4) != 0) ? reader.read_data() : Data.Null.NULL;
-        transition.content = ((flags & 8) != 0) ? read_executable_content_by_id() : null;
+        transition.content = ((flags & 8) != 0) ? read_executable_content_id() : null;
 
         if (StaticOptions.debug_serializer)
             Log.debug("<<Transition");
@@ -239,11 +245,13 @@ public class FsmReader implements DefaultProtocolDefinitions {
     }
 
 
-    public State read_state() throws IOException {
+    public @Nullable State read_state() throws IOException {
         if (StaticOptions.debug_serializer)
             Log.debug(">>State");
 
         State state = read_or_create_state_by_id();
+        if ( state == null)
+            return null;
         state.doc_id = read_int();
         state.name = reader.read_string();
 
@@ -264,13 +272,13 @@ public class FsmReader implements DefaultProtocolDefinitions {
         if ((flags & FSM_PROTOCOL_FLAG_ON_ENTRY) != 0) {
             int len = read_int();
             for (int si = 0; si < len; ++si) {
-                state.onentry.add(read_executable_content_by_id());
+                state.onentry.add(read_executable_content_id());
             }
         }
         if ((flags & FSM_PROTOCOL_FLAG_ON_EXIT) != 0) {
             int len = read_int();
             for (int si = 0; si < len; ++si) {
-                state.onexit.add(read_executable_content_by_id());
+                state.onexit.add(read_executable_content_id());
             }
         }
 
@@ -316,9 +324,12 @@ public class FsmReader implements DefaultProtocolDefinitions {
 
     public ExecutableContent read_executable_content() throws IOException {
 
+        if (StaticOptions.debug_serializer)
+            Log.debug(">>ExecutableContent");
+
         int ec_type = read_int();
 
-        return switch (ec_type) {
+        var ec = switch (ec_type) {
             case ExecutableContent.TYPE_IF -> read_executable_content_if();
             case ExecutableContent.TYPE_EXPRESSION -> read_executable_content_expression();
             case ExecutableContent.TYPE_LOG -> read_executable_content_log();
@@ -332,14 +343,18 @@ public class FsmReader implements DefaultProtocolDefinitions {
                 yield null;
             }
         };
+        if (StaticOptions.debug_serializer)
+            Log.debug("<<ExecutableContent");
+
+        return ec;
     }
 
     public ExecutableContent read_executable_content_if() throws IOException {
         var condition = reader.read_data();
         var ec = new If(condition);
 
-        ec.content = read_executable_content_by_id();
-        ec.else_content = read_executable_content_by_id();
+        ec.content = read_executable_content_id();
+        ec.else_content = read_executable_content_id();
         return ec;
     }
 
@@ -350,14 +365,14 @@ public class FsmReader implements DefaultProtocolDefinitions {
     }
 
     public ExecutableContent read_executable_content_log() throws IOException {
-        String label = reader.read_string();
+        String label = reader.read_option_string();
         Data expression = reader.read_data();
         return new com.bw.fsm.executableContent.Log(label, expression);
     }
 
     public ExecutableContent read_executable_content_for_each() throws IOException {
         ForEach ec = new ForEach();
-        ec.content = read_executable_content_by_id();
+        ec.content = read_executable_content_id();
         ec.index = reader.read_string();
         ec.array = reader.read_data();
         ec.item = reader.read_string();

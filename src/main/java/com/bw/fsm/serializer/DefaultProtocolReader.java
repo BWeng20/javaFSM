@@ -4,6 +4,7 @@ import com.bw.fsm.Data;
 import com.bw.fsm.Log;
 import com.bw.fsm.StaticOptions;
 import com.bw.fsm.datamodel.SourceCode;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +19,7 @@ public class DefaultProtocolReader implements ProtocolReader, DefaultProtocolDef
     protected boolean ok = true;
     protected TypeAndValue type_and_value = new TypeAndValue();
     protected final byte[] buffer = new byte[4096];
+    protected boolean throwOnError = false;
 
     public DefaultProtocolReader(InputStream reader) {
         this.reader = reader;
@@ -25,6 +27,8 @@ public class DefaultProtocolReader implements ProtocolReader, DefaultProtocolDef
 
     protected void error(String err, Object... arguments) {
         if (ok) {
+            if (throwOnError)
+                throw new RuntimeException(String.format(err, arguments));
             Log.error(err, arguments);
             this.ok = false;
             this.type_and_value.type_id = 0;
@@ -61,7 +65,7 @@ public class DefaultProtocolReader implements ProtocolReader, DefaultProtocolDef
                     switch (this.type_and_value.type_id) {
                         case FSM_PROTOCOL_TYPE_STRING_LENGTH_4BIT, FSM_PROTOCOL_TYPE_STRING_LENGTH_12BIT -> true;
                         default -> {
-                            error("Expected string type, got #%s", type_and_value.type_id);
+                            error("Expected string type, got #%d", type_and_value.type_id);
                             yield false;
                         }
                     };
@@ -284,4 +288,8 @@ public class DefaultProtocolReader implements ProtocolReader, DefaultProtocolDef
         return !this.ok;
     }
 
+    public @NotNull DefaultProtocolReader throwOnError() {
+        throwOnError = true;
+        return this;
+    }
 }

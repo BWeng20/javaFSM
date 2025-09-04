@@ -13,5 +13,5 @@ public interface StaticOptions {
 
     boolean ecma_script_model = true;
 
-    boolean debug_serializer = true;
+    boolean debug_serializer = false;
 }

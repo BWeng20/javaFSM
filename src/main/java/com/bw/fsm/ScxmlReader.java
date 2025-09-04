@@ -116,17 +116,26 @@ public class ScxmlReader {
      * Read and parse the FSM from a URL
      */
     public Fsm parse_from_url(URL url) throws IOException {
-        if ("file".equals(url.getProtocol())) {
-            // We need to apply all include paths
-            try {
-                Path file = includePaths.resolvePath(url.toURI().getSchemeSpecificPart());
-                return parse_from_xml_file(file);
-            } catch (URISyntaxException e) {
-                throw new IOException(e);
+        long start;
+        if (StaticOptions.debug_reader)
+            start = System.currentTimeMillis();
+        try {
+            if ("file".equals(url.getProtocol())) {
+                // We need to apply all include paths
+                try {
+                    Path file = includePaths.resolvePath(url.toURI().getSchemeSpecificPart());
+                    return parse_from_xml_file(file);
+                } catch (URISyntaxException e) {
+                    throw new IOException(e);
+                }
             }
-        }
-        try (InputStream input = url.openStream()) {
-            return parse(null, input);
+            try (InputStream input = url.openStream()) {
+                return parse(null, input);
+            }
+        } finally {
+            if (StaticOptions.debug_reader)
+                com.bw.fsm.Log.debug( "'%s' loaded in %dms", url, System.currentTimeMillis()-start);
+
         }
     }
 

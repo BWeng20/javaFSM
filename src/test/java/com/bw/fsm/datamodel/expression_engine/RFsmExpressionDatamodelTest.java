@@ -217,7 +217,7 @@ class RFsmExpressionDatamodelTest {
         actions.add_action("test", testAction);
 
         var executor = new FsmExecutor(false);
-        URL source = RFsmExpressionDatamodelTest.class.getResource("/scxml_test.scxml");
+        URL source = RFsmExpressionDatamodelTest.class.getResource("/scxml_rexp_test.scxml");
         ScxmlSession session = executor.execute(source.toURI().toString(), actions, TraceMode.ALL);
 
         long toWait = System.currentTimeMillis() + 2000;

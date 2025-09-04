@@ -13,7 +13,7 @@ public class Transition {
     public Data cond;
     public State source;
     public final java.util.List<State> target = new ArrayList<>(1);
-    public TransitionType transition_type;
+    public TransitionType transition_type = TransitionType.External;
     public ExecutableContentBlock content;
 
     @Override

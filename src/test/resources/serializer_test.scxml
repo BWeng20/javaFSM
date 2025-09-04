@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A Simple FSM used in test RFsmExpressionDatamodelTest.scxml_test.  -->
+<scxml xmlns="http://www.w3.org/2005/07/scxml" initial="s0" version="1.0" datamodel="rfsm-expression"
+       name="scxml_test">
+    <state id="s0">
+        <onentry>
+            <send delay="0.5s" event="leave"/>
+            <script>
+                test([0,1,2,3,4][1]);
+                test(2);
+            </script>
+        </onentry>
+        <transition event="leave" cond="test(3)" target="end"/>
+        <onexit>
+            <script>
+                test(2*2-1+1);
+            </script>
+        </onexit>
+    </state>
+
+    <final id="end">
+        <onentry>
+            <script>
+                test(4);
+                test(5);
+                test(99);
+            </script>
+            <log expr="'FSM Finished'"/>
+        </onentry>
+    </final>
+</scxml>
