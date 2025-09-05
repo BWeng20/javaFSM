@@ -10,7 +10,7 @@ public class Transition {
     // TODO: Possibly we need some type to express event ids
     public java.util.List<String> events;
     public boolean wildcard;
-    public Data cond;
+    public Data cond = Data.None.NONE;
     public State source;
     public final java.util.List<State> target = new ArrayList<>(1);
     public TransitionType transition_type = TransitionType.External;
@@ -62,4 +62,5 @@ public class Transition {
             return false;
         }
     }
+
 }

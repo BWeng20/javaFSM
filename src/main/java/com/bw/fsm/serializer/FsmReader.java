@@ -40,9 +40,8 @@ public class FsmReader implements DefaultProtocolDefinitions {
             Log.info("states: %d", states_len);
             for (int idx = 0; idx < states_len; ++idx) {
                 var state = read_state();
-                if ( state != null) {
+                if (state != null) {
                     fsm.statesNames.put(state.name, state);
-                    states.put(state.id, state);
                 }
             }
             int transitions_len = read_int();
@@ -50,7 +49,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
                 Log.debug("%d transitions to read", transitions_len);
 
             for (int idx = 0; idx < transitions_len; ++idx) {
-               read_transition();
+                read_transition();
             }
             int executable_content_len = read_int();
             if (StaticOptions.debug_serializer)
@@ -66,7 +65,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
                     block.content.add(read_executable_content());
                 }
             }
-            fsm.pseudo_root = read_or_create_state_by_id();
+            fsm.pseudo_root = read_or_create_state_by_docId();
             fsm.script = read_executable_content_id();
 
             long end = System.currentTimeMillis();
@@ -85,17 +84,18 @@ public class FsmReader implements DefaultProtocolDefinitions {
         reader.close();
     }
 
-    public @Nullable State read_or_create_state_by_id() throws IOException {
-        int id = read_int();
+    public @Nullable State read_or_create_state_by_docId() throws IOException {
+        final int doc_id = read_int();
 
-        if (id == 0) {
+        if (doc_id == 0) {
             return null;
         }
-        State s = states.get(id);
+        State s = states.get(doc_id);
         if (s == null) {
             s = new State(null);
-            s.id = id;
-            states.put(id, s);
+            s.doc_id = doc_id;
+            s.id = ScxmlReader.ID_COUNTER.incrementAndGet();
+            states.put(doc_id, s);
         }
         return s;
     }
@@ -213,11 +213,13 @@ public class FsmReader implements DefaultProtocolDefinitions {
 
         var transition = read_or_create_transition_by_id();
         transition.doc_id = read_int();
-        transition.source = read_or_create_state_by_id();
+        transition.source = read_or_create_state_by_docId();
+        if (transition.source == null)
+            throw new RuntimeException("Source of transition " + transition.doc_id + " not found");
 
         int target_len = read_int();
         for (int idx = 0; idx < target_len; ++idx) {
-            transition.target.add(read_or_create_state_by_id());
+            transition.target.add(read_or_create_state_by_docId());
         }
 
         int events_len = read_int();
@@ -235,7 +237,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
         transition.transition_type = TransitionType.from_ordinal(flags & 1);
         transition.wildcard = (flags & 2) != 0;
 
-        transition.cond = ((flags & 4) != 0) ? reader.read_data() : Data.Null.NULL;
+        transition.cond = ((flags & 4) != 0) ? reader.read_data() : Data.None.NONE;
         transition.content = ((flags & 8) != 0) ? read_executable_content_id() : null;
 
         if (StaticOptions.debug_serializer)
@@ -249,10 +251,9 @@ public class FsmReader implements DefaultProtocolDefinitions {
         if (StaticOptions.debug_serializer)
             Log.debug(">>State");
 
-        State state = read_or_create_state_by_id();
-        if ( state == null)
+        State state = read_or_create_state_by_docId();
+        if (state == null)
             return null;
-        state.doc_id = read_int();
         state.name = reader.read_string();
 
         int flags = read_int();
@@ -265,7 +266,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
             state.initial = read_or_create_transition_by_id();
             int states_len = read_int();
             for (int si = 0; si < states_len; ++si) {
-                state.states.add(read_or_create_state_by_id());
+                state.states.add(read_or_create_state_by_docId());
             }
         }
 
@@ -299,7 +300,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
         if ((flags & FSM_PROTOCOL_FLAG_HISTORY) != 0) {
             int len = read_int();
             for (int si = 0; si < len; ++si) {
-                state.history.push(read_or_create_state_by_id());
+                state.history.push(read_or_create_state_by_docId());
             }
         }
 
@@ -307,7 +308,7 @@ public class FsmReader implements DefaultProtocolDefinitions {
             read_data_map(state.data);
         }
 
-        state.parent = read_or_create_state_by_id();
+        state.parent = read_or_create_state_by_docId();
 
         if ((flags & FSM_PROTOCOL_FLAG_DONE_DATA) != 0) {
             state.donedata = new DoneData();

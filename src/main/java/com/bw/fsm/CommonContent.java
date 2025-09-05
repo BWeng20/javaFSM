@@ -1,5 +1,7 @@
 package com.bw.fsm;
 
+import java.util.Objects;
+
 public class CommonContent {
 
     /**
@@ -28,5 +30,15 @@ public class CommonContent {
             stringBuilder.append("expr: ").append(content_expr);
         stringBuilder.append("}");
         return stringBuilder.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o instanceof CommonContent that) {
+            return Objects.equals(content, that.content) && Objects.equals(content_expr, that.content_expr);
+        }
+        return false;
     }
 }

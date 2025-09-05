@@ -236,7 +236,7 @@ class ScxmlReaderTest {
         Assertions.assertEquals(2, region.content.size(), "'foreach' and last 'log' must be placed in two entries");
         var ecforEach = region.content.get(0);
         Assertions.assertInstanceOf(ForEach.class, ecforEach);
-        var forEachEc = (ForEach)ecforEach;
+        var forEachEc = (ForEach) ecforEach;
 
         Assertions.assertNull(forEachEc.index);
         Assertions.assertEquals("Var2", forEachEc.item);

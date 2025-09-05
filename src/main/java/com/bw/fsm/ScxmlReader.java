@@ -90,9 +90,10 @@ public class ScxmlReader {
     public static final String ATTR_LABEL = "label";
     public static final String ATTR_EXPR = "expr";
     public static final String NS_XINCLUDE = "http://www.w3.org/2001/XInclude";
-    static AtomicInteger DOC_ID_COUNTER = new AtomicInteger(1);
-    static AtomicInteger SOURCE_ID_COUNTER = new AtomicInteger(1);
-    static Pattern split_whitespace = Pattern.compile("\\s");
+    public static final AtomicInteger ID_COUNTER = new AtomicInteger(1);
+    static final AtomicInteger DOC_ID_COUNTER = new AtomicInteger(1);
+    static final AtomicInteger SOURCE_ID_COUNTER = new AtomicInteger(1);
+    static final Pattern split_whitespace = Pattern.compile("\\s");
 
     static XMLOutputFactory outputFactory = XMLOutputFactory.newInstance();
     static XMLInputFactory factory = XMLInputFactory.newInstance();
@@ -445,9 +446,11 @@ public class ScxmlReader {
             if (initialName != null) {
                 // Create initial-transition with the initial states
                 Transition initial = new Transition();
+                initial.id = ID_COUNTER.incrementAndGet();
                 initial.doc_id = DOC_ID_COUNTER.incrementAndGet();
                 initial.transition_type = TransitionType.Internal;
                 initial.source = state;
+                initial.events = Collections.emptyList();
                 this.parse_state_specification(initialName, initial.target);
                 if (StaticOptions.debug_reader)
                     com.bw.fsm.Log.debug(

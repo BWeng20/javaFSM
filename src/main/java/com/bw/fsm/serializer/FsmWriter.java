@@ -63,7 +63,7 @@ public class FsmWriter implements DefaultProtocolDefinitions {
         if (StaticOptions.debug_serializer)
             Log.debug("%d executable content blocks written", executableContentBlocks.size());
 
-        write_int(fsm.pseudo_root.id);
+        write_int(fsm.pseudo_root.doc_id);
         write_executable_content_block_id(fsm.script);
     }
 
@@ -166,14 +166,18 @@ public class FsmWriter implements DefaultProtocolDefinitions {
 
         write_int(transition.id);
         write_int(transition.doc_id);
-        write_int(transition.source.id);
+        write_int(transition.source.doc_id);
         write_size(transition.target.size());
         for (State t : transition.target) {
-            write_int(t.id);
+            write_int(t.doc_id);
         }
-        write_size(transition.events.size());
-        for (String e : transition.events) {
-            writer.write_str(e);
+        if (transition.events == null) {
+            write_size(0);
+        } else {
+            write_size(transition.events.size());
+            for (String e : transition.events) {
+                writer.write_str(e);
+            }
         }
         write_int(
                 transition.transition_type.get_ordinal() // 0 - 1
@@ -205,7 +209,6 @@ public class FsmWriter implements DefaultProtocolDefinitions {
         if (StaticOptions.debug_serializer)
             Log.debug(">>State %s", state.name);
 
-        write_int(state.id);
         write_int(state.doc_id);
         writer.write_str(state.name);
 
@@ -223,9 +226,11 @@ public class FsmWriter implements DefaultProtocolDefinitions {
 
         if (!state.states.isEmpty()) {
             write_int(state.initial == null ? 0 : state.initial.id);
+            if (state.initial != null)
+                transitions.add(state.initial);
             write_size(state.states.size());
             for (State s : state.states) {
-                write_int(s.id);
+                write_int(s.doc_id);
             }
         }
 
@@ -235,6 +240,7 @@ public class FsmWriter implements DefaultProtocolDefinitions {
                 write_executable_content_block_id(ec);
             }
         }
+
         if (!state.onexit.isEmpty()) {
             write_size(state.onexit.size());
             for (ExecutableContentBlock ec : state.onentry)
@@ -257,7 +263,7 @@ public class FsmWriter implements DefaultProtocolDefinitions {
         if (state.history.size() > 0) {
             write_size(state.history.size());
             for (var history : state.history.data) {
-                write_int(history.id);
+                write_int(history.doc_id);
             }
         }
 
@@ -265,7 +271,7 @@ public class FsmWriter implements DefaultProtocolDefinitions {
             write_data_map(state.data);
         }
 
-        write_int(state.parent == null ? 0 : state.parent.id);
+        write_int(state.parent == null ? 0 : state.parent.doc_id);
 
         if (state.donedata != null) {
             write_done_data(state.donedata);

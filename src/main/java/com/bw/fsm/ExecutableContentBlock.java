@@ -1,11 +1,13 @@
 package com.bw.fsm;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class ExecutableContentBlock {
 
-    public List<ExecutableContent> content;
+    public @NotNull final List<ExecutableContent> content;
     public String tag;
 
     public ExecutableContentBlock(ExecutableContent content, String tag) {
@@ -15,11 +17,10 @@ public class ExecutableContentBlock {
         this.tag = tag;
     }
 
-    public ExecutableContentBlock(List<ExecutableContent> content, String tag) {
+    public ExecutableContentBlock(@NotNull List<ExecutableContent> content, String tag) {
         this.content = new ArrayList<>(content);
         this.tag = tag;
     }
-
 
     @Override
     public String toString() {
