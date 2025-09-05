@@ -109,7 +109,7 @@ public class ScxmlEventIOProcessor extends EventIOProcessor {
      */
     @Override
     public boolean send(@NotNull GlobalData global, @NotNull String target, @NotNull Event event) {
-        event.origin_type = SCXML_EVENT_PROCESSOR_SHORT_TYPE;
+        event.origin_type = SCXML_EVENT_PROCESSOR;
         if (event.origin == null) {
             event.origin = this.get_location(global.session_id);
         }
