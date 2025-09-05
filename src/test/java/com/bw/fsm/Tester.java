@@ -2,6 +2,7 @@ package com.bw.fsm;
 
 import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.ecma.ECMAScriptDatamodel;
+import com.bw.fsm.datamodel.expression_engine.RFsmExpressionDatamodel;
 import com.bw.fsm.datamodel.null_datamodel.NullDatamodel;
 import com.bw.fsm.tracer.TraceMode;
 
@@ -111,9 +112,9 @@ public class Tester {
         if (config != null) {
             if (!modelsInitialized) {
                 modelsInitialized = true;
-                if (StaticOptions.ecma_script_model)
-                    ECMAScriptDatamodel.register();
+                ECMAScriptDatamodel.register();
                 NullDatamodel.register();
+                RFsmExpressionDatamodel.register();
             }
             TestUseCase test = new TestUseCase();
             test.name = fsm.name;
