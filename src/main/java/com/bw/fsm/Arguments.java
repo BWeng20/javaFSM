@@ -73,12 +73,13 @@ public class Arguments {
         this.options = map;
     }
 
+    public static final Option TRACE_ARGUMENT_OPTION = new Option("trace");
+
     public TraceMode getTraceMode() {
-        return TraceMode.fromString(options.get("trace"));
+        return TraceMode.fromString(options.get(TRACE_ARGUMENT_OPTION.name));
     }
 
-    public static Option INCLUDE_PATH_ARGUMENT_OPTION =
-            new Option("includePaths").withValue();
+    public static final Option INCLUDE_PATH_ARGUMENT_OPTION = new Option("includePaths").withValue();
 
 
     public java.util.List<Path> getIncludePaths() {

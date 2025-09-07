@@ -20,8 +20,7 @@ import java.util.function.Consumer;
 public class Tester {
 
 
-    public static final String TRACE_ARGUMENT_OPTION = "trace";
-    public static final String INCLUDE_PATH_ARGUMENT_OPTION = "includePaths";
+
 
     private static boolean modelsInitialized = false;
 
@@ -32,11 +31,11 @@ public class Tester {
 
         try {
             Arguments arguments = new Arguments(args, new Arguments.Option[]{
-                    new Arguments.Option(TRACE_ARGUMENT_OPTION).withValue(),
-                    new Arguments.Option(INCLUDE_PATH_ARGUMENT_OPTION).withValue()});
+                    Arguments.TRACE_ARGUMENT_OPTION, Arguments.INCLUDE_PATH_ARGUMENT_OPTION});
 
             IncludePaths include_paths = new IncludePaths();
-            include_paths.addPaths(arguments.options.get(INCLUDE_PATH_ARGUMENT_OPTION));
+            include_paths.add(arguments.getIncludePaths());
+
             List<Fsm> fsms = new ArrayList<>();
             TestSpecification config = null;
 
