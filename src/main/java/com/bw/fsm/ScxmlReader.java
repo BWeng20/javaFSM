@@ -135,7 +135,7 @@ public class ScxmlReader {
             }
         } finally {
             if (StaticOptions.debug_reader)
-                com.bw.fsm.Log.debug( "'%s' loaded in %dms", url, System.currentTimeMillis()-start);
+                com.bw.fsm.Log.debug("'%s' loaded in %dms", url, System.currentTimeMillis() - start);
 
         }
     }

@@ -57,32 +57,66 @@ struct Data {
  */
 service EventIOProcessor {
 
+    /**
+     * Sends a external event to the processor.
+     */
     oneway void sendEvent(1: i32 session, 2: Event event);
+
+    list<string> getConfiguration(1: i32 session)
 
 }
 
+struct NamedArgument {
+    1: string name,
+    2: string value
+}
 
 /**
  * FSM Trace Server
  */
 service TraceServer
  {
-    string registerFsm(1: string clientAddress, 2: i32 session);
+    /**
+     * Processor registers a FSM.
+     * @param clientAddress The thrift url of the TraceClient.
+     * @param fsmName the name of the FSM model (only informational)
+     * @param session the session id
+     * @return the id to use in the other calls as value of argument "fsm".
+     */
+    string registerFsm(1: string clientAddress, 3: string fsmName, 2: i32 session);
 
+    oneway void unregisterFsm(1: string fsmId );
+
+    /**
+     * Some generic message.
+     */
     oneway void message( 1: string fsm, 2: string message );
 
-    oneway void sentEvent( 1: Event event );
-    oneway void receivedEvent( 1: Event event );
+    /**
+     * A Event was sent.
+     */
+    oneway void sentEvent( 1:string fsm, 2: Event event );
 
+    /**
+     * A Event was received.
+     */
+    oneway void receivedEvent( 1:string fsm, 2: Event event );
+
+    /**
+     * A method was entered.
+     */
     oneway void enterMethod(
         1: string fsm,
         2: string name,
-        3: list<Argument> arguments );
+        3: list<NamedArgument> arguments );
 
+    /**
+     * A method was finished.
+     */
     oneway void exitMethod(
         1: string fsm,
         2: string name,
-        3: list<Argument> results );
+        3: list<NamedArgument> results );
 
 }
 
@@ -92,6 +126,10 @@ service TraceServer
  */
 service TraceClient
  {
+    /**
+     * Injects a event in the session.
+     * This method can send also internal or platform events.
+     */
     oneway void event( 1: string fsm, 2: Event event );
 
     /**

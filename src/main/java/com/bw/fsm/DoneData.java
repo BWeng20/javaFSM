@@ -24,7 +24,7 @@ public class DoneData {
 
     @Override
     public boolean equals(Object o) {
-        if ( this == o)
+        if (this == o)
             return true;
         if (o instanceof DoneData doneData) {
             return Objects.equals(content, doneData.content) && Objects.equals(params, doneData.params);

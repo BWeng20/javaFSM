@@ -7,6 +7,7 @@ import com.bw.fsm.datamodel.GlobalData;
 import com.bw.fsm.eventIoProcessor.ScxmlEventIOProcessor;
 import com.bw.fsm.expressionEngine.ExpressionException;
 import com.bw.fsm.tracer.TraceArgument;
+import com.bw.fsm.tracer.TraceMode;
 import com.bw.fsm.tracer.Tracer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +48,7 @@ public class Fsm {
     public static final Comparator<Invoke> invoke_document_order = Comparator.comparing(s -> s.doc_id);
 
 
-    public final Tracer tracer = Tracer.create_tracer();
+    public Tracer tracer;
     public String datamodel;
     public BindingType binding = BindingType.Early;
     public String version;
@@ -80,14 +81,18 @@ public class Fsm {
      * Starts the FSM inside a worker thread.
      */
     public @NotNull ScxmlSession start_fsm(ActionWrapper actions, FsmExecutor executor) {
-        return start_fsm_with_data(actions, executor, new ArrayList<>());
+        return start_fsm_with_data(actions, executor, new ArrayList<>(), TraceMode.NONE);
     }
 
     public @NotNull ScxmlSession start_fsm_with_data(
             ActionWrapper actions,
             FsmExecutor executor,
-            java.util.List<ParamPair> data) {
+            java.util.List<ParamPair> data,
+            TraceMode trace) {
         BlockingQueue<Event> externalQueue = new BlockingQueue<>();
+
+        tracer = Tracer.getInstance();
+        tracer.enable_trace(trace);
 
         Integer session_id = SESSION_ID_COUNTER.incrementAndGet();
         final var session = new ScxmlSession(session_id, externalQueue, tracer);
@@ -1824,13 +1829,13 @@ public class Fsm {
                         return;
                     }
                 }
-                fsm.tracer.enable_trace(this.tracer.trace_mode());
                 fsm.caller_invoke_id = invokeId;
                 fsm.parent_session_id = gd.session_id;
                 session = fsm.start_fsm_with_data(
                         gd.actions,
                         gd.executor,
-                        name_values
+                        name_values,
+                        this.tracer.trace_mode()
                 );
 
             } else {

@@ -20,8 +20,6 @@ import java.util.function.Consumer;
 public class Tester {
 
 
-
-
     private static boolean modelsInitialized = false;
 
     /**
@@ -168,15 +166,13 @@ public class Tester {
             Consumer<BlockingQueue<Event>> eventCb) {
 
         try {
-            fsm.tracer.enable_trace(trace_mode);
-
             var executor = new FsmExecutor(false);
             executor.set_global_options_from_arguments(options);
             executor.set_include_paths(include_paths);
 
             session = fsm.start_fsm_with_data(
                     new ActionWrapper(),
-                    executor, Collections.emptyList()
+                    executor, Collections.emptyList(), trace_mode
             );
 
             BlockingQueue<Event> watchdog_sender = null;

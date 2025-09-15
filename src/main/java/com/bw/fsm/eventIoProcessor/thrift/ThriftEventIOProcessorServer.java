@@ -3,10 +3,13 @@ package com.bw.fsm.eventIoProcessor.thrift;
 import com.bw.fsm.Log;
 import com.bw.fsm.thrift.Event;
 import com.bw.fsm.thrift.EventIOProcessor;
+import org.apache.thrift.TException;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
+
+import java.util.List;
 
 public class ThriftEventIOProcessorServer implements EventIOProcessor.Iface {
 
@@ -16,6 +19,12 @@ public class ThriftEventIOProcessorServer implements EventIOProcessor.Iface {
     @Override
     public void sendEvent(int session, Event event) {
         System.out.println("Event received. For Session " + session + " Event " + event.name);
+    }
+
+    @Override
+    public List<String> getConfiguration(int session) throws TException {
+        // TODO
+        return List.of();
     }
 
     public synchronized void stop() {

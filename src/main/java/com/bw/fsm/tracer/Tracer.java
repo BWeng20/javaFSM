@@ -12,6 +12,13 @@ import java.util.stream.Collectors;
 public abstract class Tracer {
 
     /**
+     * Needs to be called before session is traces..
+     */
+    public abstract void registerSession(int session, String fsmName);
+
+    public abstract void removeSession(int session);
+
+    /**
      * Needed by a minimalistic implementation. Default methods below call this
      * Method with a textual representation of the trace-event.
      */
@@ -98,9 +105,9 @@ public abstract class Tracer {
     }
 
     /**
-     * Called by FSM if a state is entered or left.
+     * Helper for default implementations.
      */
-    public void trace_state(int sessionId, String what, State s) {
+    protected void trace_state(int sessionId, String what, State s) {
         if (StaticOptions.trace_state && this.is_trace(TraceMode.STATES)) {
             if (s.name.isEmpty()) {
                 this.trace(sessionId, String.format("%s #%d", what, s.id));
@@ -143,16 +150,34 @@ public abstract class Tracer {
         }
     }
 
-    private static TracerFactory tracer_factory = new DefaultTracerFactory();
-
-    public static void set_tracer_factory(TracerFactory tracer_factory) {
-        if (tracer_factory == null)
-            tracer_factory = new DefaultTracerFactory();
-        Tracer.tracer_factory = tracer_factory;
+    /**
+     * Tracer should stop all activities and release all sessions.
+     */
+    public void stop() {
+        // Default has nothing to do.
     }
 
-    public static Tracer create_tracer() {
-        return tracer_factory.create();
+    private static TracerFactory tracer_factory = new DefaultTracerFactory();
+    private static Tracer tracer;
+
+    public static synchronized void set_tracer_factory(TracerFactory tracer_factory) {
+        if (tracer_factory != Tracer.tracer_factory
+                && !(tracer_factory == null && Tracer.tracer_factory instanceof DefaultTracerFactory)) {
+            if (tracer_factory == null) {
+                tracer_factory = new DefaultTracerFactory();
+            }
+            Tracer.tracer_factory = tracer_factory;
+            if (tracer != null) {
+                tracer.stop();
+                tracer = tracer_factory.create();
+            }
+        }
+    }
+
+    public static synchronized Tracer getInstance() {
+        if (tracer == null)
+            tracer = tracer_factory.create();
+        return tracer;
     }
 
     protected String value_to_string(Object d) {
@@ -167,7 +192,6 @@ public abstract class Tracer {
         }
         return String.valueOf(d);
     }
-
 
     protected String executable_content_to_string(ExecutableContent ec) {
         StringBuilder sb = new StringBuilder(100);

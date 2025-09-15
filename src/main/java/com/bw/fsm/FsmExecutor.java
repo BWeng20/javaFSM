@@ -114,8 +114,7 @@ public class FsmExecutor {
                     Log.debug("Loading FSM from binary %s", url);
                 try (InputStream is = new URL(url).openStream()) {
                     FsmReader reader = new FsmReader(new DefaultProtocolReader(is));
-                    // @TODO
-                    // sm = reader.read();
+                    fsm = reader.read();
                 }
             }
         } catch (Exception e) {
@@ -126,11 +125,9 @@ public class FsmExecutor {
 
         if (fsm != null) {
             fsm.file = url;
-
-            fsm.tracer.enable_trace(trace);
             fsm.caller_invoke_id = invoke_id;
             fsm.parent_session_id = parent;
-            return fsm.start_fsm_with_data(actions, this, data);
+            return fsm.start_fsm_with_data(actions, this, data, trace);
         } else {
             return null;
         }
@@ -152,13 +149,13 @@ public class FsmExecutor {
         // Use reader to parse the XML:
         ScxmlReader reader = new ScxmlReader().withIncludePaths(this.include_paths);
         Fsm fsm = reader.parse_from_xml(xml);
-        fsm.tracer.enable_trace(trace);
         fsm.caller_invoke_id = invoke_id;
         fsm.parent_session_id = parent;
         var session = fsm.start_fsm_with_data(
                 actions,
                 this,
-                data
+                data,
+                trace
         );
         return session;
     }

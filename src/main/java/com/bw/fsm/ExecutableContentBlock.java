@@ -7,7 +7,8 @@ import java.util.List;
 
 public class ExecutableContentBlock {
 
-    public @NotNull final List<ExecutableContent> content;
+    public @NotNull
+    final List<ExecutableContent> content;
     public String tag;
 
     public ExecutableContentBlock(ExecutableContent content, String tag) {

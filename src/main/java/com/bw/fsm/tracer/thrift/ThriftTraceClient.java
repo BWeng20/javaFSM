@@ -3,25 +3,23 @@ package com.bw.fsm.tracer.thrift;
 import com.bw.fsm.Log;
 import com.bw.fsm.thrift.*;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
-import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
 
+/**
+ * Client side of a ThriftTracer.
+ */
 public class ThriftTraceClient implements TraceClient.Iface {
 
-    Thread serverThread;
-    TServer server;
-    TraceServer.Client traceServer;
-    TTransport transport;
+    protected Thread serverThread;
+    protected TServer server;
+    protected TraceServer.Client traceServer;
+    protected TTransport transport;
 
     @Override
     public void event(String fsm, Event event) throws TException {
-
     }
 
     @Override
@@ -40,7 +38,6 @@ public class ThriftTraceClient implements TraceClient.Iface {
             } catch (Exception e) {
                 Log.exception("Stop of ThriftClient failed", e);
             }
-
             server = null;
             serverThread = null;
         }
@@ -58,28 +55,12 @@ public class ThriftTraceClient implements TraceClient.Iface {
 
     }
 
-    public synchronized void start(String serverAddress) {
+    public synchronized void start(String address) {
         stop();
-        String r;
-        try {
-            transport = ThriftIO.createClientTransportFromAddress(serverAddress);
-            transport.open();
-            TProtocol protocol = new TBinaryProtocol(transport);
-            traceServer = new TraceServer.Client(protocol);
-            r = traceServer.registerFsm("localhost:4211", 1);
-        } catch (TTransportException te) {
-            Log.exception("Failed to connect to TraceServer", te);
-            return;
-        } catch (TException e) {
-            Log.exception("Failed to registwer FSM", e);
-            return;
-        }
-        Log.info("Registered: " + r);
-
         Log.info("Starting Thrift Client...");
         try {
             TraceClient.Processor<ThriftTraceClient> processor = new TraceClient.Processor<>(this);
-            TServerTransport serverTransport = new TServerSocket(4211);
+            TServerTransport serverTransport = ThriftIO.createServerTransportFromAddress(address);
             server = new TSimpleServer(new TServer.Args(serverTransport).processor(processor));
 
             final TServer localServer = server;
@@ -101,6 +82,5 @@ public class ThriftTraceClient implements TraceClient.Iface {
     public static void main(String[] args) {
         ThriftTraceClient client = new ThriftTraceClient();
         client.start("tcp:localhost:4212");
-
     }
 }

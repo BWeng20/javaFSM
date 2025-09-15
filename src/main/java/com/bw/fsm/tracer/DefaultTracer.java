@@ -25,6 +25,16 @@ public class DefaultTracer extends Tracer {
     }
 
     @Override
+    public void registerSession(int session, String fsmName) {
+        // Nothing to do
+    }
+
+    @Override
+    public void removeSession(int session) {
+        // Nothing to do
+    }
+
+    @Override
     public void trace(int sessionId, String msg) {
         if (StaticOptions.trace) {
             Log.info("Trace #%d >%" + get_indent() + "s%s", sessionId, "", msg);
