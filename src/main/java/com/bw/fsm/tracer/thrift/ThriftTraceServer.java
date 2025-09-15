@@ -19,8 +19,8 @@ public class ThriftTraceServer implements TraceServer.Iface {
     private Thread serverThread;
     private TServer server;
 
-    private Map<String, TraceSession> sessions = new HashMap<>();
-    private AtomicInteger fsmCount = new AtomicInteger(0);
+    private final Map<String, TraceSession> sessions = new HashMap<>();
+    private final AtomicInteger fsmCount = new AtomicInteger(0);
 
 
     @Override

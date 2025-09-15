@@ -22,8 +22,8 @@ import java.util.Map;
 public class ThriftTracer extends Tracer {
 
     private TraceServer.Iface server;
-    private Map<Integer, TraceSession> sessions = new HashMap<>();
-    private String clientAddress;
+    private final Map<Integer, TraceSession> sessions = new HashMap<>();
+    private final String clientAddress;
     private ThriftTraceClient client;
 
     public ThriftTracer(String serverAddress, String clientAddress) {

@@ -1812,7 +1812,7 @@ public class Fsm {
 
         ScxmlSession session;
 
-        if (src == null || src.is_empty()) {
+        if (src.is_empty()) {
             var content = datamodel.evaluate_content(inv.content);
             if (!content.is_empty()) {
                 Fsm fsm;

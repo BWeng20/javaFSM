@@ -243,9 +243,7 @@ public class Tester {
             @Override
             public void run() {
                 try {
-                    if (!watchdog_queue.data.isEmpty()) {
-                        // All ok, FSM terminated in time.
-                    } else {
+                    if (watchdog_queue.data.isEmpty()) {
                         Log.setLogStream(ps);
                         abort_test(String.format("[%s] ==> FSM timed out after %d milliseconds", test_name, timeout));
                     }
@@ -290,7 +288,7 @@ public class Tester {
                 do {
                     try {
                         session.thread.join();
-                    } catch (Exception e) {
+                    } catch (Exception ignored) {
                     }
                 } while (session.global_data.running);
             }
