@@ -62,7 +62,7 @@ The available operators and their meaning
 As mentioned above, the "+" operator aggregates arrays and maps.
 
 If the first operant is an `Data.Array` the second operant will be added to the resulting array.
-If the second operant is also some array, both will be merged. <br/>
+If the second operant is also some array, both will be merged.<br/>
 The following expression will return _true_:
 
 ```
@@ -87,7 +87,7 @@ SCXML requires that only declared variables can be written. An `=` to an undefin
 Nevertheless, it should be possible to declare variables in the global &lt;script&gt; element.<br/>
 In the ECMA-datamodel (in which the ECMA-interpreter is executed in strict mode) this is done via a _"var"_
 declaration. <br/>
-This expression language is not a script languages and thus has no such declaration syntax. Instead, you can use the "
+This expression language is not a script language and thus has no such declaration syntax. Instead, you can use the "
 Initialisation" assignment operator `?=`
 to create and initialize a variable.<br/>
 
@@ -95,9 +95,9 @@ to create and initialize a variable.<br/>
   myVar ?= [1,2,3,4]
 ```
 
-SCXML aldo requires that system variables are read-only. To support this, the Datamodel has a "readonly" flag in each
+SCXML also requires that system variables are read-only. To support this, the Datamodel has a "readonly" flag for each
 data-element.
-Assignments to a read-only marked data will fail. <br/>
+Assignments to a read-only marked data-element will fail. <br/>
 There is currently no way to set this flag from the expression language.
 
 #### Conditional (ternary) operator
@@ -118,7 +118,7 @@ Will return "_is not One_" if "_A_" is not 1.
 
 ### Custom Actions
 
-Custom actions (via the interface "Action") can be called like methods.
+Custom actions (see interface "Action") can be called like methods.
 
 _You can call them like global functions_
 
