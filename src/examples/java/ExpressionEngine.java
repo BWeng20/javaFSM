@@ -12,8 +12,14 @@ import com.bw.fsm.tracer.TraceMode;
 import java.net.URL;
 import java.util.List;
 
+/**
+ * Example that registers and use the "Expression Language" Datamodel.
+ */
 public class ExpressionEngine {
 
+    /**
+     * Some custom action that will be called from the datamodel.
+     */
     public static class MySuperMul implements Action {
 
         @Override
@@ -63,7 +69,7 @@ public class ExpressionEngine {
             // Otherwise: var executor = new FsmExecutor(true);
             var executor = new FsmExecutor(false);
 
-            // Start the FSM. Executor has different alternative
+            // Start the FSM. Executor has different alternatives
             // of this execute-methode. You can load the FSM also from memory,
             // or add some data to initialize the data-model.
             URL source = CustomActions.class.getResource("ExpressionEngine.scxml");
