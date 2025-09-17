@@ -4,6 +4,8 @@ import com.bw.fsm.actions.ActionWrapper;
 import com.bw.fsm.datamodel.ecma.ECMAScriptDatamodel;
 import com.bw.fsm.datamodel.expression_engine.RFsmExpressionDatamodel;
 import com.bw.fsm.datamodel.null_datamodel.NullDatamodel;
+import com.bw.fsm.tracer.Tracer;
+import com.bw.fsm.tracer.thrift.ThriftTracerFactory;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -78,6 +80,13 @@ public class Main {
                     icp = runConfigFolder.resolve(icp);
                 }
                 ic.add(icp);
+            }
+
+            if ( config.thrift.serverAddress != null) {
+                ThriftTracerFactory.serverAddress = config.thrift.serverAddress;
+                if ( config.thrift.clientAddress != null)
+                    ThriftTracerFactory.clientAddress = config.thrift.clientAddress;
+                Tracer.set_tracer_factory(new ThriftTracerFactory());
             }
 
             FsmExecutor executor = new FsmExecutor(true);

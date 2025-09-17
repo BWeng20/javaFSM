@@ -46,7 +46,8 @@ ext.'StaticOptionsConfig' =
                                 'Method': true,
                                 'Event': true,
                                 'State': true,
-                                'Script': true
+                                'Script': true,
+                                'Thrift': true
                         ],
                 'Datamodels':
                         [

@@ -26,6 +26,7 @@ dependencies {
     testImplementation "net.sf.saxon:Saxon-HE:${saxonVersion}"
 }
 
+/** Main project has all options enabled */
 ext.'StaticOptionsConfig' =
         [
                 'Debug' :
@@ -40,7 +41,8 @@ ext.'StaticOptionsConfig' =
                                 'Method': true,
                                 'Event': true,
                                 'State': true,
-                                'Script': true
+                                'Script': true,
+                                'Thrift': true
                         ],
                 'Datamodels':
                         [

@@ -98,6 +98,10 @@ public class Fsm {
         final var session = new ScxmlSession(session_id, externalQueue, tracer);
         session.global_data.source = this.name;
 
+        if ( StaticOptions.trace && tracer != null) {
+            tracer.registerSession(session_id, this.name);
+        }
+
         executor.state.sessions.put(session_id, session);
         final var options = executor.state.datamodel_options;
 

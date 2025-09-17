@@ -26,22 +26,28 @@ Also it describes a datamodel, which defines and stores writable data and can ex
 Users can choose between different datamodels, extend them or even create new ones.
 
 Some features of this library can be removed by static switches, 
-the compiled JVM code will not contain any reverence of it if a switch is turned.<br>
-<b>They can't be changed during runtime</b>. These can be used to increase performance and reduce the library size 
-and runtime dependencies.
+the compiled JVM code will not contain any reverence of it if a switch is turned off.<br>
+<b>They can't be changed during runtime</b>.<br>
 
-See [StaticOptions](src/main/java/com/bw/fsm/StaticOptions.java).
+These switches can be used to increase performance and reduce the library size and runtime dependencies. 
+But you need to compile the source separately for each configuration.<br>
 
-| Switch (StaticOptions) | Description                                                             | Runtime dependency<br/>if switched on |
-|------------------------|-------------------------------------------------------------------------|---------------------------------------|
-| debug                  | Adds debug output to FSM execution                                      |                                       |
-| debug_reader           | Adds debug output to the SCXML reader (a lot)                           |                                       |
-| trace                  | Enables tracing of the FSM algorithm                                    |                                       |
-| trace_method           | Enables tracing of methods calls in the FSM (if "trace" is enabled)     |                                       |
-| trace_event            | Enables tracing of events in the FSM (if "trace" is enabled)            |                                       |
-| trace_state            | Enables tracing of state changes in the FSM (if "trace" is enabled)     |                                       |
-| ecma_script_model      | Enabled ECMA Datamodel                                                  | graalvm.js                            |
-| rfsm_expression_model  | Adds a datamodel implementation based on the internal Expression-Engine |                                       |
+The file "StaticOptions.java" is generated from a [template](src/main/templates/StaticOptions.template) which is feed by configuration 
+setting in the build-script. See `StaticOptionsConfig` in the build scripts for [Main](build.gradle) and the variants [Thrift-Trace-Build](thriftTraceBuild/build.gradle) 
+and [Minimal-Build](minimalBuild/build.gradle).
+
+You can add new variante easily.
+
+| Switch (StaticOptions) | Description                                                         | Runtime dependency<br/>if switched on |
+|------------------------|---------------------------------------------------------------------|---------------------------------------|
+| debug                  | Adds debug output to FSM execution                                  |                                       |
+| debug_reader           | Adds debug output to the SCXML reader (a lot)                       |                                       |
+| trace                  | Enables tracing of the FSM algorithm                                |                                       |
+| trace_method           | Enables tracing of methods calls in the FSM (if "trace" is enabled) |                                       |
+| trace_event            | Enables tracing of events in the FSM (if "trace" is enabled)        |                                       |
+| trace_state            | Enables tracing of state changes in the FSM (if "trace" is enabled) |                                       |
+| ecma                   | Enabled ECMA Datamodel                                              | graalvm.js                            |
+| thrift_trace           | Enabled the Thrift-based Tracer.                                    | thrift                                |
 
 
 ## About SCXML files

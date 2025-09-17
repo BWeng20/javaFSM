@@ -70,7 +70,13 @@ public class ThriftTracer extends Tracer {
     @Override
     public void registerSession(int sessionId, String fsmName) {
         try {
-            String fsmId = server.registerFsm(clientAddress, fsmName, sessionId);
+            String fsmId;
+            if (server != null) {
+                fsmId = server.registerFsm(clientAddress, fsmName, sessionId);
+            } else {
+                Log.error("ThriftTrace: No Server");
+                fsmId = fsmName + ":" + sessionId;
+            }
             TraceSession ts = new TraceSession(fsmId, clientAddress, fsmName, sessionId);
             synchronized (sessions) {
                 sessions.put(sessionId, ts);
@@ -88,7 +94,14 @@ public class ThriftTracer extends Tracer {
         TraceSession ts = getSession(sessionId);
         if (ts != null) {
             try {
-                server.unregisterFsm(ts.fsmId);
+                if (server != null)
+                    server.unregisterFsm(ts.fsmId);
+                else
+                    Log.error("ThriftTrace: No Server");
+
+                synchronized (sessions) {
+                    sessions.remove(sessionId);
+                }
                 Log.info("ThriftTrace: %s (session %d) un-registered as %s", ts.fsmName, ts.session, ts.fsmId);
             } catch (TException te) {
                 Log.exception(
@@ -102,7 +115,10 @@ public class ThriftTracer extends Tracer {
         TraceSession ts = getSession(sessionId);
         if (ts != null) {
             try {
-                server.message(ts.fsmId, msg);
+                if (server != null)
+                    server.message(ts.fsmId, msg);
+                else
+                    Log.error("ThriftTrace: No Server");
             } catch (TException te) {
                 logThriftException(te);
             }
@@ -130,19 +146,24 @@ public class ThriftTracer extends Tracer {
 
     @Override
     public void enter_method(int sessionId, String what, TraceArgument... arguments) {
-        TraceSession ts = getSession(sessionId);
-        if (ts != null) {
-            try {
-                List<NamedArgument> args = new ArrayList<>(arguments.length);
-                for (TraceArgument a : arguments) {
-                    NamedArgument ta = new NamedArgument();
-                    ta.name = a.name;
-                    ta.value = a.value == null ? null : a.value.toString();
-                    args.add(ta);
+
+        if (server == null)
+            Log.error("ThriftTrace: No Server");
+        else {
+            TraceSession ts = getSession(sessionId);
+            if (ts != null) {
+                try {
+                    List<NamedArgument> args = new ArrayList<>(arguments.length);
+                    for (TraceArgument a : arguments) {
+                        NamedArgument ta = new NamedArgument();
+                        ta.name = a.name;
+                        ta.value = a.value == null ? null : a.value.toString();
+                        args.add(ta);
+                    }
+                    server.enterMethod(ts.fsmId, what, args);
+                } catch (TException te) {
+                    logThriftException(te);
                 }
-                server.enterMethod(ts.fsmId, what, args);
-            } catch (TException te) {
-                logThriftException(te);
             }
         }
     }
@@ -150,22 +171,25 @@ public class ThriftTracer extends Tracer {
 
     @Override
     public void exit_method(int sessionId, String what, TraceArgument... results) {
-        TraceSession ts = getSession(sessionId);
-        if (ts != null) {
-            try {
-                List<NamedArgument> args = new ArrayList<>(results.length);
-                for (TraceArgument a : results) {
-                    NamedArgument ta = new NamedArgument();
-                    ta.name = a.name;
-                    ta.value = a.value == null ? null : a.value.toString();
-                    args.add(ta);
+        if (server == null)
+            Log.error("ThriftTrace: No Server");
+        else {
+            TraceSession ts = getSession(sessionId);
+            if (ts != null) {
+                try {
+                    List<NamedArgument> args = new ArrayList<>(results.length);
+                    for (TraceArgument a : results) {
+                        NamedArgument ta = new NamedArgument();
+                        ta.name = a.name;
+                        ta.value = a.value == null ? null : a.value.toString();
+                        args.add(ta);
+                    }
+                    server.exitMethod(ts.fsmId, what, args);
+                } catch (TException te) {
+                    logThriftException(te);
                 }
-                server.exitMethod(ts.fsmId, what, args);
-            } catch (TException te) {
-                logThriftException(te);
             }
         }
-
     }
 
     protected TraceSession getSession(int session) {

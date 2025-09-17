@@ -25,11 +25,6 @@ public class RunConfiguration {
         @JsonProperty("mode")
         public TraceMode mode = TraceMode.STATES;
 
-        @JsonProperty("thriftServerAddress")
-        public String thriftServerAddress;
-
-        @JsonProperty("thriftClientAddress")
-        public String thriftClientAddress;
     }
 
 
@@ -64,6 +59,20 @@ public class RunConfiguration {
     @JsonProperty("global_options")
     public Map<String, String> globalOptions;
 
+    public static class ThriftOptions {
+
+        /**
+         * If thriftServerAddress is set, a Thrift based Tracer implementation will be used.
+         */
+        @JsonProperty(value = "server_address")
+        public String serverAddress;
+
+        @JsonProperty("client_address")
+        public String clientAddress;
+    }
+
+    @JsonProperty("thrift")
+    public  ThriftOptions thrift = new ThriftOptions();
 
     @JsonProperty("options")
     public Map<String, String> options;

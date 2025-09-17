@@ -43,7 +43,8 @@ ext.'StaticOptionsConfig' =
                                 'Method': false,
                                 'Event': false,
                                 'State': false,
-                                'Script': false
+                                'Script': false,
+                                'Thrift': false
                         ],
                 'Datamodels':
                         [

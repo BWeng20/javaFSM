@@ -28,5 +28,7 @@ public interface StaticOptions {
      * Debug output for {@link com.bw.fsm.serializer.FsmReader} and {@link com.bw.fsm.serializer.FsmWriter}.
      */
     boolean debug_serializer = ${Config.Debug.On} && ${Config.Debug.Serializer};
+
+    boolean thrift_trace = ${Config.Trace.On} && ${Config.Trace.Thrift};
 }
 

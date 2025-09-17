@@ -10,12 +10,6 @@
         "mode": {
           "type": "string",
           "enum": ["ALL","METHODS","STATES","EVENTS", "ARGUMENTS", "RESULTS", "NONE"]
-        },
-        "thriftServerAddress": {
-          "type": "string"
-        },
-        "thriftClientAddress": {
-          "type": "string"
         }
       }
     }
@@ -46,6 +40,19 @@
           }
         },
         "required": [ "path"]
+      }
+    },
+    "thrift" :{
+      "description": "Thrift options.",
+      "type": "object",
+      "properties": {
+        "server_address": {
+          "description": "If server-address is set, a Thrift based Tracer implementation will be used.",
+          "type": "string"
+        },
+        "client_address": {
+          "type": "string"
+        }
       }
     },
     "includes" :{

@@ -5,12 +5,14 @@
       "timeout_milliseconds": 5000,
       "options": {
         "trace": {
-          "mode": "ALL",
-          "thriftClientAddress": "tcp:localhost:4212",
-          "thriftServerAddress": "tcp:localhost:4211"
+          "mode": "ALL"
         }
       }
     }
   ],
-  "includes": ["fsms"]
+  "includes": ["fsms"],
+  "thrift": {
+    "client_address": "tcp:localhost:4212",
+    "server_address": "tcp:localhost:4211"
+  }
 }
