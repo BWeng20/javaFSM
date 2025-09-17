@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/BWeng20/rFSM/runner-specification.json",
+  "title": "javaFSM Runner Configuration",
+  "description": "Configuration for javaFSM runner.",
+  "definitions": {
+    "trace-options": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["ALL","METHODS","STATES","EVENTS", "ARGUMENTS", "RESULTS", "NONE"]
+        },
+        "thriftServerAddress": {
+          "type": "string"
+        },
+        "thriftClientAddress": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "type": "object",
+  "properties": {
+    "machines": {
+      "description": "The Final-State-Machines to load.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+            "path" : {
+            "description": "The absolute or relative path to the SCXML file to load.",
+            "type": "string"
+          },
+          "timeout_milliseconds": {
+            "description": "Maximal time the FSM shall run. 0 for no restriction.",
+            "type": "integer"
+          },
+          "options": {
+            "description": "Options for executor.",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "trace" : { "$ref": "#/definitions/trace-options" }
+            }
+          }
+        },
+        "required": [ "path"]
+      }
+    },
+    "includes" :{
+      "description": "Include paths for all machines.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "global_options": {
+      "description": "Global options for executor.",
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "machines"
+  ]
+}
