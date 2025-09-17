@@ -73,7 +73,7 @@ public class Arguments {
         this.options = map;
     }
 
-    public static final Option TRACE_ARGUMENT_OPTION = new Option("trace");
+    public static final Option TRACE_ARGUMENT_OPTION = new Option("trace").withValue();
 
     public TraceMode getTraceMode() {
         return TraceMode.fromString(options.get(TRACE_ARGUMENT_OPTION.name));
