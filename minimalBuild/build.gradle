@@ -1,0 +1,66 @@
+/**
+ * Build Script for variant with all features turned on.
+ * The source needs to be re-compiled with different flags for each variant.
+ * The compile-time flags are defined in interface "StaticSettings" which is generated from a template.
+ * The template is configured with "StaticOptionsConfig" below.
+ */
+
+plugins {
+    id 'java'
+}
+
+apply from: rootProject.file('fsm-common.gradle')
+
+
+dependencies {
+    compileOnly "org.graalvm.sdk:graal-sdk:${graalvmVersion}"
+    compileOnly "org.graalvm.js:js:${graalvmVersion}"
+
+    compileOnly "org.apache.thrift:libthrift:${thriftVersion}"
+    compileOnly "org.slf4j:slf4j-api:${slf4jVersion}"
+    compileOnly "org.slf4j:slf4j-simple:${slf4jVersion}"
+
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${jacksonVersion}"
+
+    compileOnly 'org.jetbrains:annotations:26.0.2'
+    testImplementation platform("org.junit:junit-bom:${junitVersion}")
+    testImplementation "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+    testImplementation "net.sf.saxon:Saxon-HE:${saxonVersion}"
+}
+
+ext.'StaticOptionsConfig' =
+        [
+                'Debug' :
+                        [
+                                'On' : false,
+                                'Serializer': false,
+                                'Reader': false
+                        ],
+                'Trace' :
+                        [
+                                'On' : false,
+                                'Method': false,
+                                'Event': false,
+                                'State': false,
+                                'Script': false
+                        ],
+                'Datamodels':
+                        [
+                                // Will remove runtime dependency to graalvm
+                                'ecma' : false
+                        ]
+        ]
+
+sourceSets {
+    main {
+        java {
+            srcDir '../src/main/java'
+            srcDir thriftOutputDir
+            srcDir 'build/generated/sources/configuration'
+        }
+        resources {
+            srcDir '../src/main/resources'
+        }
+    }
+}

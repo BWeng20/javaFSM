@@ -1,0 +1,32 @@
+package com.bw.fsm;
+
+/**
+ * <b>Compile-time</b> flags to control supported features.
+ * If changed, a re-build of the project is needed.
+ */
+public interface StaticOptions {
+
+    boolean debug = ${Config.Debug.On};
+
+    boolean ecma = ${Config.Datamodels.ecma};
+
+    /**
+     * Enables {@link com.bw.fsm.tracer.Tracer}
+     */
+    boolean trace = ${Config.Trace.On};
+    boolean trace_method = ${Config.Trace.On} && ${Config.Trace.Method};
+    boolean trace_event = ${Config.Trace.On} && ${Config.Trace.Event};
+    boolean trace_state = ${Config.Trace.On} && ${Config.Trace.State};
+    boolean trace_script = ${Config.Trace.On} && ${Config.Trace.Script};
+
+    /**
+     * Debug output for {@link ScxmlReader}
+     */
+    boolean debug_reader = ${Config.Debug.On} && ${Config.Debug.Reader};
+
+    /**
+     * Debug output for {@link com.bw.fsm.serializer.FsmReader} and {@link com.bw.fsm.serializer.FsmWriter}.
+     */
+    boolean debug_serializer = ${Config.Debug.On} && ${Config.Debug.Serializer};
+}
+

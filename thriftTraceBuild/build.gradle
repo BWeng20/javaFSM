@@ -1,13 +1,18 @@
+/**
+ * Build Script for variant with thrift-trace features turned on.
+ * The source needs to be re-compiled with different flags for each variant.
+ * The compile-time flags are defined in interface "StaticSettings" which is generated from a template.
+ * The template is configured with "StaticOptionsConfig" below.
+ */
+
 plugins {
     id 'java'
 }
 
-group = 'io.github.bweng20'
-version = '1.0-SNAPSHOT'
-
 apply from: rootProject.file('fsm-common.gradle')
 
 dependencies {
+
     implementation "org.graalvm.sdk:graal-sdk:${graalvmVersion}"
     implementation "org.graalvm.js:js:${graalvmVersion}"
 
@@ -26,13 +31,14 @@ dependencies {
     testImplementation "net.sf.saxon:Saxon-HE:${saxonVersion}"
 }
 
+
 ext.'StaticOptionsConfig' =
         [
                 'Debug' :
                         [
-                                'On' : true,
-                                'Serializer': true,
-                                'Reader': true
+                                'On' : false,
+                                'Serializer': false,
+                                'Reader': false
                         ],
                 'Trace' :
                         [
@@ -47,31 +53,6 @@ ext.'StaticOptionsConfig' =
                                 'ecma' : true
                         ]
         ]
-
-tasks.register('w3cTest', JavaExec) {
-    group = 'verification'
-    description = 'Starts the w3c test'
-
-    mainClass = 'com.bw.fsm.W3CTest'
-
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-    println 'class path '+classpath.asPath
-
-    // jvmArgs = ['-Xmx512m']
-    args = [layout.projectDirectory.asFile.absolutePath + '/../w3ctest', "-report", layout.projectDirectory.asFile.absolutePath + "/../W3C_TEST_REPORT.MD", "-parallel", "-logOnlyFailure"]
-}
-
-tasks.register('w3cTestWithOptionals', JavaExec) {
-    group = 'verification'
-    description = 'Starts the w3c test, including optional tests'
-
-    mainClass = 'com.bw.fsm.W3CTest'
-
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-
-    // jvmArgs = ['-Xmx512m']
-    args = [layout.projectDirectory.asFile.absolutePath + '/w3ctest', "-report", layout.projectDirectory.asFile.absolutePath + "/W3C_TEST_REPORT.MD", "-parallel", "-logOnlyFailure", "-optionals"]
-}
 
 tasks.named('compileJava') {
     dependsOn(tasks.named('generateThrift'))

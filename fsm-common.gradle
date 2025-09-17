@@ -1,0 +1,93 @@
+/**
+ * Common gradle stuff, uses for main- and sub-projects.
+ */
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    thriftVersion = '0.22.0'
+    thriftOutputDir = layout.buildDirectory.dir('generated-sources/java').get().asFile.absolutePath
+    thriftSourceDir = rootProject.layout.projectDirectory.dir('src/main/thrift').asFile.absolutePath
+
+    graalvmVersion = '22.3.0'
+
+    slf4jVersion = '2.0.9'
+    jacksonVersion = '2.17.2'
+    junitVersion = '5.11.0'
+    saxonVersion = '12.8'
+}
+
+group = 'io.github.bweng20'
+version = '1.0-SNAPSHOT'
+
+println "Configure <$project.name>, Gradle version $project.gradle.gradleVersion"
+println "maven: $project.group : $project.version"
+
+project.ext.'configureGenDir' = layout.buildDirectory.dir('generated/sources/configuration').get()
+apply plugin: 'java'
+
+// Create the StaticOptions that contains boolean flags to control compile-time features.
+tasks.register('generateStaticOptions', Copy) {
+    println "Create StaticOptions for " + project
+    println " at ${project.configureGenDir}"
+    println " with ${project.StaticOptionsConfig}"
+
+    from("${rootProject.rootDir}/src/main/templates/") {
+        include 'StaticOptions.template'
+    }
+    into project.layout.buildDirectory.dir('generated/sources/configuration/com/bw/fsm')
+    expand(['Config': project.StaticOptionsConfig])
+    rename {
+        file -> "StaticOptions.java"
+    }
+}
+
+afterEvaluate {
+    if (project.hasProperty('StaticOptionsConfig')) {
+        tasks.findByName(sourceSets.main.compileJavaTaskName).dependsOn(tasks.generateStaticOptions)
+
+        tasks.withType(Test).configureEach {
+            useJUnitPlatform()
+        }
+    }
+}
+
+tasks.register('generateThrift') {
+
+    def outputDir = file(thriftOutputDir)
+
+    inputs.dir thriftSourceDir
+    outputs.dir outputDir
+
+    doLast {
+        file(thriftOutputDir).mkdirs()
+
+        def thriftExecutable
+        def compilerDir = rootProject.layout.projectDirectory.dir("thrift")
+        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+            thriftExecutable = compilerDir.file("thrift-${thriftVersion}.exe").getAsFile().absolutePath
+        } else {
+            thriftExecutable = compilerDir.file("thrift-${thriftVersion}").getAsFile().absolutePath
+        }
+
+        fileTree(thriftSourceDir) {
+            include '**/*.thrift'
+        }.each { thriftFile ->
+            println "Compiling Thrift: ${thriftFile.name} with ${thriftExecutable}"
+
+            project.exec {
+                workingDir layout.projectDirectory
+                commandLine thriftExecutable, '--gen', 'java:generated_annotations=suppress', '-out', thriftOutputDir, '-I', thriftSourceDir, thriftFile
+            }
+        }
+    }
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
+javadoc.options.addStringOption('Xdoclint:none', '-quiet')
+javadoc.options.addStringOption('stylesheetfile', '../doc/javadoc.css')
